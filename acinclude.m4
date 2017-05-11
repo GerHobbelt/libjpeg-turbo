@@ -25,7 +25,7 @@ case "$host_os" in
     objfmt='COFF'
   ;;
   os2-emx*)			# not tested
-    objfmt='MSOMF'		# obj
+    objfmt='OS2OMF'		# obj
   ;;
   linux*coff* | linux*oldld*)
     objfmt='COFF'		# ???
@@ -91,6 +91,7 @@ fi
 AC_MSG_CHECKING([for object file format specifier (NAFLAGS) ])
 case "$objfmt" in
   MSOMF)      NAFLAGS='-fobj -DOBJ32';;
+  OS2OMF)     NAFLAGS='-fobj -DOBJ32 -D__OS2__';;
   Win32-COFF) NAFLAGS='-fwin32 -DWIN32';;
   Win64-COFF) NAFLAGS='-fwin64 -DWIN64 -D__x86_64__';;
   COFF)       NAFLAGS='-fcoff -DCOFF';;
