@@ -1,10 +1,17 @@
+VENDOR ?=community
+BUILD_INFO=\#\#1\#\# $(shell date +'%d %b %Y %H:%M:%S')     $(shell uname -n)
+BUILDLEVEL_INFO=@\#$(VENDOR):$(VERSION)\#@$(BUILD_INFO)::::0::
+
 lib_LTLIBRARIES = libjpeg.la
-libjpeg_la_LDFLAGS = -version-info ${LIBTOOL_CURRENT}:${SO_MINOR_VERSION}:${SO_AGE} -no-undefined
+libjpeg_la_LDFLAGS = -version-info ${LIBTOOL_CURRENT}:${SO_MINOR_VERSION}:${SO_AGE} -no-undefined \
+        -buildlevel '$(BUILDLEVEL_INFO)'
+
 include_HEADERS = jerror.h jmorecfg.h jpeglib.h
 
 if WITH_TURBOJPEG
 lib_LTLIBRARIES += libturbojpeg.la
-libturbojpeg_la_LDFLAGS = -version-info 1:0:1 -no-undefined
+libturbojpeg_la_LDFLAGS = -version-info 1:0:1 -no-undefined \
+        -buildlevel '$(BUILDLEVEL_INFO)'
 include_HEADERS += turbojpeg.h
 endif
 
