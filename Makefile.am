@@ -102,9 +102,7 @@ noinst_PROGRAMS = jcstest
 
 if WITH_TURBOJPEG
 
-bin_PROGRAMS += tjbench
-
-noinst_PROGRAMS += tjunittest
+noinst_PROGRAMS += tjunittest tjbench
 
 tjbench_SOURCES = tjbench.c bmp.h bmp.c tjutil.h tjutil.c rdbmp.c rdppm.c \
 	wrbmp.c wrppm.c
@@ -169,13 +167,6 @@ dist_man1_MANS = cjpeg.1 djpeg.1 jpegtran.1 rdjpgcom.1 wrjpgcom.1
 
 DOCS= coderules.txt jconfig.txt change.log rdrle.c wrrle.c BUILDING.md \
 	ChangeLog.md
-
-dist_doc_DATA = README.ijg README.md libjpeg.txt structure.txt usage.txt \
-	wizard.txt LICENSE.md
-
-exampledir = $(docdir)
-dist_example_DATA = example.c
-
 
 EXTRA_DIST = win release $(DOCS) testimages CMakeLists.txt \
 	sharedlib/CMakeLists.txt cmakescripts libjpeg.map.in doc doxygen.config \
