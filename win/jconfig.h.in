@@ -7,7 +7,7 @@
 #cmakedefine MEM_SRCDST_SUPPORTED
 #cmakedefine WITH_SIMD
 #cmakedefine NO_GETENV
-
+#cmakedefine WITH_3DNOW
 #define BITS_IN_JSAMPLE  @BITS_IN_JSAMPLE@      /* use 8 or 12 */
 
 #undef RIGHT_SHIFT_IS_UNSIGNED
