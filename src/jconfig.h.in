@@ -25,6 +25,7 @@
 #cmakedefine NO_GETENV
 
 /* Support 3DNow */
+#cmakedefine WITH_3DNOW 1
 
 /* Enable full tracing */
 #cmakedefine WITH_FULLTRACING 1
