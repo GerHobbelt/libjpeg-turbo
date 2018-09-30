@@ -1,3 +1,57 @@
+libjpego-turbo-bp
+=================
+
+Motivation
+----------
+
+D. R. Commander, the author and maintainer of original libjpeg-turbo seems pretty conservative when it comes to applying others' patches. I'm not really blaming him, he's maintaining a project consumed by a lot of other projects, including web browsers and serious data processing applications, so it's pretty understandable that he might not want to apply patches that aren't valuable from his perspective because if something borks, he'll be to blame and not the authors of faulty patch.
+
+On the other hand, I need some of changes for my personal projects and I'm not willing to manually reapply them with each release, so that's why I made this fork. I'd love also some of features that I implemented "offsite" (most importantly, automatic rotation according to EXIF data and naive CMYK processing).
+
+How to use
+----------
+
+tl;dr - clone this repo's "bp-fixes" branch and proceed like with regular libjpeg-turbo.
+
+This fork consists of two branches - master, which is *equal* to libjpeg-turbo's master, and separate branch "bp-fixes" that contian my changes. The motivation here is to have easy way to reapply my changes (using "git rebase") while keeping a copy of original libjpeg-turbo "locally". Although it's improbable, if one day the libjpeg-turbo vanishes, I'll still have *something* to base on.
+
+Current changelog
+-----------------
+
+- Ability to disable "getenv" code that allows forcing particular SIMD codepath.
+- Ability to disable 3DNow extensions support
+- Built-in protection against LJT­01­003 (https://cure53.de/pentest-report_libjpeg-turbo.pdf)
+- Ability to disable tracing/debug messages (no calling emit_message for trace/debug level messages)
+
+Planned changes
+---------------
+
+- Ability to disable encoder (compressor) code
+
+  This will save storage space for projects that don't require JPEG compression.
+
+- Automatic conversion from CMYK to RGB
+
+  Right now I'm doing this manually "offsite" (outside of library code), meaning wasted time for reprocessing the pixel data. 
+  
+  
+Changes that I'd like to research
+----------------------------------  
+
+- Possibility to specify own implementations of memset/memcpy/memmove
+
+- Automatic rotation according to EXIF info
+
+
+License
+-------
+
+It's the same as original libjpeg-turbo.
+
+
+
+== ORIGINAL README.MD FOLLOWS ==
+
 Background
 ==========
 
