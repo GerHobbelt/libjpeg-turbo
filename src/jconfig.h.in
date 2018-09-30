@@ -23,6 +23,7 @@
 
 /* Disable GETENV */
 #cmakedefine NO_GETENV
+
 /* Support 3DNow */
 
 /* Enable full tracing */
