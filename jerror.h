@@ -288,6 +288,7 @@ JMESSAGE(JERR_BAD_DROP_SAMPLING,
    (*(cinfo)->err->emit_message) ((j_common_ptr)(cinfo), -1))
 
 /* Informational/debugging messages */
+#ifdef WITH_FULLTRACING
 #define TRACEMS(cinfo, lvl, code) \
   ((cinfo)->err->msg_code = (code), \
    (*(cinfo)->err->emit_message) ((j_common_ptr)(cinfo), (lvl)))
@@ -327,5 +328,15 @@ JMESSAGE(JERR_BAD_DROP_SAMPLING,
    strncpy((cinfo)->err->msg_parm.s, (str), JMSG_STR_PARM_MAX), \
    (cinfo)->err->msg_parm.s[JMSG_STR_PARM_MAX - 1] = '\0', \
    (*(cinfo)->err->emit_message) ((j_common_ptr)(cinfo), (lvl)))
+#else
+#define TRACEMS(cinfo, lvl, code)  
+#define TRACEMS1(cinfo, lvl, code, p1) 
+#define TRACEMS2(cinfo, lvl, code, p1, p2)
+#define TRACEMS3(cinfo, lvl, code, p1, p2, p3)
+#define TRACEMS4(cinfo, lvl, code, p1, p2, p3, p4)
+#define TRACEMS5(cinfo, lvl, code, p1, p2, p3, p4, p5)
+#define TRACEMS8(cinfo, lvl, code, p1, p2, p3, p4, p5, p6, p7, p8)
+#define TRACEMSS(cinfo, lvl, code, str) 
+#endif
 
 #endif /* JERROR_H */

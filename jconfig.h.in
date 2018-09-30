@@ -24,7 +24,11 @@
 /* Disable GETENV */
 #cmakedefine NO_GETENV
 /* Support 3DNow */
-#cmakedefine WITH_3DNOW 1/*
+
+/* Enable full tracing */
+#cmakedefine WITH_FULLTRACING 1
+
+/*
  * Define BITS_IN_JSAMPLE as either
  *   8   for 8-bit sample values (the usual setting)
  *   12  for 12-bit sample values
