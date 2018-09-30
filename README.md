@@ -21,7 +21,6 @@ Current changelog
 - Ability to disable "getenv" code that allows forcing particular SIMD codepath.
 - Ability to disable 3DNow extensions support
 - Built-in protection against LJT­01­003 (https://cure53.de/pentest-report_libjpeg-turbo.pdf)
-- Ability to disable tracing/debug messages (no calling emit_message for trace/debug level messages)
 
 Planned changes
 ---------------
