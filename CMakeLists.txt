@@ -581,9 +581,9 @@ if(WITH_TURBOJPEG)
     endif()
     if(OS2)
       set_target_properties(turbojpeg PROPERTIES
-      OS2_DEF_VENDOR "$ENV{VENDOR}"
-      OS2_DEF_PATCH "${VERSION_REVISION}"
-      OS2_DEF_VERSION "${VERSION}")
+        OS2_DEF_VENDOR "$ENV{VENDOR}"
+        OS2_DEF_PATCH "${VERSION_REVISION}"
+        OS2_DEF_VERSION "${VERSION}")
     endif()
     if(APPLE AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR
                   CMAKE_OSX_DEPLOYMENT_TARGET VERSION_GREATER 10.4))
@@ -603,9 +603,9 @@ if(WITH_TURBOJPEG)
     target_link_libraries(tjunittest turbojpeg)
     if(OS2)
       set_target_properties(tjunittest PROPERTIES
-      OS2_DEF_VENDOR "$ENV{VENDOR}"
-      OS2_DEF_PATCH "${VERSION_REVISION}"
-      OS2_DEF_VERSION "${VERSION}")
+        OS2_DEF_VENDOR "$ENV{VENDOR}"
+        OS2_DEF_PATCH "${VERSION_REVISION}"
+        OS2_DEF_VERSION "${VERSION}")
     endif()
 
     add_executable(tjbench tjbench.c tjutil.c)
@@ -615,18 +615,18 @@ if(WITH_TURBOJPEG)
     endif()
     if(OS2)
       set_target_properties(tjbench PROPERTIES
-      OS2_DEF_VENDOR "$ENV{VENDOR}"
-      OS2_DEF_PATCH "${VERSION_REVISION}"
-      OS2_DEF_VERSION "${VERSION}")
+        OS2_DEF_VENDOR "$ENV{VENDOR}"
+        OS2_DEF_PATCH "${VERSION_REVISION}"
+        OS2_DEF_VERSION "${VERSION}")
     endif()
 
     add_executable(tjexample tjexample.c)
     target_link_libraries(tjexample turbojpeg)
     if(OS2)
       set_target_properties(tjexample PROPERTIES
-      OS2_DEF_VENDOR "$ENV{VENDOR}"
-      OS2_DEF_PATCH "${VERSION_REVISION}"
-      OS2_DEF_VERSION "${VERSION}")
+        OS2_DEF_VENDOR "$ENV{VENDOR}"
+        OS2_DEF_PATCH "${VERSION_REVISION}"
+        OS2_DEF_VERSION "${VERSION}")
     endif()
   endif()
 
@@ -682,17 +682,17 @@ endif()
 add_executable(rdjpgcom rdjpgcom.c)
 if(OS2)
   set_target_properties(rdjpgcom PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${VERSION_REVISION}"
-  OS2_DEF_VERSION "${VERSION}")
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${VERSION_REVISION}"
+    OS2_DEF_VERSION "${VERSION}")
 endif()
 
 add_executable(wrjpgcom wrjpgcom.c)
 if(OS2)
   set_target_properties(wrjpgcom PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${VERSION_REVISION}"
-  OS2_DEF_VERSION "${VERSION}")
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${VERSION_REVISION}"
+    OS2_DEF_VERSION "${VERSION}")
 endif()
 
 
@@ -1362,10 +1362,21 @@ set(EXE ${CMAKE_EXECUTABLE_SUFFIX})
 
 if(WITH_TURBOJPEG)
   if(ENABLE_SHARED)
+    if (OS2)
+    install(TARGETS turbojpeg
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    install(TARGETS tjbench
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    else()
     install(TARGETS turbojpeg tjbench
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
   endif()
   if(ENABLE_STATIC)
     install(TARGETS turbojpeg-static ARCHIVE

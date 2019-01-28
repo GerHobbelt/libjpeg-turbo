@@ -59,8 +59,8 @@ elseif(MINGW)
   set_target_properties(jpeg PROPERTIES SUFFIX -${SO_MAJOR_VERSION}.dll)
 elseif(OS2)
   set_target_properties(jpeg PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${SO_MINOR_VERSION}")
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${SO_MINOR_VERSION}")
 endif()
 
 if(WIN32)
@@ -80,9 +80,9 @@ set_property(TARGET cjpeg PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
 target_link_libraries(cjpeg jpeg)
 if(OS2)
   set_target_properties(cjpeg PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${VERSION_REVISION}"
-  OS2_DEF_VERSION "${VERSION}")
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${VERSION_REVISION}"
+    OS2_DEF_VERSION "${VERSION}")
 endif()
 
 add_executable(djpeg ../djpeg.c ../cdjpeg.c ../rdcolmap.c ../rdswitch.c
@@ -91,9 +91,9 @@ set_property(TARGET djpeg PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
 target_link_libraries(djpeg jpeg)
 if(OS2)
   set_target_properties(djpeg PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${VERSION_REVISION}"
-  OS2_DEF_VERSION "${VERSION}")
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${VERSION_REVISION}"
+    OS2_DEF_VERSION "${VERSION}")
 endif()
 
 add_executable(jpegtran ../jpegtran.c ../cdjpeg.c ../rdswitch.c ../transupp.c)
@@ -101,21 +101,29 @@ target_link_libraries(jpegtran jpeg)
 set_property(TARGET jpegtran PROPERTY COMPILE_FLAGS "${USE_SETMODE}")
 if(OS2)
   set_target_properties(jpegtran PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${VERSION_REVISION}"
-  OS2_DEF_VERSION "${VERSION}")
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${VERSION_REVISION}"
+    OS2_DEF_VERSION "${VERSION}")
 endif()
 
 add_executable(jcstest ../jcstest.c)
 target_link_libraries(jcstest jpeg)
 if(OS2)
   set_target_properties(jcstest PROPERTIES
-  OS2_DEF_VENDOR "$ENV{VENDOR}"
-  OS2_DEF_PATCH "${VERSION_REVISION}"
-  OS2_DEF_VERSION "${VERSION}")
-endif()
-
+    OS2_DEF_VENDOR "$ENV{VENDOR}"
+    OS2_DEF_PATCH "${VERSION_REVISION}"
+    OS2_DEF_VERSION "${VERSION}")
+  install(TARGETS jpeg
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+  install(TARGETS cjpeg djpeg jpegtran
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+else()
 install(TARGETS jpeg cjpeg djpeg jpegtran
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
