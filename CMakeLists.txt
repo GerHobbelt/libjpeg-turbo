@@ -579,6 +579,12 @@ if(WITH_TURBOJPEG)
     if(MINGW)
       set_target_properties(turbojpeg PROPERTIES LINK_FLAGS -Wl,--kill-at)
     endif()
+    if(OS2)
+      set_target_properties(turbojpeg PROPERTIES
+      OS2_DEF_VENDOR "$ENV{VENDOR}"
+      OS2_DEF_PATCH "${VERSION_REVISION}"
+      OS2_DEF_VERSION "${VERSION}")
+    endif()
     if(APPLE AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR
                   CMAKE_OSX_DEPLOYMENT_TARGET VERSION_GREATER 10.4))
       if(NOT CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG)
@@ -595,15 +601,33 @@ if(WITH_TURBOJPEG)
 
     add_executable(tjunittest tjunittest.c tjutil.c md5/md5.c md5/md5hl.c)
     target_link_libraries(tjunittest turbojpeg)
+    if(OS2)
+      set_target_properties(tjunittest PROPERTIES
+      OS2_DEF_VENDOR "$ENV{VENDOR}"
+      OS2_DEF_PATCH "${VERSION_REVISION}"
+      OS2_DEF_VERSION "${VERSION}")
+    endif()
 
     add_executable(tjbench tjbench.c tjutil.c)
     target_link_libraries(tjbench turbojpeg)
     if(UNIX)
       target_link_libraries(tjbench m)
     endif()
+    if(OS2)
+      set_target_properties(tjbench PROPERTIES
+      OS2_DEF_VENDOR "$ENV{VENDOR}"
+      OS2_DEF_PATCH "${VERSION_REVISION}"
+      OS2_DEF_VERSION "${VERSION}")
+    endif()
 
     add_executable(tjexample tjexample.c)
     target_link_libraries(tjexample turbojpeg)
+    if(OS2)
+      set_target_properties(tjexample PROPERTIES
+      OS2_DEF_VENDOR "$ENV{VENDOR}"
+      OS2_DEF_PATCH "${VERSION_REVISION}"
+      OS2_DEF_VERSION "${VERSION}")
+    endif()
   endif()
 
   if(ENABLE_STATIC)
@@ -656,8 +680,20 @@ if(ENABLE_STATIC)
 endif()
 
 add_executable(rdjpgcom rdjpgcom.c)
+if(OS2)
+  set_target_properties(rdjpgcom PROPERTIES
+  OS2_DEF_VENDOR "$ENV{VENDOR}"
+  OS2_DEF_PATCH "${VERSION_REVISION}"
+  OS2_DEF_VERSION "${VERSION}")
+endif()
 
 add_executable(wrjpgcom wrjpgcom.c)
+if(OS2)
+  set_target_properties(wrjpgcom PROPERTIES
+  OS2_DEF_VENDOR "$ENV{VENDOR}"
+  OS2_DEF_PATCH "${VERSION_REVISION}"
+  OS2_DEF_VERSION "${VERSION}")
+endif()
 
 
 ###############################################################################

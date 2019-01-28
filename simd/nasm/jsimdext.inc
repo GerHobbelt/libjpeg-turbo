@@ -65,8 +65,13 @@
 
 ; -- segment definition --
 ;
+%ifdef __OS2__
+%define SEG_TEXT    .TEXT32 align=16 public use32 class=CODE
+%define SEG_CONST   .DATA32 align=16 public use32 class=DATA
+%else
 %define SEG_TEXT   _text align=32 public use32 class=CODE
 %define SEG_CONST  _data align=32 public use32 class=DATA
+%endif
 
 %elifdef ELF    ; ----(nasm -felf[64] -DELF ...)------------
 ; * Linux
