@@ -1960,7 +1960,8 @@ DLLEXPORT unsigned char *tjLoadImage(const char *filename, int *width,
                                      int align, int *height, int *pixelFormat,
                                      int flags)
 {
-  int retval = 0, tempc, pitch;
+  int retval = 0, tempc;
+  size_t pitch;
   tjhandle handle = NULL;
   tjinstance *this;
   j_compress_ptr cinfo = NULL;
@@ -2013,7 +2014,9 @@ DLLEXPORT unsigned char *tjLoadImage(const char *filename, int *width,
   *pixelFormat = cs2pf[cinfo->in_color_space];
 
   pitch = PAD((*width) * tjPixelSize[*pixelFormat], align);
-  if ((dstBuf = (unsigned char *)malloc(pitch * (*height))) == NULL)
+  if ((unsigned long long)pitch * (unsigned long long)(*height) >
+     (unsigned long long)((size_t)-1) ||
+     (dstBuf = (unsigned char *)malloc(pitch * (*height))) == NULL)
     _throwg("tjLoadImage(): Memory allocation failure");
 
   if (setjmp(this->jerr.setjmp_buffer)) {
