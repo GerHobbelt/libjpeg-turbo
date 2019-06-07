@@ -1379,6 +1379,7 @@ if(WITH_TURBOJPEG)
       install(FILES "$<TARGET_PDB_FILE:turbojpeg>"
         DESTINATION ${CMAKE_INSTALL_BINDIR} OPTIONAL)
     endif()
+    endif()
   endif()
   if(ENABLE_STATIC)
     install(TARGETS turbojpeg-static ARCHIVE
