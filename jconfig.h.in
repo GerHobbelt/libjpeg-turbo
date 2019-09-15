@@ -28,6 +28,9 @@
 /* Enable full tracing */
 #cmakedefine WITH_FULLTRACING 1
 
+/* Enable compressor part */
+#cmakedefine JPEGLIB_ENABLE_COMPRESS 1
+
 /*
  * Define BITS_IN_JSAMPLE as either
  *   8   for 8-bit sample values (the usual setting)

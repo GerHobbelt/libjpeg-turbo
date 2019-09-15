@@ -11,9 +11,7 @@ On the other hand, I need some of changes for my personal projects and I'm not w
 How to use
 ----------
 
-tl;dr - clone this repo's "bp-fixes" branch and proceed like with regular libjpeg-turbo.
-
-This fork consists of two branches - master, which is *equal* to libjpeg-turbo's master, and separate branch "bp-fixes" that contian my changes. The motivation here is to have easy way to reapply my changes (using "git rebase") while keeping a copy of original libjpeg-turbo "locally". Although it's improbable, if one day the libjpeg-turbo vanishes, I'll still have *something* to base on.
+tl;dr - clone this repo's "master" branch and proceed like with regular libjpeg-turbo.
 
 Current changelog
 -----------------
@@ -22,17 +20,18 @@ Current changelog
 - Ability to disable 3DNow extensions support
 - Built-in protection against LJT­01­003 (https://cure53.de/pentest-report_libjpeg-turbo.pdf)
 - Ability to disable tracing/debug messages (no calling emit_message for trace/debug level messages)
+- Ability to disable encoder (compressor) code, saving storage space for projects that don't require JPEG compression.
 
 Planned changes
 ---------------
 
-- Ability to disable encoder (compressor) code
-
-  This will save storage space for projects that don't require JPEG compression.
-
 - Automatic conversion from CMYK to RGB
 
   Right now I'm doing this manually "offsite" (outside of library code), meaning wasted time for reprocessing the pixel data. 
+  
+- Static (self-contained) Windows build
+
+  Currently the MSVC runtime library installation is required to run applications utilizing this library.
   
   
 Changes that I'd like to research

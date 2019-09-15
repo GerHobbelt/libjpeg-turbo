@@ -9,6 +9,7 @@
 #cmakedefine NO_GETENV
 #cmakedefine WITH_3DNOW
 #cmakedefine WITH_FULLTRACING
+#cmakedefine JPEGLIB_ENABLE_COMPRESS
 
 #define BITS_IN_JSAMPLE  @BITS_IN_JSAMPLE@      /* use 8 or 12 */
 

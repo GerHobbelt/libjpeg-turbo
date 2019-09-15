@@ -897,33 +897,44 @@ EXTERN(struct jpeg_error_mgr *) jpeg_std_error(struct jpeg_error_mgr *err);
  * passed for version mismatch checking.
  * NB: you must set up the error-manager BEFORE calling jpeg_create_xxx.
  */
+#ifdef JPEGLIB_ENABLE_COMPRESS
 #define jpeg_create_compress(cinfo) \
   jpeg_CreateCompress((cinfo), JPEG_LIB_VERSION, \
                       (size_t)sizeof(struct jpeg_compress_struct))
+#endif
 #define jpeg_create_decompress(cinfo) \
   jpeg_CreateDecompress((cinfo), JPEG_LIB_VERSION, \
                         (size_t)sizeof(struct jpeg_decompress_struct))
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_CreateCompress(j_compress_ptr cinfo, int version,
                                  size_t structsize);
+#endif
 EXTERN(void) jpeg_CreateDecompress(j_decompress_ptr cinfo, int version,
                                    size_t structsize);
 /* Destruction of JPEG compression objects */
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_destroy_compress(j_compress_ptr cinfo);
+#endif
 EXTERN(void) jpeg_destroy_decompress(j_decompress_ptr cinfo);
 
 /* Standard data source and destination managers: stdio streams. */
 /* Caller is responsible for opening the file before and closing after. */
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_stdio_dest(j_compress_ptr cinfo, FILE *outfile);
+#endif
 EXTERN(void) jpeg_stdio_src(j_decompress_ptr cinfo, FILE *infile);
 
 #if JPEG_LIB_VERSION >= 80 || defined(MEM_SRCDST_SUPPORTED)
 /* Data source and destination managers: memory buffers. */
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_mem_dest(j_compress_ptr cinfo, unsigned char **outbuffer,
                            unsigned long *outsize);
+#endif
 EXTERN(void) jpeg_mem_src(j_decompress_ptr cinfo,
                           const unsigned char *inbuffer, unsigned long insize);
 #endif
 
+#ifdef JPEGLIB_ENABLE_COMPRESS
 /* Default parameter setup for compression */
 EXTERN(void) jpeg_set_defaults(j_compress_ptr cinfo);
 /* Compression parameter setup aids */
@@ -944,10 +955,13 @@ EXTERN(void) jpeg_add_quant_table(j_compress_ptr cinfo, int which_tbl,
 EXTERN(int) jpeg_quality_scaling(int quality);
 EXTERN(void) jpeg_simple_progression(j_compress_ptr cinfo);
 EXTERN(void) jpeg_suppress_tables(j_compress_ptr cinfo, boolean suppress);
+#endif
+
 EXTERN(JQUANT_TBL *) jpeg_alloc_quant_table(j_common_ptr cinfo);
 EXTERN(JHUFF_TBL *) jpeg_alloc_huff_table(j_common_ptr cinfo);
 
 /* Main entry points for compression */
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_start_compress(j_compress_ptr cinfo,
                                  boolean write_all_tables);
 EXTERN(JDIMENSION) jpeg_write_scanlines(j_compress_ptr cinfo,
@@ -979,7 +993,7 @@ EXTERN(void) jpeg_write_tables(j_compress_ptr cinfo);
 EXTERN(void) jpeg_write_icc_profile(j_compress_ptr cinfo,
                                     const JOCTET *icc_data_ptr,
                                     unsigned int icc_data_len);
-
+#endif
 
 /* Decompression startup: read start of JPEG datastream to see what's there */
 EXTERN(int) jpeg_read_header(j_decompress_ptr cinfo, boolean require_image);
@@ -1039,23 +1053,27 @@ EXTERN(void) jpeg_set_marker_processor(j_decompress_ptr cinfo,
 
 /* Read or write raw DCT coefficients --- useful for lossless transcoding. */
 EXTERN(jvirt_barray_ptr *) jpeg_read_coefficients(j_decompress_ptr cinfo);
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_write_coefficients(j_compress_ptr cinfo,
                                      jvirt_barray_ptr *coef_arrays);
 EXTERN(void) jpeg_copy_critical_parameters(j_decompress_ptr srcinfo,
                                            j_compress_ptr dstinfo);
-
+#endif
 /* If you choose to abort compression or decompression before completing
  * jpeg_finish_(de)compress, then you need to clean up to release memory,
  * temporary files, etc.  You can just call jpeg_destroy_(de)compress
  * if you're done with the JPEG object, but if you want to clean it up and
  * reuse it, call this:
  */
+#ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_abort_compress(j_compress_ptr cinfo);
+#endif
 EXTERN(void) jpeg_abort_decompress(j_decompress_ptr cinfo);
 
 /* Generic versions of jpeg_abort and jpeg_destroy that work on either
  * flavor of JPEG object.  These may be more convenient in some places.
  */
+
 EXTERN(void) jpeg_abort(j_common_ptr cinfo);
 EXTERN(void) jpeg_destroy(j_common_ptr cinfo);
 

@@ -80,6 +80,7 @@ init_simd(void)
 #endif
 }
 
+#ifdef JPEGLIB_ENABLE_COMPRESS
 GLOBAL(int)
 jsimd_can_rgb_ycc(void)
 {
@@ -129,6 +130,7 @@ jsimd_can_rgb_gray(void)
 
   return 0;
 }
+#endif
 
 GLOBAL(int)
 jsimd_can_ycc_rgb(void)
@@ -161,6 +163,7 @@ jsimd_can_ycc_rgb565(void)
   return 0;
 }
 
+#ifdef JPEGLIB_ENABLE_COMPRESS
 GLOBAL(void)
 jsimd_rgb_ycc_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                       JSAMPIMAGE output_buf, JDIMENSION output_row,
@@ -278,6 +281,7 @@ jsimd_rgb_gray_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
   else
     mmxfct(cinfo->image_width, input_buf, output_buf, output_row, num_rows);
 }
+#endif
 
 GLOBAL(void)
 jsimd_ycc_rgb_convert(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
@@ -345,6 +349,7 @@ jsimd_ycc_rgb565_convert(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 {
 }
 
+#ifdef JPEGLIB_ENABLE_COMPRESS
 GLOBAL(int)
 jsimd_can_h2v2_downsample(void)
 {
@@ -426,6 +431,7 @@ jsimd_h2v1_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
                               compptr->v_samp_factor, compptr->width_in_blocks,
                               input_data, output_data);
 }
+#endif
 
 GLOBAL(int)
 jsimd_can_h2v2_upsample(void)
@@ -1190,6 +1196,7 @@ jsimd_idct_float(j_decompress_ptr cinfo, jpeg_component_info *compptr,
 #endif
 }
 
+#ifdef JPEGLIB_ENABLE_COMPRESS
 GLOBAL(int)
 jsimd_can_huff_encode_one_block(void)
 {
@@ -1268,3 +1275,4 @@ jsimd_encode_mcu_AC_refine_prepare(const JCOEF *block,
                                                  jpeg_natural_order_start,
                                                  Sl, Al, absvalues, bits);
 }
+#endif
