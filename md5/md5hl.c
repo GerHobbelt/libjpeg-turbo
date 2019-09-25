@@ -91,6 +91,8 @@ char *MD5FileChunk(const char *filename, char *buf, off_t ofs, off_t len)
   MD5Init(&ctx);
 #ifdef _WIN32
   f = _open(filename, O_RDONLY | O_BINARY);
+#elif defined(__OS2__)
+  f = open(filename, O_RDONLY | O_BINARY);
 #else
   f = open(filename, O_RDONLY);
 #endif

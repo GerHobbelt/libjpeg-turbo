@@ -34,6 +34,9 @@
 #endif
 #define strcasecmp  stricmp
 #define strncasecmp  strnicmp
+#elif defined(__OS2__)
+#define strcasecmp  stricmp
+#define strncasecmp  strnicmp
 #endif
 
 #ifndef min

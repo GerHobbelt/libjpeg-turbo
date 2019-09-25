@@ -39,7 +39,7 @@
 #include <turbojpeg.h>
 
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__OS2__)
 #define strcasecmp  stricmp
 #define strncasecmp  strnicmp
 #endif
