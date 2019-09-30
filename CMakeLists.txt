@@ -119,7 +119,7 @@ macro(report_directory var)
 endmacro()
 
 set(DIRLIST "BINDIR;DATAROOTDIR;DOCDIR;INCLUDEDIR;LIBDIR")
-if(UNIX)
+if(UNIX OR OS2)
   list(APPEND DIRLIST "MANDIR")
 endif()
 foreach(dir ${DIRLIST})
@@ -361,7 +361,7 @@ if(MSVC)
   check_include_files("intrin.h" HAVE_INTRIN_H)
 endif()
 
-if(UNIX)
+if(UNIX OR OS2)
   # Check for headers
   check_include_files(locale.h HAVE_LOCALE_H)
   check_include_files(stddef.h HAVE_STDDEF_H)
