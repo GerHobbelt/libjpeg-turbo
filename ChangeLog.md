@@ -13,6 +13,28 @@ instruction exception, in rare cases, on CPUs that lack support for CPUID leaf
 07H (or on which the maximum CPUID leaf has been limited by way of a BIOS
 setting.)
 
+3. The 4:4:0 (h1v2) fancy (smooth) chroma upsampling algorithm in the
+decompressor now uses a similar bias pattern to that of the 4:2:2 (h2v1) fancy
+chroma upsampling algorithm, rounding up or down the upsampled result for
+alternate pixels rather than always rounding down.  This ensures that,
+regardless of whether a 4:2:2 JPEG image is rotated or transposed prior to
+decompression (in the frequency domain) or after decompression (in the spatial
+domain), the final image will be similar.
+
+4. Fixed an integer overflow and subsequent segfault that occurred when
+attempting to compress or decompress images with more than 1 billion pixels
+using the TurboJPEG API.
+
+5. Fixed a regression introduced by 2.0 beta1[15] whereby attempting to
+generate a progressive JPEG image on an SSE2-capable CPU using a scan script
+containing one or more scans with lengths divisible by 16 would result in an
+error ("Missing Huffman code table entry") and an invalid JPEG image.
+
+6. Fixed an issue whereby `tjDecodeYUV()` and `tjDecodeYUVPlanes()` would throw
+an error ("Invalid progressive parameters") or a warning ("Inconsistent
+progression sequence") if passed a TurboJPEG instance that was previously used
+to decompress a progressive JPEG image.
+
 
 2.0.2
 =====
