@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 cmake_policy(SET CMP0068 NEW)
+set(BUILD_WITH_INSTALL_NAME_DIR 1)
 
 if(CMAKE_EXECUTABLE_SUFFIX)
   set(CMAKE_EXECUTABLE_SUFFIX_TMP ${CMAKE_EXECUTABLE_SUFFIX})
@@ -190,10 +191,6 @@ endif()
 
 report_option(ENABLE_SHARED "Shared libraries")
 report_option(ENABLE_STATIC "Static libraries")
-
-if(ENABLE_SHARED)
-  set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
-endif()
 
 if(WITH_12BIT)
   set(WITH_ARITH_DEC 0)
@@ -580,13 +577,6 @@ if(WITH_TURBOJPEG)
     endif()
     if(MINGW)
       set_target_properties(turbojpeg PROPERTIES LINK_FLAGS -Wl,--kill-at)
-    endif()
-    if(APPLE AND (NOT CMAKE_OSX_DEPLOYMENT_TARGET OR
-                  CMAKE_OSX_DEPLOYMENT_TARGET VERSION_GREATER 10.4))
-      if(NOT CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG)
-        set(CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG "-Wl,-rpath,")
-      endif()
-      set_target_properties(turbojpeg PROPERTIES MACOSX_RPATH 1)
     endif()
     set_target_properties(turbojpeg PROPERTIES
       SOVERSION ${TURBOJPEG_SO_MAJOR_VERSION} VERSION ${TURBOJPEG_SO_VERSION})
