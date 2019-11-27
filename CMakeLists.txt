@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 cmake_policy(SET CMP0068 NEW)
+cmake_policy(SET CMP0042 OFF)
 set(BUILD_WITH_INSTALL_NAME_DIR 1)
 
 if(CMAKE_EXECUTABLE_SUFFIX)
@@ -192,6 +193,10 @@ endif()
 report_option(ENABLE_SHARED "Shared libraries")
 report_option(ENABLE_STATIC "Static libraries")
 
+if(ENABLE_SHARED)
+   set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_FULL_LIBDIR})
+endif()
+ 
 if(WITH_12BIT)
   set(WITH_ARITH_DEC 0)
   set(WITH_ARITH_ENC 0)
