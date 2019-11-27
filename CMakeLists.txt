@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 cmake_policy(SET CMP0068 NEW)
-cmake_policy(SET CMP0042 0)
+cmake_policy(SET CMP0042 NEW)
 set(BUILD_WITH_INSTALL_NAME_DIR 1)
 
 if(CMAKE_EXECUTABLE_SUFFIX)
