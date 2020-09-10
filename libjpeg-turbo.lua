@@ -93,7 +93,7 @@ project "jpeg"
   -- configurations
   -- -------------------------------------------------------------
 
-  if (os.is("windows") and not _TARGET_IS_WINUWP) then
+  if (_PLATFORM_WINDOWS) then
     -- -------------------------------------------------------------
     -- configuration { "windows" }
     -- -------------------------------------------------------------
@@ -165,7 +165,7 @@ project "jpeg"
     -- -------------------------------------------------------------
   end
 
-  if (os.is("linux") and not _OS_IS_ANDROID) then
+  if (_PLATFORM_LINUX) then
     -- -------------------------------------------------------------
     -- configuration { "linux" }
     -- -------------------------------------------------------------
@@ -233,7 +233,7 @@ project "jpeg"
     -- -------------------------------------------------------------
   end
 
-  if (os.is("macosx") and not _OS_IS_IOS and not _OS_IS_ANDROID) then
+  if (_PLATFORM_MACOS) then
     -- -------------------------------------------------------------
     -- configuration { "macosx" }
     -- -------------------------------------------------------------
@@ -277,9 +277,129 @@ project "jpeg"
     -- -------------------------------------------------------------
   end
 
-  if (_OS_IS_IOS) then
+  if (_PLATFORM_COCOA) then
     -- -------------------------------------------------------------
-    -- configuration { "ios" } == _OS_IS_IOS
+    -- configuration { "cocoa*" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa.lua")
+
+    -- project specific configuration settings
+
+    -- configuration { "cocoa*" }
+
+    -- -------------------------------------------------------------
+    -- configuration { "cocoa_arm64_debug" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa_arm64_debug.lua")
+
+    -- project specific configuration settings
+
+    configuration { "cocoa_arm64_debug" }
+
+      defines {
+        "WITH_SIMD",
+      }
+
+      files {
+        opts_simd_arm64,
+      }
+
+    -- -------------------------------------------------------------
+    -- configuration { "cocoa_arm64_release" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa_arm64_release.lua")
+
+    -- project specific configuration settings
+
+    configuration { "cocoa_arm64_release" }
+
+      defines {
+        "WITH_SIMD",
+      }
+
+      files {
+        opts_simd_arm64,
+      }
+
+    -- -------------------------------------------------------------
+    -- configuration { "cocoa_sim64_debug" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa_sim64_debug.lua")
+
+    -- project specific configuration settings
+
+    configuration { "cocoa_sim64_debug" }
+
+      files {
+        opts_simd_none,
+      }
+
+    -- -------------------------------------------------------------
+    -- configuration { "cocoa_sim64_release" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa_sim64_release.lua")
+
+    -- project specific configuration settings
+
+    configuration { "cocoa_sim64_release" }
+
+      files {
+        opts_simd_none,
+      }
+
+    -- -------------------------------------------------------------
+    -- configuration { "cocoa_x64_debug" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa_x64_debug.lua")
+
+    -- project specific configuration settings
+
+    configuration { "cocoa_x64_debug" }
+
+      files {
+        opts_simd_none,
+      }
+
+    -- -------------------------------------------------------------
+    -- configuration { "cocoa_x64_release" }
+    -- -------------------------------------------------------------
+
+    -- common configuration settings
+
+    dofile (_BUILD_DIR .. "/static_cocoa_x64_release.lua")
+
+    -- project specific configuration settings
+
+    configuration { "cocoa_x64_release" }
+
+      files {
+        opts_simd_none,
+      }
+
+    -- -------------------------------------------------------------
+  end
+
+  if (_PLATFORM_IOS) then
+    -- -------------------------------------------------------------
+    -- configuration { "ios*" }
     -- -------------------------------------------------------------
 
     -- common configuration settings
@@ -365,9 +485,9 @@ project "jpeg"
     -- -------------------------------------------------------------
   end
 
-  if (_OS_IS_ANDROID) then
+  if (_PLATFORM_ANDROID) then
     -- -------------------------------------------------------------
-    -- configuration { "android" } == _OS_IS_ANDROID
+    -- configuration { "android*" }
     -- -------------------------------------------------------------
 
     -- common configuration settings
@@ -525,9 +645,9 @@ project "jpeg"
     -- -------------------------------------------------------------
   end
 
-  if (_TARGET_IS_WINUWP) then
+  if (_PLATFORM_WINUWP) then
     -- -------------------------------------------------------------
-    -- configuration { "winuwp" } == _TARGET_IS_WINUWP
+    -- configuration { "windows" }
     -- -------------------------------------------------------------
 
     -- common configuration settings
@@ -594,30 +714,6 @@ project "jpeg"
     -- project specific configuration settings
 
     -- configuration { "winuwp_release", "x64" }
-
-    -- -------------------------------------------------------------
-    -- configuration { "winuwp_debug", "ARM" }
-    -- -------------------------------------------------------------
-
-    -- common configuration settings
-
-    dofile (_BUILD_DIR .. "/static_winuwp_arm_debug.lua")
-
-    -- project specific configuration settings
-
-    -- configuration { "winuwp_debug", "ARM" }
-
-    -- -------------------------------------------------------------
-    -- configuration { "winuwp_release", "ARM" }
-    -- -------------------------------------------------------------
-
-    -- common configuration settings
-
-    dofile (_BUILD_DIR .. "/static_winuwp_arm_release.lua")
-
-    -- project specific configuration settings
-
-    -- configuration { "winuwp_release", "ARM" }
 
     -- -------------------------------------------------------------
     -- configuration { "winuwp_debug", "ARM64" }
