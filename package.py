@@ -2,7 +2,7 @@
 
 name = 'libjpeg_turbo'
 
-version = '2.0.5-ta.1.0.0'
+version = '2.0.5-ta.1.0.1'
 
 authors = [
     'benjamin.skinner',
@@ -27,7 +27,7 @@ variants = [
 def commands():
 
     # Split and store version and package version
-    split_versions = str(version).split('+')
+    split_versions = str(version).split('-')
     env.LIBJPEG_TURBO_VERSION.set(split_versions[0])
     env.LIBJPEG_TURBO_PACKAGE_VERSION.set(split_versions[1])
 
