@@ -236,7 +236,7 @@ typedef int boolean;
 
 #define DCT_ISLOW_SUPPORTED     /* accurate integer method */
 #define DCT_IFAST_SUPPORTED     /* less accurate int method [legacy feature] */
-#define DCT_FLOAT_SUPPORTED     /* floating-point method [legacy feature] */
+#undef DCT_FLOAT_SUPPORTED     /* floating-point method [legacy feature] */
 
 /* Encoder capability options: */
 

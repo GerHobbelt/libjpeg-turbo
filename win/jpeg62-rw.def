@@ -43,7 +43,6 @@ EXPORTS
   jpeg_destroy @ 42 ;
   jpeg_destroy_compress @ 43 ;
   jpeg_destroy_decompress @ 44 ;
-  jpeg_fdct_float @ 45 ;
   jpeg_fdct_ifast @ 46 ;
   jpeg_fdct_islow @ 47 ;
   jpeg_fill_bit_buffer @ 48 ;
@@ -60,7 +59,6 @@ EXPORTS
   jpeg_idct_1x1 @ 59 ;
   jpeg_idct_2x2 @ 60 ;
   jpeg_idct_4x4 @ 61 ;
-  jpeg_idct_float @ 62 ;
   jpeg_idct_ifast @ 63 ;
   jpeg_idct_islow @ 64 ;
   jpeg_input_complete @ 65 ;

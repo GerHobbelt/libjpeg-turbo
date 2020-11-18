@@ -21,6 +21,7 @@ Current changelog
 - Built-in protection against LJT­01­003 (https://cure53.de/pentest-report_libjpeg-turbo.pdf)
 - Ability to disable tracing/debug messages (no calling emit_message for trace/debug level messages)
 - Ability to disable encoder (compressor) code, saving storage space for projects that don't require JPEG compression.
+- Undefined DCT_FLOAT_SUPPORTED by default, which shaves a few KB off resulting .dll - JDCT_FLOAT is useless with libjpeg-turbo's AVX2/SSE code.
 
 Planned changes
 ---------------
