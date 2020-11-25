@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-name = "libjpeg-turbo"
+name = "libjpeg_turbo"
 
 version = "2.0.90"
 
