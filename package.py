@@ -2,7 +2,7 @@
 
 name = 'libjpeg_turbo'
 
-version = '2.0.5-ta.1.1.0'
+version = '2.0.5-ta.1.1.1'
 
 authors = [
     'benjamin.skinner',
@@ -34,6 +34,12 @@ def commands():
     env.LIBJPEG_TURBO_ROOT.set("{root}")
     env.LIBJPEG_TURBO_INCLUDE_DIR.set("{root}/include")
     env.LIBJPEG_TURBO_LIBRARY_DIR.set("{root}/lib")
+    
+    import sys
+    if 'win' not in str(sys.platform):
+       env.LIBJPEG_TURBO_LIBRARY_DIR.set("{root}/lib64")
+       env.LD_LIBRARY_PATH.append("{root}/lib64")
+
     env.LIBJPEG_TURBO_BINARY_DIR.set("{root}/bin")
 
     env.PATH.append( str(env.LIBJPEG_TURBO_BINARY_DIR) )
