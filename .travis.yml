@@ -34,28 +34,27 @@ matrix:
         CTEST_OUTPUT_ON_FAILURE=1
     - os: linux
       compiler: gcc
+      arch: ppc64le
       env:
         CMAKE_FLAGS="-DWITH_JPEG7=1"
         CTEST_OUTPUT_ON_FAILURE=1
-      addons:
-        apt:
-          packages:
-            - nasm
     - os: linux
       compiler: gcc
+      arch: arm64
       env:
         CMAKE_FLAGS="-DWITH_JPEG8=1"
         CTEST_OUTPUT_ON_FAILURE=1
-      addons:
-        apt:
-          packages:
-            - nasm
     - os: linux
       compiler: clang
       env:
         CMAKE_BUILD_TYPE=RelWithDebInfo
         CFLAGS_RELWITHDEBINFO="-O3 -g -fsanitize=memory -fPIE"
         CMAKE_FLAGS="-DWITH_SIMD=0"
+        CTEST_OUTPUT_ON_FAILURE=1
+    - os: linux
+      compiler: clang
+      arch: arm64
+      env:
         CTEST_OUTPUT_ON_FAILURE=1
 
 before_install:
@@ -65,8 +64,9 @@ before_install:
       hdid JavaForOSX.dmg &&
       sudo installer -pkg /Volumes/Java\ for\ macOS\ 2017-001/JavaForOSX.pkg -target / &&
       hdiutil detach /Volumes/Java\ for\ macOS\ 2017-001 &&
-      curl -LO https://raw.githubusercontent.com/GiovanniBussi/macports-ci/master/macports-ci &&
-      . ./macports-ci install &&
+      curl -LO https://distfiles.macports.org/MacPorts/MacPorts-2.6.4-10.12-Sierra.pkg &&
+      sudo installer -pkg MacPorts-2.6.4-10.12-Sierra.pkg -target / &&
+      rm MacPorts-2.6.4-10.12-Sierra.pkg &&
       sudo /opt/local/bin/port -N install gcc5 yasm md5sha1sum &&
       popd &&
       git clone --depth=1 https://github.com/libjpeg-turbo/gas-preprocessor.git ~/src/gas-preprocessor &&
@@ -109,9 +109,10 @@ script:
       make -j$NUMCPUS --load-average=$NUMCPUS &&
       make test &&
       if [[ ! "${CMAKE_FLAGS[0]}" =~ "WITH_12BIT" &&
-            ! "${CMAKE_FLAGS[0]}" =~ "WITH_SIMD" ]]; then
+            ! "${CMAKE_FLAGS[0]}" =~ "WITH_SIMD" &&
+            "$TRAVIS_CPU_ARCH" = "amd64" ]]; then
         JSIMD_FORCESSE2=1 make test &&
-        cmake -DFLOATTEST=32bit .. &&
+        cmake -DFLOATTEST=no-fp-contract .. &&
         JSIMD_FORCENONE=1 make test;
       fi &&
       popd;

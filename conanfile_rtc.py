@@ -3,7 +3,7 @@ from conans import ConanFile
 
 class JpegConan(ConanFile):
     name = "jpeg"
-    version = "2.0.5"
+    version = "2.0.6"
     url = "https://github.com/Esri/libjpeg-turbo/tree/runtimecore"
     license = "https://github.com/Esri/libjpeg-turbo/blob/runtimecore/LICENSE.md"
     description = "libjpeg-turbo is a JPEG image codec that uses SIMD instructions to accelerate JPEG compression and decompression."
