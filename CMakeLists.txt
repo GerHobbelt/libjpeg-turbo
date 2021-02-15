@@ -687,7 +687,7 @@ else()
   set(DJPEG_BMP_SOURCES wrbmp.c wrtarga.c)
 endif()
 
-if(ENABLE_STATIC AND not IOS)
+if(ENABLE_STATIC AND NOT IOS)
   add_executable(cjpeg-static cjpeg.c cdjpeg.c rdgif.c rdppm.c rdswitch.c
     ${CJPEG_BMP_SOURCES})
   set_property(TARGET cjpeg-static PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
