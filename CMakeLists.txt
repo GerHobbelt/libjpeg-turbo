@@ -1453,8 +1453,8 @@ endif()
 if(UNIX OR MINGW)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cjpeg.1
     ${CMAKE_CURRENT_SOURCE_DIR}/djpeg.1 ${CMAKE_CURRENT_SOURCE_DIR}/jpegtran.1
-#     ${CMAKE_CURRENT_SOURCE_DIR}/rdjpgcom.1
-#     ${CMAKE_CURRENT_SOURCE_DIR}/wrjpgcom.1
+    ${CMAKE_CURRENT_SOURCE_DIR}/rdjpgcom.1
+    ${CMAKE_CURRENT_SOURCE_DIR}/wrjpgcom.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 endif()
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libjpeg.pc
