@@ -703,9 +703,9 @@ if(ENABLE_STATIC)
   set_property(TARGET jpegtran-static PROPERTY COMPILE_FLAGS "${USE_SETMODE}")
 endif()
 
-add_executable(rdjpgcom rdjpgcom.c)
+# add_executable(rdjpgcom rdjpgcom.c)
 
-add_executable(wrjpgcom wrjpgcom.c)
+# add_executable(wrjpgcom wrjpgcom.c)
 
 
 ###############################################################################
@@ -1436,7 +1436,7 @@ if(ENABLE_STATIC)
   endif()
 endif()
 
-install(TARGETS rdjpgcom wrjpgcom RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+# install(TARGETS rdjpgcom wrjpgcom RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.ijg
   ${CMAKE_CURRENT_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/example.txt
@@ -1453,8 +1453,8 @@ endif()
 if(UNIX OR MINGW)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cjpeg.1
     ${CMAKE_CURRENT_SOURCE_DIR}/djpeg.1 ${CMAKE_CURRENT_SOURCE_DIR}/jpegtran.1
-    ${CMAKE_CURRENT_SOURCE_DIR}/rdjpgcom.1
-    ${CMAKE_CURRENT_SOURCE_DIR}/wrjpgcom.1
+#     ${CMAKE_CURRENT_SOURCE_DIR}/rdjpgcom.1
+#     ${CMAKE_CURRENT_SOURCE_DIR}/wrjpgcom.1
     DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 endif()
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libjpeg.pc
