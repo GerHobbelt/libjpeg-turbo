@@ -687,21 +687,21 @@ else()
   set(DJPEG_BMP_SOURCES wrbmp.c wrtarga.c)
 endif()
 
-if(ENABLE_STATIC)
-  add_executable(cjpeg-static cjpeg.c cdjpeg.c rdgif.c rdppm.c rdswitch.c
-    ${CJPEG_BMP_SOURCES})
-  set_property(TARGET cjpeg-static PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
-  target_link_libraries(cjpeg-static ${JPEG_STATIC_LIB_NAME})
-
-  add_executable(djpeg-static djpeg.c cdjpeg.c rdcolmap.c rdswitch.c wrgif.c
-    wrppm.c ${DJPEG_BMP_SOURCES})
-  set_property(TARGET djpeg-static PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
-  target_link_libraries(djpeg-static ${JPEG_STATIC_LIB_NAME})
-
-  add_executable(jpegtran-static jpegtran.c cdjpeg.c rdswitch.c transupp.c)
-  target_link_libraries(jpegtran-static ${JPEG_STATIC_LIB_NAME})
-  set_property(TARGET jpegtran-static PROPERTY COMPILE_FLAGS "${USE_SETMODE}")
-endif()
+# if(ENABLE_STATIC)
+#   add_executable(cjpeg-static cjpeg.c cdjpeg.c rdgif.c rdppm.c rdswitch.c
+#     ${CJPEG_BMP_SOURCES})
+#   set_property(TARGET cjpeg-static PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
+#   target_link_libraries(cjpeg-static ${JPEG_STATIC_LIB_NAME})
+# 
+#   add_executable(djpeg-static djpeg.c cdjpeg.c rdcolmap.c rdswitch.c wrgif.c
+#     wrppm.c ${DJPEG_BMP_SOURCES})
+#   set_property(TARGET djpeg-static PROPERTY COMPILE_FLAGS ${COMPILE_FLAGS})
+#   target_link_libraries(djpeg-static ${JPEG_STATIC_LIB_NAME})
+# 
+#   add_executable(jpegtran-static jpegtran.c cdjpeg.c rdswitch.c transupp.c)
+#   target_link_libraries(jpegtran-static ${JPEG_STATIC_LIB_NAME})
+#   set_property(TARGET jpegtran-static PROPERTY COMPILE_FLAGS "${USE_SETMODE}")
+# endif()
 
 # add_executable(rdjpgcom rdjpgcom.c)
 
@@ -1427,12 +1427,12 @@ if(ENABLE_STATIC)
     else()
       set(DIR ${CMAKE_CURRENT_BINARY_DIR})
     endif()
-    install(PROGRAMS ${DIR}/cjpeg-static${EXE}
-      DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME cjpeg${EXE})
-    install(PROGRAMS ${DIR}/djpeg-static${EXE}
-      DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME djpeg${EXE})
-    install(PROGRAMS ${DIR}/jpegtran-static${EXE}
-      DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME jpegtran${EXE})
+#     install(PROGRAMS ${DIR}/cjpeg-static${EXE}
+#       DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME cjpeg${EXE})
+#     install(PROGRAMS ${DIR}/djpeg-static${EXE}
+#       DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME djpeg${EXE})
+#     install(PROGRAMS ${DIR}/jpegtran-static${EXE}
+#       DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME jpegtran${EXE})
   endif()
 endif()
 
