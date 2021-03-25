@@ -126,12 +126,6 @@ if (_PLATFORM_COCOA) then
   files {
     opts_simd_none,
   }
-
-  configuration { "*sim64*" } -- remove once sim64 is simx64
-
-  files {
-    opts_simd_none,
-  }
 end
 
 if (_PLATFORM_IOS) then
@@ -146,12 +140,6 @@ if (_PLATFORM_IOS) then
   }
 
   configuration { "*x64*" }
-
-  files {
-    opts_simd_none,
-  }
-
-  configuration { "*sim64*" } -- remove once sim64 is simx64
 
   files {
     opts_simd_none,
