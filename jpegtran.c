@@ -40,10 +40,10 @@
 
 
 static const char *progname;    /* program name for error messages */
-static char *icc_filename;      /* for -icc switch */
+static const char *icc_filename;      /* for -icc switch */
 JDIMENSION max_scans;           /* for -maxscans switch */
-static char *outfilename;       /* for -outfile switch */
-static char *dropfilename;      /* for -drop switch */
+static const char *outfilename;       /* for -outfile switch */
+static const char *dropfilename;      /* for -drop switch */
 boolean report;                 /* for -report switch */
 boolean strict;                 /* for -strict switch */
 static JCOPY_OPTION copyoption; /* -copy switch */
@@ -132,7 +132,7 @@ select_transform(JXFORM_CODE transform)
 
 
 LOCAL(int)
-parse_switches(j_compress_ptr cinfo, int argc, char **argv,
+parse_switches(j_compress_ptr cinfo, int argc, const char **argv,
                int last_file_arg_seen, boolean for_real)
 /* Parse optional switches.
  * Returns argv[] index of first file-name argument (== argc if none).
@@ -144,9 +144,9 @@ parse_switches(j_compress_ptr cinfo, int argc, char **argv,
  */
 {
   int argn;
-  char *arg;
+  const char *arg;
   boolean simple_progressive;
-  char *scansarg = NULL;        /* saves -scans parm if any */
+  const char *scansarg = NULL;        /* saves -scans parm if any */
 
   /* Set up default JPEG parameters. */
   simple_progressive = FALSE;
@@ -449,12 +449,16 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
 }
 
 
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_jpegtran_test_main(cnt, arr)
+#endif
+
 /*
  * The main program.
  */
 
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
   struct jpeg_decompress_struct srcinfo;
 #if TRANSFORMS_SUPPORTED

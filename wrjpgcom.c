@@ -341,7 +341,7 @@ scan_JPEG_header(int keep_COM)
 static const char *progname;    /* program name for error messages */
 
 
-static void
+static int
 usage(void)
 /* complain about bad command line */
 {
@@ -370,12 +370,12 @@ usage(void)
   fprintf(stderr, "comment text from standard input.\n");
 #endif
 
-  exit(EXIT_FAILURE);
+  return EXIT_FAILURE;
 }
 
 
 static int
-keymatch(char *arg, const char *keyword, int minchars)
+keymatch(const char *arg, const char *keyword, int minchars)
 /* Case-insensitive matching of (possibly abbreviated) keyword switches. */
 /* keyword is the constant keyword (must be lower case already), */
 /* minchars is length of minimum legal abbreviation. */
@@ -399,15 +399,20 @@ keymatch(char *arg, const char *keyword, int minchars)
 }
 
 
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_wrjpgcom_main(cnt, arr)
+#endif
+
 /*
  * The main program.
  */
 
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
   int argn;
-  char *arg;
+  const char *arg;
   int keep_COM = 1;
   char *comment_arg = NULL;
   FILE *comment_file = NULL;
@@ -432,26 +437,26 @@ main(int argc, char **argv)
     if (keymatch(arg, "replace", 1)) {
       keep_COM = 0;
     } else if (keymatch(arg, "cfile", 2)) {
-      if (++argn >= argc) usage();
+      if (++argn >= argc) return usage();
       if ((comment_file = fopen(argv[argn], "r")) == NULL) {
         fprintf(stderr, "%s: can't open %s\n", progname, argv[argn]);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
       }
     } else if (keymatch(arg, "comment", 1)) {
-      if (++argn >= argc) usage();
-      comment_arg = argv[argn];
+      if (++argn >= argc) return usage();
+	  comment_arg = (char*)calloc((size_t)MAX_COM_LENGTH, 1);
+	  if (comment_arg == NULL)
+		  ERREXIT("Insufficient memory");
+	  if (strlen(argv[argn]) + 1 >= (size_t)MAX_COM_LENGTH) {
+		  fprintf(stderr, "Comment text may not exceed %u bytes\n",
+			  (unsigned int)MAX_COM_LENGTH - 1);
+		  return EXIT_FAILURE;
+	  }
+	  strcpy(comment_arg, argv[argn]);
       /* If the comment text starts with '"', then we are probably running
        * under MS-DOG and must parse out the quoted string ourselves.  Sigh.
        */
       if (comment_arg[0] == '"') {
-        comment_arg = (char *)malloc((size_t)MAX_COM_LENGTH);
-        if (comment_arg == NULL)
-          ERREXIT("Insufficient memory");
-        if (strlen(argv[argn]) + 2 >= (size_t)MAX_COM_LENGTH) {
-          fprintf(stderr, "Comment text may not exceed %u bytes\n",
-                  (unsigned int)MAX_COM_LENGTH);
-          exit(EXIT_FAILURE);
-        }
         strcpy(comment_arg, argv[argn] + 1);
         for (;;) {
           comment_length = (unsigned int)strlen(comment_arg);
@@ -465,35 +470,31 @@ main(int argc, char **argv)
               (size_t)MAX_COM_LENGTH) {
             fprintf(stderr, "Comment text may not exceed %u bytes\n",
                     (unsigned int)MAX_COM_LENGTH);
-            exit(EXIT_FAILURE);
+            return EXIT_FAILURE;
           }
           strcat(comment_arg, " ");
           strcat(comment_arg, argv[argn]);
         }
-      } else if (strlen(argv[argn]) >= (size_t)MAX_COM_LENGTH) {
-        fprintf(stderr, "Comment text may not exceed %u bytes\n",
-                (unsigned int)MAX_COM_LENGTH);
-        exit(EXIT_FAILURE);
       }
       comment_length = (unsigned int)strlen(comment_arg);
     } else
-      usage();
+      return usage();
   }
 
   /* Cannot use both -comment and -cfile. */
   if (comment_arg != NULL && comment_file != NULL)
-    usage();
+    return usage();
   /* If there is neither -comment nor -cfile, we will read the comment text
    * from stdin; in this case there MUST be an input JPEG file name.
    */
   if (comment_arg == NULL && comment_file == NULL && argn >= argc)
-    usage();
+    return usage();
 
   /* Open the input file. */
   if (argn < argc) {
     if ((infile = fopen(argv[argn], READ_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, argv[argn]);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
   } else {
     /* default input file is stdin */
@@ -503,7 +504,7 @@ main(int argc, char **argv)
 #ifdef USE_FDOPEN               /* need to re-open in binary mode? */
     if ((infile = fdopen(fileno(stdin), READ_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open stdin\n", progname);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 #else
     infile = stdin;
@@ -515,17 +516,17 @@ main(int argc, char **argv)
   /* Must have explicit output file name */
   if (argn != argc - 2) {
     fprintf(stderr, "%s: must name one input and one output file\n", progname);
-    usage();
+    return usage();
   }
   if ((outfile = fopen(argv[argn + 1], WRITE_BINARY)) == NULL) {
     fprintf(stderr, "%s: can't open %s\n", progname, argv[argn + 1]);
-    exit(EXIT_FAILURE);
+    return EXIT_FAILURE;
   }
 #else
   /* Unix style: expect zero or one file name */
   if (argn < argc - 1) {
     fprintf(stderr, "%s: only one input file\n", progname);
-    usage();
+    return usage();
   }
   /* default output file is stdout */
 #ifdef USE_SETMODE              /* need to hack file mode? */
@@ -534,7 +535,7 @@ main(int argc, char **argv)
 #ifdef USE_FDOPEN               /* need to re-open in binary mode? */
   if ((outfile = fdopen(fileno(stdout), WRITE_BINARY)) == NULL) {
     fprintf(stderr, "%s: can't open stdout\n", progname);
-    exit(EXIT_FAILURE);
+    return EXIT_FAILURE;
   }
 #else
   outfile = stdout;
@@ -555,11 +556,11 @@ main(int argc, char **argv)
       if (comment_length >= (unsigned int)MAX_COM_LENGTH) {
         fprintf(stderr, "Comment text may not exceed %u bytes\n",
                 (unsigned int)MAX_COM_LENGTH);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
       }
       comment_arg[comment_length++] = (char)c;
     }
-    if (comment_file != NULL)
+	if (comment_file != NULL)
       fclose(comment_file);
   }
 
@@ -586,6 +587,5 @@ main(int argc, char **argv)
   copy_rest_of_file();
 
   /* All done. */
-  exit(EXIT_SUCCESS);
-  return 0;                     /* suppress no-return-value warnings */
+  return EXIT_SUCCESS;
 }

@@ -31,7 +31,11 @@
 #include "./md5.h"
 #include "../tjutil.h"
 
-int main(int argc, char *argv[])
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_md5cmp_main(cnt, arr)
+#endif
+
+int main(int argc, const char **argv)
 {
   char *md5sum = NULL, buf[65];
 

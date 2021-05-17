@@ -44,8 +44,8 @@
 }
 #define THROW_UNIX(m)  THROW(m, strerror(errno))
 
-char tjErrorStr[JMSG_LENGTH_MAX] = "\0", tjErrorMsg[JMSG_LENGTH_MAX] = "\0";
-int tjErrorLine = -1, tjErrorCode = -1;
+static char tjErrorStr[JMSG_LENGTH_MAX] = "\0", tjErrorMsg[JMSG_LENGTH_MAX] = "\0";
+static int tjErrorLine = -1, tjErrorCode = -1;
 
 #define THROW_TJG(m) { \
   printf("ERROR in line %d while %s:\n%s\n", __LINE__, m, \
@@ -75,25 +75,25 @@ int tjErrorLine = -1, tjErrorCode = -1;
   } \
 }
 
-int flags = TJFLAG_NOREALLOC, compOnly = 0, decompOnly = 0, doYUV = 0,
+static int flags = TJFLAG_NOREALLOC, compOnly = 0, decompOnly = 0, doYUV = 0,
   quiet = 0, doTile = 0, pf = TJPF_BGR, yuvPad = 1, doWrite = 1;
-char *ext = "ppm";
-const char *pixFormatStr[TJ_NUMPF] = {
+static char *ext = "ppm";
+static const char *pixFormatStr[TJ_NUMPF] = {
   "RGB", "BGR", "RGBX", "BGRX", "XBGR", "XRGB", "GRAY", "", "", "", "", "CMYK"
 };
-const char *subNameLong[TJ_NUMSAMP] = {
+static const char *subNameLong[TJ_NUMSAMP] = {
   "4:4:4", "4:2:2", "4:2:0", "GRAY", "4:4:0", "4:1:1"
 };
-const char *csName[TJ_NUMCS] = {
+static const char *csName[TJ_NUMCS] = {
   "RGB", "YCbCr", "GRAY", "CMYK", "YCCK"
 };
-const char *subName[TJ_NUMSAMP] = {
+static const char *subName[TJ_NUMSAMP] = {
   "444", "422", "420", "GRAY", "440", "411"
 };
-tjscalingfactor *scalingFactors = NULL, sf = { 1, 1 };
-int nsf = 0, xformOp = TJXOP_NONE, xformOpt = 0;
-int (*customFilter) (short *, tjregion, tjregion, int, int, tjtransform *);
-double benchTime = 5.0, warmup = 1.0;
+static tjscalingfactor *scalingFactors = NULL, sf = { 1, 1 };
+static int nsf = 0, xformOp = TJXOP_NONE, xformOpt = 0;
+static int (*customFilter) (short *, tjregion, tjregion, int, int, tjtransform *);
+static double benchTime = 5.0, warmup = 1.0;
 
 
 static char *formatName(int subsamp, int cs, char *buf)
@@ -138,7 +138,7 @@ static int dummyDCTFilter(short *coeffs, tjregion arrayRegion,
 /* Decompression test */
 static int decomp(unsigned char *srcBuf, unsigned char **jpegBuf,
                   unsigned long *jpegSize, unsigned char *dstBuf, int w, int h,
-                  int subsamp, int jpegQual, char *fileName, int tilew,
+                  int subsamp, int jpegQual, const char *fileName, int tilew,
                   int tileh)
 {
   char tempStr[1024], sizeStr[24] = "\0", qualStr[13] = "\0", *ptr;
@@ -311,7 +311,7 @@ bailout:
 
 
 static int fullTest(unsigned char *srcBuf, int w, int h, int subsamp,
-                    int jpegQual, char *fileName)
+                    int jpegQual, const char *fileName)
 {
   char tempStr[1024], tempStr2[80];
   FILE *file = NULL;
@@ -516,7 +516,7 @@ bailout:
 }
 
 
-static int decompTest(char *fileName)
+static int decompTest(const char *fileName)
 {
   FILE *file = NULL;
   tjhandle handle = NULL;
@@ -738,7 +738,7 @@ bailout:
 }
 
 
-static void usage(char *progName)
+static int usage(const char *progName)
 {
   int i;
 
@@ -807,11 +807,15 @@ static void usage(char *progName)
   printf("     throws a warning (non-fatal error)\n\n");
   printf("NOTE:  If the quality is specified as a range (e.g. 90-100), a separate\n");
   printf("test will be performed for all quality values in the range.\n\n");
-  exit(1);
+  return 1;
 }
 
 
-int main(int argc, char *argv[])
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_tjbench_main(cnt, arr)
+#endif
+
+int main(int argc, const char **argv)
 {
   unsigned char *srcBuf = NULL;
   int w = 0, h = 0, i, j, minQual = -1, maxQual = -1;
@@ -821,7 +825,7 @@ int main(int argc, char *argv[])
   if ((scalingFactors = tjGetScalingFactors(&nsf)) == NULL || nsf == 0)
     THROW("executing tjGetScalingFactors()", tjGetErrorStr());
 
-  if (argc < minArg) usage(argv[0]);
+  if (argc < minArg) return usage(argv[0]);
 
   temp = strrchr(argv[1], '.');
   if (temp != NULL) {
@@ -834,7 +838,7 @@ int main(int argc, char *argv[])
 
   if (!decompOnly) {
     minArg = 3;
-    if (argc < minArg) usage(argv[0]);
+    if (argc < minArg) return usage(argv[0]);
     if ((minQual = atoi(argv[2])) < 1 || minQual > 100) {
       puts("ERROR: Quality must be between 1 and 100.");
       exit(1);
@@ -893,8 +897,8 @@ int main(int argc, char *argv[])
               match = 1;  break;
             }
           }
-          if (!match) usage(argv[0]);
-        } else usage(argv[0]);
+          if (!match) return usage(argv[0]);
+        } else return usage(argv[0]);
       } else if (!strcasecmp(argv[i], "-hflip"))
         xformOp = TJXOP_HFLIP;
       else if (!strcasecmp(argv[i], "-vflip"))
@@ -921,12 +925,12 @@ int main(int argc, char *argv[])
         double tempd = atof(argv[++i]);
 
         if (tempd > 0.0) benchTime = tempd;
-        else usage(argv[0]);
+        else return usage(argv[0]);
       } else if (!strcasecmp(argv[i], "-warmup") && i < argc - 1) {
         double tempd = atof(argv[++i]);
 
         if (tempd >= 0.0) warmup = tempd;
-        else usage(argv[0]);
+        else return usage(argv[0]);
         printf("Warmup time = %.1f seconds\n\n", warmup);
       } else if (!strcasecmp(argv[i], "-alloc"))
         flags &= (~TJFLAG_NOREALLOC);
@@ -961,7 +965,7 @@ int main(int argc, char *argv[])
         flags |= TJFLAG_LIMITSCANS;
       else if (!strcasecmp(argv[i], "-stoponwarning"))
         flags |= TJFLAG_STOPONWARNING;
-      else usage(argv[0]);
+      else return usage(argv[0]);
     }
   }
 

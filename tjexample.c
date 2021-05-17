@@ -57,16 +57,16 @@
 #define DEFAULT_QUALITY  95
 
 
-const char *subsampName[TJ_NUMSAMP] = {
+static const char *subsampName[TJ_NUMSAMP] = {
   "4:4:4", "4:2:2", "4:2:0", "Grayscale", "4:4:0", "4:1:1"
 };
 
-const char *colorspaceName[TJ_NUMCS] = {
+static const char *colorspaceName[TJ_NUMCS] = {
   "RGB", "YCbCr", "GRAY", "CMYK", "YCCK"
 };
 
-tjscalingfactor *scalingFactors = NULL;
-int numScalingFactors = 0;
+static tjscalingfactor *scalingFactors = NULL;
+static int numScalingFactors = 0;
 
 
 /* DCT filter example.  This produces a negative of the image. */
@@ -84,7 +84,7 @@ static int customFilter(short *coeffs, tjregion arrayRegion,
 }
 
 
-static void usage(char *programName)
+static int usage(const char *programName)
 {
   int i;
 
@@ -154,11 +154,15 @@ static void usage(char *programName)
   printf("-accuratedct = Use the most accurate DCT/IDCT algorithms available in the\n");
   printf("     underlying codec.\n\n");
 
-  exit(1);
+  return 1;
 }
 
 
-int main(int argc, char **argv)
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_tjexample_main(cnt, arr)
+#endif
+
+int main(int argc, const char **argv)
 {
   tjscalingfactor scalingFactor = { 1, 1 };
   int outSubsamp = -1, outQual = -1;
@@ -176,7 +180,7 @@ int main(int argc, char **argv)
   memset(&xform, 0, sizeof(tjtransform));
 
   if (argc < 3)
-    usage(argv[0]);
+    return usage(argv[0]);
 
   /* Parse arguments. */
   for (i = 3; i < argc; i++) {
@@ -184,7 +188,7 @@ int main(int argc, char **argv)
       int match = 0, temp1 = 0, temp2 = 0, j;
 
       if (sscanf(argv[++i], "%d/%d", &temp1, &temp2) < 2)
-        usage(argv[0]);
+		  return usage(argv[0]);
       for (j = 0; j < numScalingFactors; j++) {
         if ((double)temp1 / (double)temp2 == (double)scalingFactors[j].num /
                                              (double)scalingFactors[j].denom) {
@@ -194,7 +198,7 @@ int main(int argc, char **argv)
         }
       }
       if (match != 1)
-        usage(argv[0]);
+		  return usage(argv[0]);
     } else if (!strncasecmp(argv[i], "-su", 3) && i < argc - 1) {
       i++;
       if (!strncasecmp(argv[i], "g", 1))
@@ -206,11 +210,11 @@ int main(int argc, char **argv)
       else if (!strcasecmp(argv[i], "420"))
         outSubsamp = TJSAMP_420;
       else
-        usage(argv[0]);
+		  return usage(argv[0]);
     } else if (!strncasecmp(argv[i], "-q", 2) && i < argc - 1) {
       outQual = atoi(argv[++i]);
       if (outQual < 1 || outQual > 100)
-        usage(argv[0]);
+		  return usage(argv[0]);
     } else if (!strncasecmp(argv[i], "-g", 2))
       xform.options |= TJXOPT_GRAY;
     else if (!strcasecmp(argv[i], "-hflip"))
@@ -233,7 +237,7 @@ int main(int argc, char **argv)
       if (sscanf(argv[++i], "%dx%d+%d+%d", &xform.r.w, &xform.r.h, &xform.r.x,
                  &xform.r.y) < 4 ||
           xform.r.x < 0 || xform.r.y < 0 || xform.r.w < 1 || xform.r.h < 1)
-        usage(argv[0]);
+		  return usage(argv[0]);
       xform.options |= TJXOPT_CROP;
     } else if (!strcasecmp(argv[i], "-fastupsample")) {
       printf("Using fast upsampling code\n");
@@ -244,7 +248,7 @@ int main(int argc, char **argv)
     } else if (!strcasecmp(argv[i], "-accuratedct")) {
       printf("Using most accurate DCT/IDCT algorithm\n");
       flags |= TJFLAG_ACCURATEDCT;
-    } else usage(argv[0]);
+    } else return usage(argv[0]);
   }
 
   /* Determine input and output image formats based on file extensions. */
@@ -252,7 +256,7 @@ int main(int argc, char **argv)
   outFormat = strrchr(argv[2], '.');
   if (inFormat == NULL || outFormat == NULL || strlen(inFormat) < 2 ||
       strlen(outFormat) < 2)
-    usage(argv[0]);
+	  return usage(argv[0]);
   inFormat = &inFormat[1];
   outFormat = &outFormat[1];
 

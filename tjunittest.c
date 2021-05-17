@@ -46,7 +46,7 @@
 #endif
 
 
-static void usage(char *progName)
+static int usage(const char *progName)
 {
   printf("\nUSAGE: %s [options]\n\n", progName);
   printf("Options:\n");
@@ -55,7 +55,7 @@ static void usage(char *progName)
   printf("            4-byte boundary\n");
   printf("-alloc = test automatic buffer allocation\n");
   printf("-bmp = tjLoadImage()/tjSaveImage() unit test\n\n");
-  exit(1);
+  return 1;
 }
 
 
@@ -71,28 +71,28 @@ static void usage(char *progName)
   BAILOUT() \
 }
 
-const char *subNameLong[TJ_NUMSAMP] = {
+static const char *subNameLong[TJ_NUMSAMP] = {
   "4:4:4", "4:2:2", "4:2:0", "GRAY", "4:4:0", "4:1:1"
 };
-const char *subName[TJ_NUMSAMP] = {
+static const char *subName[TJ_NUMSAMP] = {
   "444", "422", "420", "GRAY", "440", "411"
 };
 
-const char *pixFormatStr[TJ_NUMPF] = {
+static const char *pixFormatStr[TJ_NUMPF] = {
   "RGB", "BGR", "RGBX", "BGRX", "XBGR", "XRGB", "Grayscale",
   "RGBA", "BGRA", "ABGR", "ARGB", "CMYK"
 };
 
-const int _3byteFormats[] = { TJPF_RGB, TJPF_BGR };
-const int _4byteFormats[] = {
+static const int _3byteFormats[] = { TJPF_RGB, TJPF_BGR };
+static const int _4byteFormats[] = {
   TJPF_RGBX, TJPF_BGRX, TJPF_XBGR, TJPF_XRGB, TJPF_CMYK
 };
-const int _onlyGray[] = { TJPF_GRAY };
-const int _onlyRGB[] = { TJPF_RGB };
+static const int _onlyGray[] = { TJPF_GRAY };
+static const int _onlyRGB[] = { TJPF_RGB };
 
-int doYUV = 0, alloc = 0, pad = 4;
+static int doYUV = 0, alloc = 0, pad = 4;
 
-int exitStatus = 0;
+static int exitStatus = 0;
 #define BAILOUT() { exitStatus = -1;  goto bailout; }
 
 
@@ -883,7 +883,11 @@ static int bmpTest(void)
 }
 
 
-int main(int argc, char *argv[])
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_tjunittest_main(cnt, arr)
+#endif
+
+int main(int argc, const char **argv)
 {
   int i, num4bf = 5;
 
@@ -896,7 +900,7 @@ int main(int argc, char *argv[])
       else if (!strcasecmp(argv[i], "-noyuvpad")) pad = 1;
       else if (!strcasecmp(argv[i], "-alloc")) alloc = 1;
       else if (!strcasecmp(argv[i], "-bmp")) return bmpTest();
-      else usage(argv[0]);
+      else return usage(argv[0]);
     }
   }
   if (alloc) printf("Testing automatic buffer allocation\n");

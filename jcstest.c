@@ -60,6 +60,10 @@ static void my_output_message(j_common_ptr cinfo)
   (*cinfo->err->format_message) (cinfo, lasterror);
 }
 
+#if defined(BUILD_MONOLITHIC)
+#define main      jpegturbo_jcstest_test_main
+#endif
+
 int main(void)
 {
   int jcs_valid = -1, jcs_alpha_valid = -1;

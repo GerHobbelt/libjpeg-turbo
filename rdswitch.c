@@ -78,7 +78,7 @@ static int q_scale_factor[NUM_QUANT_TBLS] = { 100, 100, 100, 100 };
 #endif
 
 GLOBAL(boolean)
-read_quant_tables(j_compress_ptr cinfo, char *filename, boolean force_baseline)
+read_quant_tables(j_compress_ptr cinfo, const char *filename, boolean force_baseline)
 /* Read a set of quantization tables from the specified file.
  * The file is plain ASCII text: decimal numbers with whitespace between.
  * Comments preceded by '#' may be included in the file.
@@ -168,7 +168,7 @@ read_scan_integer(FILE *file, long *result, int *termchar)
 
 
 GLOBAL(boolean)
-read_scan_script(j_compress_ptr cinfo, char *filename)
+read_scan_script(j_compress_ptr cinfo, const char *filename)
 /* Read a scan script from the specified text file.
  * Each entry in the file defines one scan to be emitted.
  * Entries are separated by semicolons ';'.
@@ -315,7 +315,7 @@ jpeg_default_qtables(j_compress_ptr cinfo, boolean force_baseline)
 
 
 GLOBAL(boolean)
-set_quality_ratings(j_compress_ptr cinfo, char *arg, boolean force_baseline)
+set_quality_ratings(j_compress_ptr cinfo, const char *arg, boolean force_baseline)
 /* Process a quality-ratings parameter string, of the form
  *     N[,N,...]
  * If there are more q-table slots than parameters, the last value is replicated.
@@ -355,7 +355,7 @@ set_quality_ratings(j_compress_ptr cinfo, char *arg, boolean force_baseline)
 
 
 GLOBAL(boolean)
-set_quant_slots(j_compress_ptr cinfo, char *arg)
+set_quant_slots(j_compress_ptr cinfo, const char *arg)
 /* Process a quantization-table-selectors parameter string, of the form
  *     N[,N,...]
  * If there are more components than parameters, the last value is replicated.
@@ -390,7 +390,7 @@ set_quant_slots(j_compress_ptr cinfo, char *arg)
 
 
 GLOBAL(boolean)
-set_sample_factors(j_compress_ptr cinfo, char *arg)
+set_sample_factors(j_compress_ptr cinfo, const char *arg)
 /* Process a sample-factors parameter string, of the form
  *     HxV[,HxV,...]
  * If there are more components than parameters, "1x1" is assumed for the rest.

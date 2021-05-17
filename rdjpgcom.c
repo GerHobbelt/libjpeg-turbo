@@ -400,7 +400,7 @@ scan_JPEG_header(int verbose, int raw)
 static const char *progname;    /* program name for error messages */
 
 
-static void
+static int
 usage(void)
 /* complain about bad command line */
 {
@@ -412,12 +412,12 @@ usage(void)
   fprintf(stderr, "  -raw        Display non-printable characters in comments (unsafe)\n");
   fprintf(stderr, "  -verbose    Also display dimensions of JPEG image\n");
 
-  exit(EXIT_FAILURE);
+  return EXIT_FAILURE;
 }
 
 
 static int
-keymatch(char *arg, const char *keyword, int minchars)
+keymatch(const char *arg, const char *keyword, int minchars)
 /* Case-insensitive matching of (possibly abbreviated) keyword switches. */
 /* keyword is the constant keyword (must be lower case already), */
 /* minchars is length of minimum legal abbreviation. */
@@ -441,15 +441,19 @@ keymatch(char *arg, const char *keyword, int minchars)
 }
 
 
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_rdjpgcom_main(cnt, arr)
+#endif
+
 /*
  * The main program.
  */
 
 int
-main(int argc, char **argv)
+main(int argc, const char **argv)
 {
   int argn;
-  char *arg;
+  const char *arg;
   int verbose = 0, raw = 0;
 
   /* On Mac, fetch a command line. */
@@ -472,14 +476,14 @@ main(int argc, char **argv)
     } else if (keymatch(arg, "raw", 1)) {
       raw = 1;
     } else
-      usage();
+		return usage();
   }
 
   /* Open the input file. */
   /* Unix style: expect zero or one file name */
   if (argn < argc - 1) {
     fprintf(stderr, "%s: only one input file\n", progname);
-    usage();
+	return usage();
   }
   if (argn < argc) {
     if ((infile = fopen(argv[argn], READ_BINARY)) == NULL) {
@@ -505,6 +509,5 @@ main(int argc, char **argv)
   (void)scan_JPEG_header(verbose, raw);
 
   /* All done. */
-  exit(EXIT_SUCCESS);
-  return 0;                     /* suppress no-return-value warnings */
+  return EXIT_SUCCESS;
 }
