@@ -551,16 +551,16 @@ parse_switches(j_compress_ptr cinfo, int argc, const char **argv,
 int
 main(int argc, const char **argv)
 {
-  struct jpeg_compress_struct cinfo;
+  struct jpeg_compress_struct cinfo = { 0 };
 #ifdef CJPEG_FUZZER
-  struct my_error_mgr myerr;
+  struct my_error_mgr myerr = { 0 };
   struct jpeg_error_mgr &jerr = myerr.pub;
 #else
-  struct jpeg_error_mgr jerr;
+  struct jpeg_error_mgr jerr = { 0 };
 #endif
-  struct cdjpeg_progress_mgr progress;
+  struct cdjpeg_progress_mgr progress = { 0 };
   int file_index;
-  cjpeg_source_ptr src_mgr;
+  cjpeg_source_ptr src_mgr = { 0 };
   FILE *input_file = NULL;
   FILE *icc_file;
   JOCTET *icc_profile = NULL;

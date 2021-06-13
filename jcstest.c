@@ -67,8 +67,8 @@ static void my_output_message(j_common_ptr cinfo)
 int main(void)
 {
   int jcs_valid = -1, jcs_alpha_valid = -1;
-  struct jpeg_compress_struct cinfo;
-  error_mgr jerr;
+  struct jpeg_compress_struct cinfo = { 0 };
+  error_mgr jerr = { 0 };
 
   printf("libjpeg-turbo colorspace extensions:\n");
 #if JCS_EXTENSIONS

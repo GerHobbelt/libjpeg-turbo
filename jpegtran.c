@@ -460,15 +460,15 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
 int
 main(int argc, const char **argv)
 {
-  struct jpeg_decompress_struct srcinfo;
+  struct jpeg_decompress_struct srcinfo = { 0 };
 #if TRANSFORMS_SUPPORTED
-  struct jpeg_decompress_struct dropinfo;
-  struct jpeg_error_mgr jdroperr;
+  struct jpeg_decompress_struct dropinfo = { 0 };
+  struct jpeg_error_mgr jdroperr = { 0 };
   FILE *drop_file;
 #endif
-  struct jpeg_compress_struct dstinfo;
-  struct jpeg_error_mgr jsrcerr, jdsterr;
-  struct cdjpeg_progress_mgr src_progress, dst_progress;
+  struct jpeg_compress_struct dstinfo = { 0 };
+  struct jpeg_error_mgr jsrcerr, jdsterr = { 0 };
+  struct cdjpeg_progress_mgr src_progress, dst_progress = { 0 };
   jvirt_barray_ptr *src_coef_arrays;
   jvirt_barray_ptr *dst_coef_arrays;
   int file_index;
