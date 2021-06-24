@@ -139,7 +139,10 @@ jpeg_suppress_tables(j_compress_ptr cinfo, boolean suppress)
 
   for (i = 0; i < NUM_QUANT_TBLS; i++) {
     if ((qtbl = cinfo->quant_tbl_ptrs[i]) != NULL)
+    {
       qtbl->sent_table = suppress;
+      qtbl->sent_bg_table = suppress;
+    }
   }
 
   for (i = 0; i < NUM_HUFF_TBLS; i++) {

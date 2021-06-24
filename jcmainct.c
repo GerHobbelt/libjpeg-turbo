@@ -33,6 +33,9 @@ typedef struct {
    * points to the currently accessible strips of the virtual arrays.
    */
   JSAMPARRAY buffer[MAX_COMPONENTS];
+
+  /* Add support for mask buffer in addition to image buffer */
+  JMASKARRAY mask_buffer[MAX_COMPONENTS];
 } my_main_controller;
 
 typedef my_main_controller *my_main_ptr;
@@ -87,7 +90,7 @@ process_data_simple_main(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       (*cinfo->prep->pre_process_data) (cinfo, input_buf, in_row_ctr,
                                         in_rows_avail, main_ptr->buffer,
                                         &main_ptr->rowgroup_ctr,
-                                        (JDIMENSION)DCTSIZE);
+                                        (JDIMENSION)DCTSIZE, main_ptr->mask_buffer);
 
     /* If we don't have a full iMCU row buffered, return to application for
      * more data.  Note that preprocessor will always pad to fill the iMCU row
@@ -157,6 +160,13 @@ jinit_c_main_controller(j_compress_ptr cinfo, boolean need_full_buffer)
         ((j_common_ptr)cinfo, JPOOL_IMAGE,
          compptr->width_in_blocks * DCTSIZE,
          (JDIMENSION)(compptr->v_samp_factor * DCTSIZE));
+
+      if (cinfo->mask != NULL) {
+        main_ptr->mask_buffer[ci] = (*cinfo->mem->alloc_sarray)
+          ((j_common_ptr)cinfo, JPOOL_IMAGE,
+           compptr->width_in_blocks * DCTSIZE,
+           (JDIMENSION)(compptr->v_samp_factor * DCTSIZE));
+      }
     }
   }
 }

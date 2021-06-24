@@ -29,6 +29,7 @@ TURBOJPEG_1.2
     tjBufSize;
     tjBufSizeYUV;
     tjCompress2;
+    tjCompressFgBg2;
     tjDecompress2;
     tjEncodeYUV2;
     tjFree;

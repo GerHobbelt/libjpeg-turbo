@@ -103,6 +103,7 @@ jpeg_copy_critical_parameters(j_decompress_ptr srcinfo, j_compress_ptr dstinfo)
       MEMCOPY((*qtblptr)->quantval, srcinfo->quant_tbl_ptrs[tblno]->quantval,
               sizeof((*qtblptr)->quantval));
       (*qtblptr)->sent_table = FALSE;
+      (*qtblptr)->sent_bg_table = FALSE;
     }
   }
   /* Copy the source's per-component info.

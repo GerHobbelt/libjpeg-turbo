@@ -275,6 +275,7 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
 
   cinfo->in_color_space = pf2cs[pixelFormat];
   cinfo->input_components = tjPixelSize[pixelFormat];
+  cinfo->mask = (JMASKARRAY) NULL;
   jpeg_set_defaults(cinfo);
 
 #ifndef NO_GETENV
@@ -302,6 +303,77 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
   if (jpegQual >= 0) {
     jpeg_set_quality(cinfo, jpegQual, TRUE);
     if (jpegQual >= 96 || flags & TJFLAG_ACCURATEDCT)
+      cinfo->dct_method = JDCT_ISLOW;
+    else
+      cinfo->dct_method = JDCT_FASTEST;
+  }
+  if (subsamp == TJSAMP_GRAY)
+    jpeg_set_colorspace(cinfo, JCS_GRAYSCALE);
+  else if (pixelFormat == TJPF_CMYK)
+    jpeg_set_colorspace(cinfo, JCS_YCCK);
+  else
+    jpeg_set_colorspace(cinfo, JCS_YCbCr);
+
+  if (flags & TJFLAG_PROGRESSIVE)
+    jpeg_simple_progression(cinfo);
+#ifndef NO_GETENV
+  else if ((env = getenv("TJ_PROGRESSIVE")) != NULL && strlen(env) > 0 &&
+           !strcmp(env, "1"))
+    jpeg_simple_progression(cinfo);
+#endif
+
+  cinfo->comp_info[0].h_samp_factor = tjMCUWidth[subsamp] / 8;
+  cinfo->comp_info[1].h_samp_factor = 1;
+  cinfo->comp_info[2].h_samp_factor = 1;
+  if (cinfo->num_components > 3)
+    cinfo->comp_info[3].h_samp_factor = tjMCUWidth[subsamp] / 8;
+  cinfo->comp_info[0].v_samp_factor = tjMCUHeight[subsamp] / 8;
+  cinfo->comp_info[1].v_samp_factor = 1;
+  cinfo->comp_info[2].v_samp_factor = 1;
+  if (cinfo->num_components > 3)
+    cinfo->comp_info[3].v_samp_factor = tjMCUHeight[subsamp] / 8;
+}
+
+
+static void setFgBgCompDefaults(struct jpeg_compress_struct *cinfo,
+                            int pixelFormat, int subsamp, int jpegQualFg,
+                            int jpegQualBg, int flags, unsigned char **mask)
+{
+#ifndef NO_GETENV
+  char *env = NULL;
+#endif
+
+  cinfo->in_color_space = pf2cs[pixelFormat];
+  cinfo->input_components = tjPixelSize[pixelFormat];
+  cinfo->mask = (JMASKARRAY) mask;
+  cinfo->sent_mask = FALSE;
+  jpeg_set_defaults(cinfo);
+
+#ifndef NO_GETENV
+  if ((env = getenv("TJ_OPTIMIZE")) != NULL && strlen(env) > 0 &&
+      !strcmp(env, "1"))
+    cinfo->optimize_coding = TRUE;
+  if ((env = getenv("TJ_ARITHMETIC")) != NULL && strlen(env) > 0 &&
+      !strcmp(env, "1"))
+    cinfo->arith_code = TRUE;
+  if ((env = getenv("TJ_RESTART")) != NULL && strlen(env) > 0) {
+    int temp = -1;
+    char tempc = 0;
+
+    if (sscanf(env, "%d%c", &temp, &tempc) >= 1 && temp >= 0 &&
+        temp <= 65535) {
+      if (toupper(tempc) == 'B') {
+        cinfo->restart_interval = temp;
+        cinfo->restart_in_rows = 0;
+      } else
+        cinfo->restart_in_rows = temp;
+    }
+  }
+#endif
+
+  if (jpegQualFg >= 0 && jpegQualBg >= 0) {
+    jpeg_set_fg_bg_quality(cinfo, jpegQualFg, jpegQualBg, TRUE);
+    if (jpegQualFg >= 96 || jpegQualBg >= 96 || flags & TJFLAG_ACCURATEDCT)
       cinfo->dct_method = JDCT_ISLOW;
     else
       cinfo->dct_method = JDCT_FASTEST;
@@ -660,6 +732,75 @@ DLLEXPORT unsigned long tjPlaneSizeYUV(int componentID, int width, int stride,
 
 bailout:
   return (unsigned long)retval;
+}
+
+
+DLLEXPORT int tjCompressFgBg2(tjhandle handle, const unsigned char *srcBuf,
+                          int width, int pitch, int height, int pixelFormat,
+                          unsigned char **jpegBuf, unsigned long *jpegSize,
+                          int jpegSubsamp, int jpegQualFg, int jpegQualBg,
+                          unsigned char **jpegMask, int flags)
+{
+  int i, retval = 0, alloc = 1;
+  JSAMPROW *row_pointer = NULL;
+
+  GET_CINSTANCE(handle)
+  this->jerr.stopOnWarning = (flags & TJFLAG_STOPONWARNING) ? TRUE : FALSE;
+  if ((this->init & COMPRESS) == 0)
+    THROW("tjCompressFgBg2(): Instance has not been initialized for compression");
+
+  if (srcBuf == NULL || width <= 0 || pitch < 0 || height <= 0 ||
+      pixelFormat < 0 || pixelFormat >= TJ_NUMPF || jpegBuf == NULL ||
+      jpegSize == NULL || jpegSubsamp < 0 || jpegSubsamp >= NUMSUBOPT ||
+      jpegQualFg < 0 || jpegQualFg > 100 || jpegQualBg < 0 || jpegQualBg > 100)
+    THROW("tjCompressFgBg2(): Invalid argument");
+
+  if (pitch == 0) pitch = width * tjPixelSize[pixelFormat];
+
+  if ((row_pointer = (JSAMPROW *)malloc(sizeof(JSAMPROW) * height)) == NULL)
+    THROW("tjCompressFgBg2(): Memory allocation failure");
+
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+
+  cinfo->image_width = width;
+  cinfo->image_height = height;
+
+#ifndef NO_PUTENV
+  if (flags & TJFLAG_FORCEMMX) putenv("JSIMD_FORCEMMX=1");
+  else if (flags & TJFLAG_FORCESSE) putenv("JSIMD_FORCESSE=1");
+  else if (flags & TJFLAG_FORCESSE2) putenv("JSIMD_FORCESSE2=1");
+#endif
+
+  if (flags & TJFLAG_NOREALLOC) {
+    alloc = 0;  *jpegSize = tjBufSize(width, height, jpegSubsamp);
+  }
+  jpeg_mem_dest_tj(cinfo, jpegBuf, jpegSize, alloc);
+  setFgBgCompDefaults(cinfo, pixelFormat, jpegSubsamp, jpegQualFg, jpegQualBg, flags, jpegMask);
+
+  jpeg_start_compress(cinfo, TRUE);
+  for (i = 0; i < height; i++) {
+    if (flags & TJFLAG_BOTTOMUP)
+      row_pointer[i] = (JSAMPROW)&srcBuf[(height - i - 1) * (size_t)pitch];
+    else
+      row_pointer[i] = (JSAMPROW)&srcBuf[i * (size_t)pitch];
+  }
+  while (cinfo->next_scanline < cinfo->image_height)
+    jpeg_write_scanlines(cinfo, &row_pointer[cinfo->next_scanline],
+                         cinfo->image_height - cinfo->next_scanline);
+  jpeg_finish_compress(cinfo);
+
+bailout:
+  if (cinfo->global_state > CSTATE_START) {
+    if (alloc) (*cinfo->dest->term_destination) (cinfo);
+    jpeg_abort_compress(cinfo);
+  }
+  free(row_pointer);
+  if (this->jerr.warning) retval = -1;
+  this->jerr.stopOnWarning = FALSE;
+  return retval;
 }
 
 

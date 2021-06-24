@@ -131,7 +131,7 @@ METHODDEF(void)
 pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                  JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                  JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
-                 JDIMENSION out_row_groups_avail)
+                 JDIMENSION out_row_groups_avail, JMASKARRAY *output_mask_buf)
 {
   my_prep_ptr prep = (my_prep_ptr)cinfo->prep;
   int numrows, ci;
@@ -165,6 +165,13 @@ pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       (*cinfo->downsample->downsample) (cinfo,
                                         prep->color_buf, (JDIMENSION)0,
                                         output_buf, *out_row_group_ctr);
+
+      if (cinfo->mask != NULL) {
+        (*cinfo->downsample->downsample_mask) (cinfo,
+                                          cinfo->mask, (JDIMENSION)0,
+                                          output_mask_buf, *out_row_group_ctr);
+      }
+
       prep->next_buf_row = 0;
       (*out_row_group_ctr)++;
     }
@@ -195,7 +202,7 @@ METHODDEF(void)
 pre_process_context(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                     JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                     JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
-                    JDIMENSION out_row_groups_avail)
+                    JDIMENSION out_row_groups_avail, JMASKARRAY *output_mask_buf)
 {
   my_prep_ptr prep = (my_prep_ptr)cinfo->prep;
   int numrows, ci;
@@ -243,6 +250,13 @@ pre_process_context(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       (*cinfo->downsample->downsample) (cinfo, prep->color_buf,
                                         (JDIMENSION)prep->this_row_group,
                                         output_buf, *out_row_group_ctr);
+
+      if (cinfo->mask != NULL) {
+        (*cinfo->downsample->downsample_mask) (cinfo,
+                                          cinfo->mask, (JDIMENSION)0,
+                                          output_mask_buf, *out_row_group_ctr);
+      }
+
       (*out_row_group_ctr)++;
       /* Advance pointers with wraparound as necessary. */
       prep->this_row_group += cinfo->max_v_samp_factor;

@@ -648,6 +648,9 @@ if(WITH_TURBOJPEG)
 
     add_executable(tjexample tjexample.c)
     target_link_libraries(tjexample turbojpeg)
+
+    add_executable(tjexamplefgbg tjexamplefgbg.c)
+    target_link_libraries(tjexamplefgbg turbojpeg)
   endif()
 
   if(ENABLE_STATIC)
@@ -1487,6 +1490,7 @@ install(TARGETS rdjpgcom wrjpgcom RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.ijg
   ${CMAKE_CURRENT_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/example.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/tjexample.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/tjexamplefgbg.c
   ${CMAKE_CURRENT_SOURCE_DIR}/libjpeg.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/structure.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/usage.txt ${CMAKE_CURRENT_SOURCE_DIR}/wizard.txt

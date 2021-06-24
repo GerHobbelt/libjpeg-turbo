@@ -18,6 +18,7 @@
 
 /* Declarations for both compression & decompression */
 
+#include "jpeglib.h"
 typedef enum {            /* Operating modes for buffer controllers */
   JBUF_PASS_THRU,         /* Plain stripwise operation */
   /* Remaining modes require a full-image buffer to have been created */
@@ -83,7 +84,8 @@ struct jpeg_c_prep_controller {
                             JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                             JSAMPIMAGE output_buf,
                             JDIMENSION *out_row_group_ctr,
-                            JDIMENSION out_row_groups_avail);
+                            JDIMENSION out_row_groups_avail,
+                            JMASKARRAY *output_mask_buf);
 };
 
 /* Coefficient buffer control */
@@ -106,6 +108,9 @@ struct jpeg_downsampler {
   void (*downsample) (j_compress_ptr cinfo, JSAMPIMAGE input_buf,
                       JDIMENSION in_row_index, JSAMPIMAGE output_buf,
                       JDIMENSION out_row_group_index);
+  void (*downsample_mask) (j_compress_ptr cinfo, JMASKARRAY input_buf,
+                           JDIMENSION in_row_index, JMASKARRAY *output_buf,
+                           JDIMENSION out_row_group_index);
 
   boolean need_context_rows;    /* TRUE if need rows above & below */
 };
@@ -352,6 +357,9 @@ EXTERN(void) jcopy_sample_rows(JSAMPARRAY input_array, int source_row,
 EXTERN(void) jcopy_block_row(JBLOCKROW input_row, JBLOCKROW output_row,
                              JDIMENSION num_blocks);
 EXTERN(void) jzero_far(void *target, size_t bytestozero);
+EXTERN(void) jcopy_mask_rows(JMASKARRAY input_array, int source_row,
+                             JMASKARRAY output_array, int dest_row,
+                             int num_rows, JDIMENSION num_cols);
 /* Constant tables in jutils.c */
 #if 0                           /* This table is not actually needed in v6a */
 extern const int jpeg_zigzag_order[]; /* natural coef order to zigzag order */

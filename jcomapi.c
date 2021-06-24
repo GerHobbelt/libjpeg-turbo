@@ -93,6 +93,7 @@ jpeg_alloc_quant_table(j_common_ptr cinfo)
   tbl = (JQUANT_TBL *)
     (*cinfo->mem->alloc_small) (cinfo, JPOOL_PERMANENT, sizeof(JQUANT_TBL));
   tbl->sent_table = FALSE;      /* make sure this is false in any new table */
+  tbl->sent_bg_table = FALSE;   /* make sure this is false in any new table */
   return tbl;
 }
 

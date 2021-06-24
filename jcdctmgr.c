@@ -56,6 +56,7 @@ typedef struct {
    * Each table is given in normal array order.
    */
   DCTELEM *divisors[NUM_QUANT_TBLS];
+  DCTELEM *bg_divisors[NUM_QUANT_TBLS];
 
   /* work area for FDCT subroutine */
   DCTELEM *workspace;
@@ -66,6 +67,7 @@ typedef struct {
   float_convsamp_method_ptr float_convsamp;
   float_quantize_method_ptr float_quantize;
   FAST_FLOAT *float_divisors[NUM_QUANT_TBLS];
+  FAST_FLOAT *bg_float_divisors[NUM_QUANT_TBLS];
   FAST_FLOAT *float_workspace;
 #endif
 } my_fdct_controller;
@@ -239,10 +241,12 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
   int ci, qtblno, i;
   jpeg_component_info *compptr;
   JQUANT_TBL *qtbl;
-  DCTELEM *dtbl;
+  DCTELEM *dtbl, *bg_dtbl;
 
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
+    compptr->cur_row = 0;
+    compptr->prev_col = 0;
     qtblno = compptr->quant_tbl_no;
     /* Make sure specified quantization table is present */
     if (qtblno < 0 || qtblno >= NUM_QUANT_TBLS ||
@@ -263,13 +267,29 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
                                       (DCTSIZE2 * 4) * sizeof(DCTELEM));
       }
       dtbl = fdct->divisors[qtblno];
+      if (cinfo->mask != NULL) {
+        if (fdct->bg_divisors[qtblno] == NULL) {
+          fdct->bg_divisors[qtblno] = (DCTELEM *)
+            (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                        (DCTSIZE2 * 4) * sizeof(DCTELEM));
+        }
+        bg_dtbl = fdct->bg_divisors[qtblno];
+      }
       for (i = 0; i < DCTSIZE2; i++) {
 #if BITS_IN_JSAMPLE == 8
         if (!compute_reciprocal(qtbl->quantval[i] << 3, &dtbl[i]) &&
             fdct->quantize == jsimd_quantize)
           fdct->quantize = quantize;
+        // No need to check anything, but we must perform this operation
+        // on the bg quantval
+        if (cinfo->mask != NULL) {
+          compute_reciprocal(qtbl->bgQuantval[i] << 3, &bg_dtbl[i]);
+        }
 #else
         dtbl[i] = ((DCTELEM)qtbl->quantval[i]) << 3;
+        if (cinfo->mask != NULL) {
+          bg_dtbl[i] = ((DCTELEM)qtbl->bgQuantval[i]) << 3;
+        }
 #endif
       }
       break;
@@ -303,6 +323,15 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
                                         (DCTSIZE2 * 4) * sizeof(DCTELEM));
         }
         dtbl = fdct->divisors[qtblno];
+
+        if (cinfo->mask != NULL) {
+          if (fdct->bg_divisors[qtblno] == NULL) {
+            fdct->bg_divisors[qtblno] = (DCTELEM *)
+              (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                          (DCTSIZE2 * 4) * sizeof(DCTELEM));
+          }
+          bg_dtbl = fdct->bg_divisors[qtblno];
+        }
         for (i = 0; i < DCTSIZE2; i++) {
 #if BITS_IN_JSAMPLE == 8
           if (!compute_reciprocal(
@@ -311,11 +340,27 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
                         CONST_BITS - 3), &dtbl[i]) &&
               fdct->quantize == jsimd_quantize)
             fdct->quantize = quantize;
+
+          if (cinfo->mask != NULL) {
+            // No need to check anything, but we must perform this operation
+            // on the bg quantval
+            compute_reciprocal(
+                  DESCALE(MULTIPLY16V16((JLONG)qtbl->bgQuantval[i],
+                                        (JLONG)aanscales[i]),
+                          CONST_BITS - 3), &bg_dtbl[i]);
+          }
 #else
           dtbl[i] = (DCTELEM)
             DESCALE(MULTIPLY16V16((JLONG)qtbl->quantval[i],
                                   (JLONG)aanscales[i]),
                     CONST_BITS - 3);
+          
+          if (cinfo->mask != NULL) {
+            bg_dtbl[i] = (DCTELEM)
+              DESCALE(MULTIPLY16V16((JLONG)qtbl->bgQuantval[i],
+                                    (JLONG)aanscales[i]),
+                      CONST_BITS - 3);
+          }
 #endif
         }
       }
@@ -332,7 +377,7 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
          * What's actually stored is 1/divisor so that the inner loop can
          * use a multiplication rather than a division.
          */
-        FAST_FLOAT *fdtbl;
+        FAST_FLOAT *fdtbl, *bg_fdtbl;
         int row, col;
         static const double aanscalefactor[DCTSIZE] = {
           1.0, 1.387039845, 1.306562965, 1.175875602,
@@ -344,6 +389,15 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
             (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                         DCTSIZE2 * sizeof(FAST_FLOAT));
         }
+
+        if (cinfo->mask != NULL) {
+          if (fdct->bg_float_divisors[qtblno] == NULL) {
+            fdct->bg_float_divisors[qtblno] = (FAST_FLOAT *)
+              (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                          DCTSIZE2 * sizeof(FAST_FLOAT));
+          }
+        }
+
         fdtbl = fdct->float_divisors[qtblno];
         i = 0;
         for (row = 0; row < DCTSIZE; row++) {
@@ -352,6 +406,19 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
               (1.0 / (((double)qtbl->quantval[i] *
                        aanscalefactor[row] * aanscalefactor[col] * 8.0)));
             i++;
+          }
+        }
+
+        if (cinfo->mask != NULL) {
+          bg_fdtbl = fdct->bg_float_divisors[qtblno];
+          i = 0;
+          for (row = 0; row < DCTSIZE; row++) {
+            for (col = 0; col < DCTSIZE; col++) {
+              bg_fdtbl[i] = (FAST_FLOAT)
+                (1.0 / (((double)qtbl->bgQuantval[i] *
+                         aanscalefactor[row] * aanscalefactor[col] * 8.0)));
+              i++;
+            }
           }
         }
       }
@@ -478,6 +545,28 @@ quantize(JCOEFPTR coef_block, DCTELEM *divisors, DCTELEM *workspace)
 }
 
 
+LOCAL(boolean)
+is_block_mask_set(j_compress_ptr cinfo, JDIMENSION start_row, JDIMENSION start_col, JMASKARRAY mask)
+{
+  // For now, just check the corners. If any corner of the block has the mask
+  // set, the whole block is set. The assumption is that a specific object of
+  // interest will never be smaller than a DCT block. If an object of interest
+  // is smaller than a DCT block, we may need to revisit this. Don't look beyond
+  // original image width and height, since the processed image may include some
+  // padding which is not included in the mask.
+  JDIMENSION max_row = (start_row + (DCTSIZE-1) > cinfo->image_height - 1) ? cinfo->image_height - 1 : start_row + (DCTSIZE-1);
+  JDIMENSION max_col = (start_col + (DCTSIZE-1) > cinfo->image_width - 1) ? cinfo->image_width - 1 : start_col + (DCTSIZE-1);
+
+  if (mask[start_row][start_col] != 0 ||
+      mask[max_row][start_col] != 0 ||
+      mask[start_row][max_col] != 0 ||
+      mask[max_row][max_col] != 0)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+
 /*
  * Perform forward DCT on one or more blocks of a component.
  *
@@ -495,6 +584,8 @@ forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
   /* This routine is heavily used, so it's worth coding it tightly. */
   my_fdct_ptr fdct = (my_fdct_ptr)cinfo->fdct;
   DCTELEM *divisors = fdct->divisors[compptr->quant_tbl_no];
+  DCTELEM *bg_divisors = fdct->bg_divisors[compptr->quant_tbl_no];
+  DCTELEM *cur_divisors;
   DCTELEM *workspace;
   JDIMENSION bi;
 
@@ -506,7 +597,19 @@ forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
 
   sample_data += start_row;     /* fold in the vertical offset once */
 
+  if (start_col < compptr->prev_col) {
+    compptr->cur_row += DCTSIZE;
+  }
+
   for (bi = 0; bi < num_blocks; bi++, start_col += DCTSIZE) {
+    // Check if block is FG or BG, and pick the appropriate divisors.
+    // If the mask is NULL, then there is no notion of background.
+    if (cinfo->mask == NULL || is_block_mask_set(cinfo, compptr->cur_row, start_col, cinfo->mask)) {
+      cur_divisors = divisors; // FG block
+    } else {
+      cur_divisors = bg_divisors; // BG block
+    }
+
     /* Load data into workspace, applying unsigned->signed conversion */
     (*do_convsamp) (sample_data, start_col, workspace);
 
@@ -514,8 +617,10 @@ forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
     (*do_dct) (workspace);
 
     /* Quantize/descale the coefficients, and store into coef_blocks[] */
-    (*do_quantize) (coef_blocks[bi], divisors, workspace);
+    (*do_quantize) (coef_blocks[bi], cur_divisors, workspace);
   }
+
+  compptr->prev_col = start_col;
 }
 
 
@@ -585,6 +690,8 @@ forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
   /* This routine is heavily used, so it's worth coding it tightly. */
   my_fdct_ptr fdct = (my_fdct_ptr)cinfo->fdct;
   FAST_FLOAT *divisors = fdct->float_divisors[compptr->quant_tbl_no];
+  FAST_FLOAT *bg_divisors = fdct->bg_float_divisors[compptr->quant_tbl_no];
+  FAST_FLOAT *cur_divisors;
   FAST_FLOAT *workspace;
   JDIMENSION bi;
 
@@ -597,7 +704,18 @@ forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
 
   sample_data += start_row;     /* fold in the vertical offset once */
 
+  if (start_col < compptr->prev_col) {
+    compptr->cur_row += DCTSIZE;
+  }
+
   for (bi = 0; bi < num_blocks; bi++, start_col += DCTSIZE) {
+    // Check if block is FG or BG, and pick the appropriate divisors.
+    // If the mask is NULL, then there is no notion of background.
+    if (cinfo->mask == NULL || is_block_mask_set(cinfo, compptr->cur_row, start_col, cinfo->mask))
+      cur_divisors = divisors; // FG block
+    else
+      cur_divisors = bg_divisors; // BG block
+
     /* Load data into workspace, applying unsigned->signed conversion */
     (*do_convsamp) (sample_data, start_col, workspace);
 
@@ -605,8 +723,10 @@ forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
     (*do_dct) (workspace);
 
     /* Quantize/descale the coefficients, and store into coef_blocks[] */
-    (*do_quantize) (coef_blocks[bi], divisors, workspace);
+    (*do_quantize) (coef_blocks[bi], cur_divisors, workspace);
   }
+
+  compptr->prev_col = start_col;
 }
 
 #endif /* DCT_FLOAT_SUPPORTED */
@@ -713,8 +833,10 @@ jinit_forward_dct(j_compress_ptr cinfo)
   /* Mark divisor tables unallocated */
   for (i = 0; i < NUM_QUANT_TBLS; i++) {
     fdct->divisors[i] = NULL;
+    fdct->bg_divisors[i] = NULL;
 #ifdef DCT_FLOAT_SUPPORTED
     fdct->float_divisors[i] = NULL;
+    fdct->bg_float_divisors[i] = NULL;
 #endif
   }
 }

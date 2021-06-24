@@ -53,7 +53,6 @@ typedef unsigned char JSAMPLE;
 
 #endif /* BITS_IN_JSAMPLE == 8 */
 
-
 #if BITS_IN_JSAMPLE == 12
 /* JSAMPLE should be the smallest type that will hold the values 0..4095.
  * On nearly all machines "short" will do nicely.
@@ -67,6 +66,10 @@ typedef short JSAMPLE;
 
 #endif /* BITS_IN_JSAMPLE == 12 */
 
+
+/* Mask value indicating which layer of the JPEG the pixels apply to.
+   Support only layers between 0..255. */
+typedef unsigned char JMASKENTRY;
 
 /* Representation of a DCT frequency coefficient.
  * This should be a signed value of at least 16 bits; "short" is usually OK.

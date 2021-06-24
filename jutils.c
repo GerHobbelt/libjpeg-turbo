@@ -131,3 +131,28 @@ jzero_far(void *target, size_t bytestozero)
 {
   MEMZERO(target, bytestozero);
 }
+
+
+GLOBAL(void)
+jcopy_mask_rows(JMASKARRAY input_array, int source_row,
+                JMASKARRAY output_array, int dest_row, int num_rows,
+                JDIMENSION num_cols)
+/* Copy some rows of mask entries from one place to another.
+ * num_rows rows are copied from input_array[source_row++]
+ * to output_array[dest_row++]; these areas may overlap for duplication.
+ * The source and destination arrays must be at least as wide as num_cols.
+ */
+{
+  register JMASKROW inptr, outptr;
+  register size_t count = (size_t)(num_cols * sizeof(JSAMPLE));
+  register int row;
+
+  input_array += source_row;
+  output_array += dest_row;
+
+  for (row = num_rows; row > 0; row--) {
+    inptr = *input_array++;
+    outptr = *output_array++;
+    MEMCOPY(outptr, inptr, count);
+  }
+}
