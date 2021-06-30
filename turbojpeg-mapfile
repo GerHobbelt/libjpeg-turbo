@@ -31,6 +31,7 @@ TURBOJPEG_1.2
     tjCompress2;
     tjCompressFgBg2;
     tjDecompress2;
+    tjDecompressFgBg2;
     tjEncodeYUV2;
     tjFree;
     tjGetScalingFactors;
@@ -47,6 +48,7 @@ TURBOJPEG_1.4
     tjDecodeYUV;
     tjDecodeYUVPlanes;
     tjDecompressHeader3;
+    tjDecompressHeaderFgBg3;
     tjDecompressToYUV2;
     tjDecompressToYUVPlanes;
     tjEncodeYUV3;

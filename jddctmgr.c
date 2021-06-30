@@ -246,9 +246,14 @@ start_pass(j_decompress_ptr cinfo)
         /* For LL&M IDCT method, multipliers are equal to raw quantization
          * coefficients, but are stored as ints to ensure access efficiency.
          */
-        ISLOW_MULT_TYPE *ismtbl = (ISLOW_MULT_TYPE *)compptr->dct_table;
+        ISLOW_MULT_TYPE *ismtbl = (ISLOW_MULT_TYPE *)compptr->fg_dct_table;
         for (i = 0; i < DCTSIZE2; i++) {
           ismtbl[i] = (ISLOW_MULT_TYPE)qtbl->quantval[i];
+        }
+
+        ismtbl = (ISLOW_MULT_TYPE *)compptr->bg_dct_table;
+        for (i = 0; i < DCTSIZE2; i++) {
+          ismtbl[i] = (ISLOW_MULT_TYPE)qtbl->bgQuantval[i];
         }
       }
       break;
@@ -263,7 +268,7 @@ start_pass(j_decompress_ptr cinfo)
          * For integer operation, the multiplier table is to be scaled by
          * IFAST_SCALE_BITS.
          */
-        IFAST_MULT_TYPE *ifmtbl = (IFAST_MULT_TYPE *)compptr->dct_table;
+        IFAST_MULT_TYPE *ifmtbl = (IFAST_MULT_TYPE *)compptr->fg_dct_table;
 #define CONST_BITS  14
         static const INT16 aanscales[DCTSIZE2] = {
           /* precomputed values scaled up by 14 bits */
@@ -284,6 +289,14 @@ start_pass(j_decompress_ptr cinfo)
                                   (JLONG)aanscales[i]),
                     CONST_BITS - IFAST_SCALE_BITS);
         }
+
+        ifmtbl = (IFAST_MULT_TYPE *)compptr->bg_dct_table;
+        for (i = 0; i < DCTSIZE2; i++) {
+          ifmtbl[i] = (IFAST_MULT_TYPE)
+            DESCALE(MULTIPLY16V16((JLONG)qtbl->bgQuantval[i],
+                                  (JLONG)aanscales[i]),
+                    CONST_BITS - IFAST_SCALE_BITS);
+        }
       }
       break;
 #endif
@@ -295,7 +308,7 @@ start_pass(j_decompress_ptr cinfo)
          *   scalefactor[0] = 1
          *   scalefactor[k] = cos(k*PI/16) * sqrt(2)    for k=1..7
          */
-        FLOAT_MULT_TYPE *fmtbl = (FLOAT_MULT_TYPE *)compptr->dct_table;
+        FLOAT_MULT_TYPE *fmtbl = (FLOAT_MULT_TYPE *)compptr->fg_dct_table;
         int row, col;
         static const double aanscalefactor[DCTSIZE] = {
           1.0, 1.387039845, 1.306562965, 1.175875602,
@@ -311,6 +324,17 @@ start_pass(j_decompress_ptr cinfo)
             i++;
           }
         }
+
+        fmtbl = (FLOAT_MULT_TYPE *)compptr->bg_dct_table;
+        i = 0;
+        for (row = 0; row < DCTSIZE; row++) {
+          for (col = 0; col < DCTSIZE; col++) {
+            fmtbl[i] = (FLOAT_MULT_TYPE)
+              ((double)qtbl->bgQuantval[i] *
+               aanscalefactor[row] * aanscalefactor[col]);
+            i++;
+          }
+        }
       }
       break;
 #endif
@@ -318,7 +342,39 @@ start_pass(j_decompress_ptr cinfo)
       ERREXIT(cinfo, JERR_NOT_COMPILED);
       break;
     }
+
+    compptr->cur_row = 0;
+    compptr->prev_col = 0;
   }
+}
+
+
+METHODDEF(void)
+set_fg_bg(j_decompress_ptr cinfo, jpeg_component_info *compptr, JDIMENSION col) {
+  // For now, just check the corners. If any corner of the block has the mask
+  // set, the whole block is set. The assumption is that a specific object of
+  // interest will never be smaller than a DCT block. If an object of interest
+  // is smaller than a DCT block, we may need to revisit this. Don't look beyond
+  // original image width and height, since the processed image may include some
+  // padding which is not included in the mask.
+  JDIMENSION max_row = (compptr->cur_row + (DCTSIZE-1) > cinfo->image_height - 1) ? cinfo->image_height - 1 : compptr->cur_row + (DCTSIZE-1);
+  JDIMENSION max_col = (col + (DCTSIZE-1) > cinfo->image_width - 1) ? cinfo->image_width - 1 : col + (DCTSIZE-1);
+
+  if (col < compptr->prev_col) {
+    compptr->cur_row += DCTSIZE;
+  }
+
+  if (cinfo->mask == NULL ||
+      cinfo->mask[compptr->cur_row][col] != 0 ||
+      cinfo->mask[max_row][col] != 0 ||
+      cinfo->mask[compptr->cur_row][max_col] != 0 ||
+      cinfo->mask[max_row][max_col] != 0) {
+    compptr->dct_table = compptr->fg_dct_table;
+  } else {
+    compptr->dct_table = compptr->bg_dct_table;
+  }
+
+  compptr->prev_col = col;
 }
 
 
@@ -338,15 +394,21 @@ jinit_inverse_dct(j_decompress_ptr cinfo)
                                 sizeof(my_idct_controller));
   cinfo->idct = (struct jpeg_inverse_dct *)idct;
   idct->pub.start_pass = start_pass;
+  idct->pub.set_fg_bg = set_fg_bg;
 
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
     /* Allocate and pre-zero a multiplier table for each component */
-    compptr->dct_table =
+    compptr->fg_dct_table =
       (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   sizeof(multiplier_table));
-    MEMZERO(compptr->dct_table, sizeof(multiplier_table));
+    MEMZERO(compptr->fg_dct_table, sizeof(multiplier_table));
+        compptr->bg_dct_table =
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                  sizeof(multiplier_table));
+    MEMZERO(compptr->bg_dct_table, sizeof(multiplier_table));
     /* Mark multiplier table not yet set up for any method */
+    compptr->dct_table = compptr->fg_dct_table;
     idct->cur_method[ci] = -1;
   }
 }

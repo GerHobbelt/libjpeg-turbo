@@ -15,6 +15,7 @@
  * the marker.
  */
 
+#include <sys/types.h>
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -83,6 +84,9 @@ typedef enum {                  /* JPEG marker codes */
   M_COM   = 0xfe,
 
   M_TEM   = 0x01,
+
+  M_MSK   = 0xaf,
+  M_BQT   = 0xb0,
 
   M_ERROR = 0x100
 } JPEG_MARKER;
@@ -562,6 +566,64 @@ get_dqt(j_decompress_ptr cinfo)
 
 
 LOCAL(boolean)
+get_bqt(j_decompress_ptr cinfo)
+/* Process a BQT marker */
+{
+  JLONG length;
+  int n, i, prec;
+  unsigned int tmp;
+  JQUANT_TBL *quant_ptr;
+  INPUT_VARS(cinfo);
+
+  INPUT_2BYTES(cinfo, length, return FALSE);
+  length -= 2;
+
+  while (length > 0) {
+    INPUT_BYTE(cinfo, n, return FALSE);
+    prec = n >> 4;
+    n &= 0x0F;
+
+    TRACEMS2(cinfo, 1, JTRC_BQT, n, prec);
+
+    if (n >= NUM_QUANT_TBLS)
+      ERREXIT1(cinfo, JERR_BQT_INDEX, n);
+
+    if (cinfo->quant_tbl_ptrs[n] == NULL)
+      cinfo->quant_tbl_ptrs[n] = jpeg_alloc_quant_table((j_common_ptr)cinfo);
+    quant_ptr = cinfo->quant_tbl_ptrs[n];
+
+    for (i = 0; i < DCTSIZE2; i++) {
+      if (prec)
+        INPUT_2BYTES(cinfo, tmp, return FALSE);
+      else
+        INPUT_BYTE(cinfo, tmp, return FALSE);
+      /* We convert the zigzag-order table to natural array order. */
+      quant_ptr->bgQuantval[jpeg_natural_order[i]] = (UINT16)tmp;
+    }
+
+    if (cinfo->err->trace_level >= 2) {
+      for (i = 0; i < DCTSIZE2; i += 8) {
+        TRACEMS8(cinfo, 2, JTRC_BGQUANTVALS,
+                 quant_ptr->bgQuantval[i],     quant_ptr->bgQuantval[i + 1],
+                 quant_ptr->bgQuantval[i + 2], quant_ptr->bgQuantval[i + 3],
+                 quant_ptr->bgQuantval[i + 4], quant_ptr->bgQuantval[i + 5],
+                 quant_ptr->bgQuantval[i + 6], quant_ptr->bgQuantval[i + 7]);
+      }
+    }
+
+    length -= DCTSIZE2 + 1;
+    if (prec) length -= DCTSIZE2;
+  }
+
+  if (length != 0)
+    ERREXIT(cinfo, JERR_BAD_LENGTH);
+
+  INPUT_SYNC(cinfo);
+  return TRUE;
+}
+
+
+LOCAL(boolean)
 get_dri(j_decompress_ptr cinfo)
 /* Process a DRI marker */
 {
@@ -579,6 +641,48 @@ get_dri(j_decompress_ptr cinfo)
   TRACEMS1(cinfo, 1, JTRC_DRI, tmp);
 
   cinfo->restart_interval = tmp;
+
+  INPUT_SYNC(cinfo);
+  return TRUE;
+}
+
+
+LOCAL(boolean)
+get_msk(j_decompress_ptr cinfo)
+/* Process a MSK marker */
+{
+  JLONG length, width, height, encoded_value;
+  JMASKARRAY mask;
+
+  INPUT_VARS(cinfo);
+
+  INPUT_2BYTES(cinfo, length, return FALSE);
+  INPUT_2BYTES(cinfo, width, return FALSE);
+  INPUT_2BYTES(cinfo, height, return FALSE);
+
+  // Take away the bytes for the length, width, and height field
+  length -= 6;
+
+  int mask_buf_index = 0;
+
+  // Fill in a flat buffer with the expanded out mask values
+  while (length > 0) {
+    INPUT_2BYTES(cinfo, encoded_value, return FALSE);
+    length -= 2;
+    UINT16 value = ((encoded_value & 0x8000) >> 15);
+    UINT16 value_count = ((encoded_value & 0x7fff));
+
+    for (UINT16 i = 0; i < value_count; i++) {
+      cinfo->mask_buf[mask_buf_index] = value;
+      mask_buf_index++;
+    }
+  }
+
+  // Make sure that the mask matches expectations
+  if (length != 0 || (mask_buf_index != (width * height)))
+    ERREXIT(cinfo, JERR_BAD_LENGTH);
+
+  cinfo->has_mask = TRUE;
 
   INPUT_SYNC(cinfo);
   return TRUE;
@@ -1045,6 +1149,16 @@ read_markers(j_decompress_ptr cinfo)
 
     case M_DQT:
       if (!get_dqt(cinfo))
+        return JPEG_SUSPENDED;
+      break;
+
+    case M_BQT:
+      if (!get_bqt(cinfo))
+        return JPEG_SUSPENDED;
+      break;
+
+    case M_MSK:
+      if (!get_msk(cinfo))
         return JPEG_SUSPENDED;
       break;
 

@@ -1382,6 +1382,67 @@ bailout:
   return retval;
 }
 
+
+DLLEXPORT int tjDecompressHeaderFgBg3(tjhandle handle,
+                                  const unsigned char *jpegBuf,
+                                  unsigned long jpegSize, int *width,
+                                  int *height, int *jpegSubsamp,
+                                  int *jpegColorspace,
+                                  const unsigned char *maskBuf,
+                                  int *hasMask)
+{
+  int retval = 0;
+
+  GET_DINSTANCE(handle);
+  if ((this->init & DECOMPRESS) == 0)
+    THROW("tjDecompressHeader3(): Instance has not been initialized for decompression");
+
+  if (jpegBuf == NULL || jpegSize <= 0 || width == NULL || height == NULL ||
+      jpegSubsamp == NULL || jpegColorspace == NULL)
+    THROW("tjDecompressHeader3(): Invalid argument");
+
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    return -1;
+  }
+
+  dinfo->mask_buf = (JMASKENTRY *) maskBuf;
+  dinfo->has_mask = FALSE;
+
+  jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
+  jpeg_read_header(dinfo, TRUE);
+
+  if (dinfo->has_mask) {
+    *hasMask = 1;
+  }
+
+  *width = dinfo->image_width;
+  *height = dinfo->image_height;
+  *jpegSubsamp = getSubsamp(dinfo);
+  switch (dinfo->jpeg_color_space) {
+  case JCS_GRAYSCALE:  *jpegColorspace = TJCS_GRAY;  break;
+  case JCS_RGB:        *jpegColorspace = TJCS_RGB;  break;
+  case JCS_YCbCr:      *jpegColorspace = TJCS_YCbCr;  break;
+  case JCS_CMYK:       *jpegColorspace = TJCS_CMYK;  break;
+  case JCS_YCCK:       *jpegColorspace = TJCS_YCCK;  break;
+  default:             *jpegColorspace = -1;  break;
+  }
+
+  jpeg_abort_decompress(dinfo);
+
+  if (*jpegSubsamp < 0)
+    THROW("tjDecompressHeader3(): Could not determine subsampling type for JPEG image");
+  if (*jpegColorspace < 0)
+    THROW("tjDecompressHeader3(): Could not determine colorspace of JPEG image");
+  if (*width < 1 || *height < 1)
+    THROW("tjDecompressHeader3(): Invalid data returned in header");
+
+bailout:
+  if (this->jerr.warning) retval = -1;
+  return retval;
+}
+
+
 DLLEXPORT int tjDecompressHeader2(tjhandle handle, unsigned char *jpegBuf,
                                   unsigned long jpegSize, int *width,
                                   int *height, int *jpegSubsamp)
@@ -1502,6 +1563,97 @@ bailout:
   this->jerr.stopOnWarning = FALSE;
   return retval;
 }
+
+
+DLLEXPORT int tjDecompressFgBg2(tjhandle handle, const unsigned char *jpegBuf,
+                            unsigned long jpegSize, unsigned char *dstBuf,
+                            int width, int pitch, int height, int pixelFormat,
+                            int flags, unsigned char **jpegMask)
+{
+  JSAMPROW *row_pointer = NULL;
+  int i, retval = 0, jpegwidth, jpegheight, scaledw, scaledh;
+  struct my_progress_mgr progress;
+
+  GET_DINSTANCE(handle);
+  this->jerr.stopOnWarning = (flags & TJFLAG_STOPONWARNING) ? TRUE : FALSE;
+  if ((this->init & DECOMPRESS) == 0)
+    THROW("tjDecompress2(): Instance has not been initialized for decompression");
+
+  if (jpegBuf == NULL || jpegSize <= 0 || dstBuf == NULL || width < 0 ||
+      pitch < 0 || height < 0 || pixelFormat < 0 || pixelFormat >= TJ_NUMPF)
+    THROW("tjDecompress2(): Invalid argument");
+
+#ifndef NO_PUTENV
+  if (flags & TJFLAG_FORCEMMX) putenv("JSIMD_FORCEMMX=1");
+  else if (flags & TJFLAG_FORCESSE) putenv("JSIMD_FORCESSE=1");
+  else if (flags & TJFLAG_FORCESSE2) putenv("JSIMD_FORCESSE2=1");
+#endif
+
+  if (flags & TJFLAG_LIMITSCANS) {
+    MEMZERO(&progress, sizeof(struct my_progress_mgr));
+    progress.pub.progress_monitor = my_progress_monitor;
+    progress.this = this;
+    dinfo->progress = &progress.pub;
+  } else
+    dinfo->progress = NULL;
+
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+
+  jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
+  jpeg_read_header(dinfo, TRUE);
+  this->dinfo.out_color_space = pf2cs[pixelFormat];
+  if (flags & TJFLAG_FASTDCT) this->dinfo.dct_method = JDCT_FASTEST;
+  if (flags & TJFLAG_FASTUPSAMPLE) dinfo->do_fancy_upsampling = FALSE;
+
+  jpegwidth = dinfo->image_width;  jpegheight = dinfo->image_height;
+  if (width == 0) width = jpegwidth;
+  if (height == 0) height = jpegheight;
+  for (i = 0; i < NUMSF; i++) {
+    scaledw = TJSCALED(jpegwidth, sf[i]);
+    scaledh = TJSCALED(jpegheight, sf[i]);
+    if (scaledw <= width && scaledh <= height)
+      break;
+  }
+  if (i >= NUMSF)
+    THROW("tjDecompress2(): Could not scale down to desired image dimensions");
+  width = scaledw;  height = scaledh;
+  dinfo->scale_num = sf[i].num;
+  dinfo->scale_denom = sf[i].denom;
+
+  dinfo->mask = (JMASKARRAY) jpegMask;
+
+  jpeg_start_decompress(dinfo);
+  if (pitch == 0) pitch = dinfo->output_width * tjPixelSize[pixelFormat];
+
+  if ((row_pointer =
+       (JSAMPROW *)malloc(sizeof(JSAMPROW) * dinfo->output_height)) == NULL)
+    THROW("tjDecompress2(): Memory allocation failure");
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+  for (i = 0; i < (int)dinfo->output_height; i++) {
+    if (flags & TJFLAG_BOTTOMUP)
+      row_pointer[i] = &dstBuf[(dinfo->output_height - i - 1) * (size_t)pitch];
+    else
+      row_pointer[i] = &dstBuf[i * (size_t)pitch];
+  }
+  while (dinfo->output_scanline < dinfo->output_height)
+    jpeg_read_scanlines(dinfo, &row_pointer[dinfo->output_scanline],
+                        dinfo->output_height - dinfo->output_scanline);
+  jpeg_finish_decompress(dinfo);
+
+bailout:
+  if (dinfo->global_state > DSTATE_START) jpeg_abort_decompress(dinfo);
+  free(row_pointer);
+  if (this->jerr.warning) retval = -1;
+  this->jerr.stopOnWarning = FALSE;
+  return retval;
+}
+
 
 DLLEXPORT int tjDecompress(tjhandle handle, unsigned char *jpegBuf,
                            unsigned long jpegSize, unsigned char *dstBuf,

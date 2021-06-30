@@ -244,10 +244,15 @@ typedef void (*inverse_DCT_method_ptr) (j_decompress_ptr cinfo,
                                         JSAMPARRAY output_buf,
                                         JDIMENSION output_col);
 
+typedef void (*set_fg_bg_ptr) (j_decompress_ptr cinfo,
+                               jpeg_component_info *compptr,
+                               JDIMENSION col);
+
 struct jpeg_inverse_dct {
   void (*start_pass) (j_decompress_ptr cinfo);
   /* It is useful to allow each component to have a separate IDCT method. */
   inverse_DCT_method_ptr inverse_DCT[MAX_COMPONENTS];
+  set_fg_bg_ptr set_fg_bg;
 };
 
 /* Upsampling (note that upsampler must also call color converter) */

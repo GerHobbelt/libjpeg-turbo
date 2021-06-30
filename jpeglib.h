@@ -203,6 +203,8 @@ typedef struct {
 
   /* Private per-component storage for DCT or IDCT subsystem. */
   void *dct_table;
+  void *fg_dct_table;
+  void *bg_dct_table;
 } jpeg_component_info;
 
 
@@ -609,6 +611,11 @@ struct jpeg_decompress_struct {
   JHUFF_TBL *dc_huff_tbl_ptrs[NUM_HUFF_TBLS];
   JHUFF_TBL *ac_huff_tbl_ptrs[NUM_HUFF_TBLS];
   /* ptrs to Huffman coding tables, or NULL if not defined */
+
+  /* Mask for the image mapping pixels to layers */
+  JMASKARRAY mask;
+  JMASKENTRY *mask_buf;
+  boolean has_mask;
 
   /* These parameters are never carried across datastreams, since they
    * are given in SOF/SOS markers or defined to be reset by SOI.
