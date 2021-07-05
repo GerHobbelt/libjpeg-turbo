@@ -91,7 +91,7 @@ struct jpeg_c_prep_controller {
 /* Coefficient buffer control */
 struct jpeg_c_coef_controller {
   void (*start_pass) (j_compress_ptr cinfo, J_BUF_MODE pass_mode);
-  boolean (*compress_data) (j_compress_ptr cinfo, JSAMPIMAGE input_buf);
+  boolean (*compress_data) (j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY *mask_buf);
 };
 
 /* Colorspace conversion */
@@ -108,7 +108,7 @@ struct jpeg_downsampler {
   void (*downsample) (j_compress_ptr cinfo, JSAMPIMAGE input_buf,
                       JDIMENSION in_row_index, JSAMPIMAGE output_buf,
                       JDIMENSION out_row_group_index);
-  void (*downsample_mask) (j_compress_ptr cinfo, JMASKARRAY input_buf,
+  void (*downsample_mask) (j_compress_ptr cinfo, JMASKARRAY *input_buf,
                            JDIMENSION in_row_index, JMASKARRAY *output_buf,
                            JDIMENSION out_row_group_index);
 
@@ -122,7 +122,7 @@ struct jpeg_forward_dct {
   void (*forward_DCT) (j_compress_ptr cinfo, jpeg_component_info *compptr,
                        JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
                        JDIMENSION start_row, JDIMENSION start_col,
-                       JDIMENSION num_blocks);
+                       JDIMENSION num_blocks, JMASKARRAY mask_buf);
 };
 
 /* Entropy encoding */
@@ -246,6 +246,7 @@ typedef void (*inverse_DCT_method_ptr) (j_decompress_ptr cinfo,
 
 typedef void (*set_fg_bg_ptr) (j_decompress_ptr cinfo,
                                jpeg_component_info *compptr,
+                               JDIMENSION row,
                                JDIMENSION col);
 
 struct jpeg_inverse_dct {
@@ -261,6 +262,13 @@ struct jpeg_upsampler {
   void (*upsample) (j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
                     JDIMENSION *in_row_group_ctr,
                     JDIMENSION in_row_groups_avail, JSAMPARRAY output_buf,
+                    JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
+
+  void (*downsample_mask) (j_decompress_ptr cinfo, JMASKARRAY input_buf);
+
+  void (*upsample_mask) (j_decompress_ptr cinfo, JMASKARRAY *input_buf,
+                    JDIMENSION *in_row_group_ctr,
+                    JDIMENSION in_row_groups_avail, JMASKARRAY output_buf,
                     JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
 
   boolean need_context_rows;    /* TRUE if need rows above & below */

@@ -1227,7 +1227,8 @@ DLLEXPORT int tjCompressFromYUVPlanes(tjhandle handle,
       } else
         yuvptr[i] = &inbuf[i][crow[i]];
     }
-    jpeg_write_raw_data(cinfo, yuvptr, cinfo->max_v_samp_factor * DCTSIZE);
+    // FIXME: we don't have a mask implemented here yet, so pass null
+    jpeg_write_raw_data(cinfo, yuvptr, cinfo->max_v_samp_factor * DCTSIZE, NULL);
   }
   jpeg_finish_compress(cinfo);
 

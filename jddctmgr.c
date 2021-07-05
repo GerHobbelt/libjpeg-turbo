@@ -345,36 +345,49 @@ start_pass(j_decompress_ptr cinfo)
 
     compptr->cur_row = 0;
     compptr->prev_col = 0;
+    compptr->prev_local_row = 0;
   }
 }
 
 
 METHODDEF(void)
-set_fg_bg(j_decompress_ptr cinfo, jpeg_component_info *compptr, JDIMENSION col) {
-  // For now, just check the corners. If any corner of the block has the mask
-  // set, the whole block is set. The assumption is that a specific object of
-  // interest will never be smaller than a DCT block. If an object of interest
-  // is smaller than a DCT block, we may need to revisit this. Don't look beyond
-  // original image width and height, since the processed image may include some
-  // padding which is not included in the mask.
-  JDIMENSION max_row = (compptr->cur_row + (DCTSIZE-1) > cinfo->image_height - 1) ? cinfo->image_height - 1 : compptr->cur_row + (DCTSIZE-1);
-  JDIMENSION max_col = (col + (DCTSIZE-1) > cinfo->image_width - 1) ? cinfo->image_width - 1 : col + (DCTSIZE-1);
-
-  if (col < compptr->prev_col) {
+set_fg_bg(j_decompress_ptr cinfo, jpeg_component_info *compptr, JDIMENSION local_row, JDIMENSION col) {
+  // For 4:2:0 downsampling, we process the luminance component in 2x2 groups
+  // of blocks. This means that we will process the block starting at (0,0)
+  // followed by the block at (0,8) followed by the block at (8,0) followed
+  // by the block at (8,8). Only then do we progress to the block starting
+  // at (0,16). Handle this special case with the following logic. In 4:4:4
+  // and 4:2:2 downsampling the row number is monotonically increasing.
+  if (col > compptr->prev_col && compptr->prev_local_row > local_row) {
+    compptr->cur_row -= DCTSIZE;
+  } else if (col < compptr->prev_col && compptr->prev_local_row < local_row) {
+    compptr->cur_row += DCTSIZE;
+  } else if (col < compptr->prev_col && compptr->prev_local_row >= local_row) {
     compptr->cur_row += DCTSIZE;
   }
 
-  if (cinfo->mask == NULL ||
-      cinfo->mask[compptr->cur_row][col] != 0 ||
-      cinfo->mask[max_row][col] != 0 ||
-      cinfo->mask[compptr->cur_row][max_col] != 0 ||
-      cinfo->mask[max_row][max_col] != 0) {
-    compptr->dct_table = compptr->fg_dct_table;
-  } else {
+  if (cinfo->mask != NULL) {
+    // If there is a mask and any of the values in this block are set, we need to
+    // treat this as an FG block. Otherwise, default to a BG block.
+    boolean found = FALSE;
     compptr->dct_table = compptr->bg_dct_table;
+    for (JDIMENSION row = compptr->cur_row; row < compptr->cur_row + DCTSIZE - 1; row++) {
+      for (JDIMENSION cur_col = col; cur_col < col + DCTSIZE - 1; cur_col++) {
+        if (compptr->scaled_mask[row][cur_col] != 0) {
+          compptr->dct_table = compptr->fg_dct_table;
+          found = TRUE;
+          break;
+        }
+      }
+      if (found) break;
+    }
+  } else {
+    // If no mask is defined, everything is FG.
+    compptr->dct_table = compptr->fg_dct_table;
   }
 
   compptr->prev_col = col;
+  compptr->prev_local_row = local_row;
 }
 
 

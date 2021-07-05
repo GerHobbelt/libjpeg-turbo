@@ -723,4 +723,18 @@ jinit_master_decompress(j_decompress_ptr cinfo)
   master->pub.jinit_upsampler_no_alloc = FALSE;
 
   master_selection(cinfo);
+
+  if (cinfo->mask != NULL) {
+    for (int ci = 0; ci < cinfo->num_components; ci++) {
+      JDIMENSION mask_width = cinfo->comp_info[ci].width_in_blocks * DCTSIZE;
+      JDIMENSION mask_height = cinfo->comp_info[ci].height_in_blocks * DCTSIZE;
+
+      cinfo->comp_info[ci].scaled_mask = (JMASKARRAY) (*cinfo->mem->alloc_sarray)
+            ((j_common_ptr)cinfo, JPOOL_IMAGE,
+             mask_width * DCTSIZE,
+             mask_height * DCTSIZE);
+    }
+
+    cinfo->upsample->downsample_mask(cinfo, cinfo->mask);
+  }
 }

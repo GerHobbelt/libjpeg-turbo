@@ -194,12 +194,15 @@ typedef struct {
 
   int cur_row;
   int prev_col;
+  int prev_local_row;
 
   /* Saved quantization table for component; NULL if none yet saved.
    * See jdinput.c comments about the need for this information.
    * This field is currently used only for decompression.
    */
   JQUANT_TBL *quant_table;
+
+  JMASKARRAY scaled_mask;
 
   /* Private per-component storage for DCT or IDCT subsystem. */
   void *dct_table;
@@ -994,7 +997,7 @@ EXTERN(void) jpeg_calc_jpeg_dimensions(j_compress_ptr cinfo);
 
 /* Replaces jpeg_write_scanlines when writing raw downsampled data. */
 EXTERN(JDIMENSION) jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
-                                       JDIMENSION num_lines);
+                                       JDIMENSION num_lines, JMASKARRAY *mask_buf);
 
 /* Write a special marker.  See libjpeg.txt concerning safe usage. */
 EXTERN(void) jpeg_write_marker(j_compress_ptr cinfo, int marker,

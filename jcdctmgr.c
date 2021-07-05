@@ -247,6 +247,7 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
        ci++, compptr++) {
     compptr->cur_row = 0;
     compptr->prev_col = 0;
+    compptr->prev_local_row = 0;
     qtblno = compptr->quant_tbl_no;
     /* Make sure specified quantization table is present */
     if (qtblno < 0 || qtblno >= NUM_QUANT_TBLS ||
@@ -546,24 +547,17 @@ quantize(JCOEFPTR coef_block, DCTELEM *divisors, DCTELEM *workspace)
 
 
 LOCAL(boolean)
-is_block_mask_set(j_compress_ptr cinfo, JDIMENSION start_row, JDIMENSION start_col, JMASKARRAY mask)
+is_block_mask_set(JMASKARRAY mask, JDIMENSION start_col)
 {
-  // For now, just check the corners. If any corner of the block has the mask
-  // set, the whole block is set. The assumption is that a specific object of
-  // interest will never be smaller than a DCT block. If an object of interest
-  // is smaller than a DCT block, we may need to revisit this. Don't look beyond
-  // original image width and height, since the processed image may include some
-  // padding which is not included in the mask.
-  JDIMENSION max_row = (start_row + (DCTSIZE-1) > cinfo->image_height - 1) ? cinfo->image_height - 1 : start_row + (DCTSIZE-1);
-  JDIMENSION max_col = (start_col + (DCTSIZE-1) > cinfo->image_width - 1) ? cinfo->image_width - 1 : start_col + (DCTSIZE-1);
+  // Look at all rows and columns in this block and check if a bit is set
+  for (JDIMENSION row = 0; row < DCTSIZE; row++) {
+    for (JDIMENSION col = start_col; col < start_col + DCTSIZE; col++) {
+      if (mask[row][col] != 0)
+        return TRUE;
+    }
+  }
 
-  if (mask[start_row][start_col] != 0 ||
-      mask[max_row][start_col] != 0 ||
-      mask[start_row][max_col] != 0 ||
-      mask[max_row][max_col] != 0)
-    return TRUE;
-  else
-    return FALSE;
+  return FALSE;
 }
 
 
@@ -578,7 +572,8 @@ is_block_mask_set(j_compress_ptr cinfo, JDIMENSION start_row, JDIMENSION start_c
 METHODDEF(void)
 forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
             JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
-            JDIMENSION start_row, JDIMENSION start_col, JDIMENSION num_blocks)
+            JDIMENSION start_row, JDIMENSION start_col, JDIMENSION num_blocks,
+            JMASKARRAY mask_buf)
 /* This version is used for integer DCT implementations. */
 {
   /* This routine is heavily used, so it's worth coding it tightly. */
@@ -604,7 +599,7 @@ forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
   for (bi = 0; bi < num_blocks; bi++, start_col += DCTSIZE) {
     // Check if block is FG or BG, and pick the appropriate divisors.
     // If the mask is NULL, then there is no notion of background.
-    if (cinfo->mask == NULL || is_block_mask_set(cinfo, compptr->cur_row, start_col, cinfo->mask)) {
+    if (cinfo->mask == NULL || is_block_mask_set(mask_buf, start_col)) {
       cur_divisors = divisors; // FG block
     } else {
       cur_divisors = bg_divisors; // BG block
@@ -684,7 +679,7 @@ METHODDEF(void)
 forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
                   JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
                   JDIMENSION start_row, JDIMENSION start_col,
-                  JDIMENSION num_blocks)
+                  JDIMENSION num_blocks, JMASKARRAY mask_buf)
 /* This version is used for floating-point DCT implementations. */
 {
   /* This routine is heavily used, so it's worth coding it tightly. */
@@ -711,7 +706,7 @@ forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
   for (bi = 0; bi < num_blocks; bi++, start_col += DCTSIZE) {
     // Check if block is FG or BG, and pick the appropriate divisors.
     // If the mask is NULL, then there is no notion of background.
-    if (cinfo->mask == NULL || is_block_mask_set(cinfo, compptr->cur_row, start_col, cinfo->mask))
+    if (cinfo->mask == NULL || is_block_mask_set(mask_buf, start_col))
       cur_divisors = divisors; // FG block
     else
       cur_divisors = bg_divisors; // BG block

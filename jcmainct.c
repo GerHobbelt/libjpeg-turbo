@@ -100,7 +100,7 @@ process_data_simple_main(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       return;
 
     /* Send the completed row to the compressor */
-    if (!(*cinfo->coef->compress_data) (cinfo, main_ptr->buffer)) {
+    if (!(*cinfo->coef->compress_data) (cinfo, main_ptr->buffer, main_ptr->mask_buffer)) {
       /* If compressor did not consume the whole row, then we must need to
        * suspend processing and return to the application.  In this situation
        * we pretend we didn't yet consume the last input row; otherwise, if

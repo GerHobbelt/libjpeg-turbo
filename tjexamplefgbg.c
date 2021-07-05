@@ -322,6 +322,7 @@ int main(int argc, char **argv)
 
     mask_width = width;
     mask_height = height;
+
     if (hasMask) {
       if ((jpegMask = (unsigned char **)tjAlloc(mask_height * sizeof(unsigned char *))) == NULL)
         THROW_UNIX("allocating mask buffer rows");   
@@ -409,12 +410,17 @@ int main(int argc, char **argv)
       THROW_TJ("initializing compressor");
 
     if (outQual != outBgQual) {
-      if ((jpegMask = (unsigned char **)tjAlloc(height * sizeof(unsigned char *))) == NULL)
+
+      mask_width = width;
+      mask_height = height;
+
+      if ((jpegMask = (unsigned char **)tjAlloc(mask_height * sizeof(unsigned char *))) == NULL)
         THROW_UNIX("allocating mask buffer rows");
-      for (int i = 0; i < height; i++) {
-        if ((jpegMask[i] = (unsigned char *)tjAlloc(width)) == NULL)
+
+      for (int i = 0; i < mask_height; i++) {
+        if ((jpegMask[i] = (unsigned char *)tjAlloc(mask_width)) == NULL)
           THROW_UNIX("allocating mask buffer rows");
-        for (int j = 0; j < width; j++) {
+        for (int j = 0; j < mask_width; j++) {
           if (i > 90 && i < 190 && j > 160 && j < 220) {
             jpegMask[i][j] = 1;
           } else {

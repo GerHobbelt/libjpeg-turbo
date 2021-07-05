@@ -143,7 +143,7 @@ sep_downsample(j_compress_ptr cinfo, JSAMPIMAGE input_buf,
 }
 
 METHODDEF(void)
-sep_downsample_mask(j_compress_ptr cinfo, JMASKARRAY input_buf,
+sep_downsample_mask(j_compress_ptr cinfo, JMASKARRAY *input_buf,
                     JDIMENSION in_row_index, JMASKARRAY *output_buf,
                     JDIMENSION out_row_group_index)
 {
@@ -154,7 +154,7 @@ sep_downsample_mask(j_compress_ptr cinfo, JMASKARRAY input_buf,
 
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
-    in_ptr = input_buf + in_row_index;
+    in_ptr = input_buf[ci] + in_row_index;
     out_ptr = output_buf[ci] + (out_row_group_index * compptr->v_samp_factor);
     (*downsample->mask_methods[ci]) (cinfo, compptr, in_ptr, out_ptr);
   }
@@ -379,7 +379,7 @@ h2v2_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     bias = 1;                   /* bias = 1,2,1,2,... for successive samples */
     for (outcol = 0; outcol < output_cols; outcol++) {
       *outptr++ =
-        (JSAMPLE) ((inptr0[0] | inptr0[1] | inptr1[0] | inptr1[1]) == 0 ? 0 : 1);
+        (JSAMPLE) ((inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1] + bias) >> 2) ;
       inptr0 += 2;  inptr1 += 2;
     }
     inrow += 2;
@@ -409,11 +409,9 @@ h2v2_downsample_mask(j_compress_ptr cinfo, jpeg_component_info *compptr,
     outptr = output_data[outrow];
     inptr0 = input_data[inrow];
     inptr1 = input_data[inrow + 1];
-    bias = 1;                   /* bias = 1,2,1,2,... for successive samples */
     for (outcol = 0; outcol < output_cols; outcol++) {
       *outptr++ =
-        (JMASKENTRY)((inptr0[0] | inptr0[1] | inptr1[0] + inptr1[1] + bias) >> 2);
-      bias ^= 3;                /* 1=>2, 2=>1 */
+        (JMASKENTRY) ((inptr0[0] | inptr0[1] | inptr1[0] | inptr1[1]) == 0 ? 0 : 1);
       inptr0 += 2;  inptr1 += 2;
     }
     inrow += 2;
