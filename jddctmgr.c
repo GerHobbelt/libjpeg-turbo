@@ -371,8 +371,8 @@ set_fg_bg(j_decompress_ptr cinfo, jpeg_component_info *compptr, JDIMENSION local
     // treat this as an FG block. Otherwise, default to a BG block.
     boolean found = FALSE;
     compptr->dct_table = compptr->bg_dct_table;
-    for (JDIMENSION row = compptr->cur_row; row < compptr->cur_row + DCTSIZE - 1; row++) {
-      for (JDIMENSION cur_col = col; cur_col < col + DCTSIZE - 1; cur_col++) {
+    for (JDIMENSION row = compptr->cur_row; row < compptr->cur_row + DCTSIZE; row++) {
+      for (JDIMENSION cur_col = col; cur_col < col + DCTSIZE; cur_col++) {
         if (compptr->scaled_mask[row][cur_col] != 0) {
           compptr->dct_table = compptr->fg_dct_table;
           found = TRUE;
