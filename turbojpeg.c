@@ -335,6 +335,103 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
 }
 
 
+static void fixMaskFor2xHorizontalDownsampling(struct jpeg_compress_struct *cinfo,
+                                             unsigned char **mask)
+{
+    // Need to check if horizontal subsampling will cause problems with mask
+    for (int row = 0; row < cinfo->image_height; row++) {
+      // Reset last_val each time we start a new row
+      unsigned char last_val = 0;
+      for (int col = 0; col < cinfo->image_width; col++) {
+        if (last_val == 0 && mask[row][col] == 1) {
+          // We have encountered a left edge in the mask
+
+          // The current column is the farthest left column where this section
+          // of mask is set. We need to check which DCT block it lies on. If it
+          // lies on an odd indexed block, then we will need to extend this
+          // edge to the left to ensure it starts on an even indexed block.
+          boolean is_odd_block = (col / DCTSIZE) % 2;
+          if (is_odd_block) {
+            for (int i = 0; i < DCTSIZE; i++) {
+              mask[row][col-i] = 1;
+            }
+          }
+        }
+
+        if (last_val == 1 && mask[row][col] == 0) {
+          // We have encountered a right edge in the mask
+
+          // The previous column was the farthest right column where this
+          // section of mask is set. We need to check which DCT block it lies
+          // on. If it lies on an even indexed block, then we will need to
+          // extend this edge to the right to ensure it ends on an odd indexed
+          // block.
+          int edge_row = row - 1;
+          boolean is_odd_block = (edge_row / DCTSIZE) % 2;
+          if (!is_odd_block) {
+            for (int i = 0; i < DCTSIZE; i++) {
+              mask[row+i][col] = 1;
+            }
+
+            // Skip over the values we just set but had not checked before
+            row += DCTSIZE;
+        }
+
+        last_val = mask[row][col];
+      }
+    }
+  }
+}
+
+
+static void fixMaskFor2xVerticalDownsampling(struct jpeg_compress_struct *cinfo,
+                                           unsigned char **mask)
+{
+    // Need to check if vertical subsampling will cause problems with mask
+    for (int col = 0; col < cinfo->image_width; col++) {
+      // Reset last_val each time we start a new column
+      unsigned char last_val = 0;
+      for (int row = 0; row < cinfo->image_height; row++) {
+        if (last_val == 0 && mask[row][col] == 1) {
+          // We have encountered a top edge in the mask
+
+          // The current row is the top row where this section of mask is set.
+          // We need to check which DCT block it lies on. If it lies on an odd
+          // indexed block, then we will need to extend this edge upward to
+          // ensure it starts on an even indexed block.
+          boolean is_odd_block = (row / DCTSIZE) % 2;
+          if (is_odd_block) {
+            for (int i = 0; i < DCTSIZE; i++) {
+              mask[row-i][col] = 1;
+            }
+          }
+        }
+
+        if (last_val == 1 && mask[row][col] == 0) {
+          // We have encountered a bottom edge in the mask
+
+          // The previous row was the bottom row where this section of mask is
+          // set. We need to check which DCT block it lies on. If it lies on an
+          // even indexed block, then we will need to extend this edge
+          // downward to ensure it ends on an odd indexed block.
+          int edge_row = row - 1;
+          boolean is_odd_block = (edge_row / DCTSIZE) % 2;
+          if (!is_odd_block) {
+            for (int i = 0; i < DCTSIZE; i++) {
+              mask[row+i][col] = 1;
+            }
+
+            // Skip over the values we just set but had not checked before
+            row += DCTSIZE;
+          }
+        }
+
+        last_val = mask[row][col];
+      }
+    }
+}
+
+
 static void setFgBgCompDefaults(struct jpeg_compress_struct *cinfo,
                             int pixelFormat, int subsamp, int jpegQualFg,
                             int jpegQualBg, int flags, unsigned char **mask)
@@ -403,6 +500,25 @@ static void setFgBgCompDefaults(struct jpeg_compress_struct *cinfo,
   cinfo->comp_info[2].v_samp_factor = 1;
   if (cinfo->num_components > 3)
     cinfo->comp_info[3].v_samp_factor = tjMCUHeight[subsamp] / 8;
+
+  // Deal with the case where subsampling causes the masks not to fall
+  // on the same boundary between chrominance and luminance channels.
+  // No work is needed for 4:4:4, and only 4:4:4, 4:2:2, and 4:2:0 are
+  // tested and supported.
+  if (subsamp == TJSAMP_444) {
+    // Nothing needed
+  } else if (subsamp == TJSAMP_422) {
+    // Need to check if horizontal subsampling will cause problems with mask
+    fixMaskFor2xHorizontalDownsampling(cinfo, mask);
+  } else if (subsamp == TJSAMP_420) {
+    // Need to check if horizontal subsampling will cause problems with mask
+    fixMaskFor2xHorizontalDownsampling(cinfo, mask);
+
+    // Need to check if vertical subsampling will cause problems with mask
+    fixMaskFor2xVerticalDownsampling(cinfo, mask);
+  } else {
+    fprintf(stderr, "WARNING: Using an unsupported subsampling for mask support\n");
+  }
 }
 
 
