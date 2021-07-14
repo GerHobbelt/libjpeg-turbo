@@ -364,6 +364,11 @@ set_fg_bg(j_decompress_ptr cinfo, jpeg_component_info *compptr, JDIMENSION local
     compptr->cur_row += DCTSIZE;
   } else if (col < compptr->prev_col && compptr->prev_local_row >= local_row) {
     compptr->cur_row += DCTSIZE;
+  } else if (col == compptr->prev_col && compptr->prev_local_row < local_row) {
+    // Deal with the special case where there is no 2x2 block at the right
+    // edge of the image. In this case, a single-column 2x1 block will be
+    // processed instead.
+    compptr->cur_row += DCTSIZE;
   }
 
   if (cinfo->mask != NULL) {
