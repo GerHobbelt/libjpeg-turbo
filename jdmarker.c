@@ -663,7 +663,7 @@ get_msk(j_decompress_ptr cinfo)
   // Take away the bytes for the length, width, and height field
   length -= 6;
 
-  int mask_buf_index = 0;
+  JLONG mask_buf_index = 0;
 
   // Fill in a flat buffer with the expanded out mask values
   while (length > 0) {
