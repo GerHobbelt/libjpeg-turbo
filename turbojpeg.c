@@ -352,7 +352,7 @@ static void fixMaskFor2xHorizontalDownsampling(struct jpeg_compress_struct *cinf
           // edge to the left to ensure it starts on an even indexed block.
           boolean is_odd_block = (col / DCTSIZE) % 2;
           if (is_odd_block) {
-            for (int i = 0; i < DCTSIZE; i++) {
+            for (int i = 1; i <= DCTSIZE; i++) {
               mask[row][col-i] = 1;
             }
           }
@@ -369,8 +369,8 @@ static void fixMaskFor2xHorizontalDownsampling(struct jpeg_compress_struct *cinf
           int edge_row = row - 1;
           boolean is_odd_block = (edge_row / DCTSIZE) % 2;
           if (!is_odd_block) {
-            for (int i = 0; i < DCTSIZE; i++) {
-              mask[row+i][col] = 1;
+            for (int i = 1; i <= DCTSIZE; i++) {
+              mask[edge_row+i][col] = 1;
             }
 
             // Skip over the values we just set but had not checked before
@@ -401,7 +401,7 @@ static void fixMaskFor2xVerticalDownsampling(struct jpeg_compress_struct *cinfo,
           // ensure it starts on an even indexed block.
           boolean is_odd_block = (row / DCTSIZE) % 2;
           if (is_odd_block) {
-            for (int i = 0; i < DCTSIZE; i++) {
+            for (int i = 1; i <= DCTSIZE; i++) {
               mask[row-i][col] = 1;
             }
           }
@@ -417,8 +417,8 @@ static void fixMaskFor2xVerticalDownsampling(struct jpeg_compress_struct *cinfo,
           int edge_row = row - 1;
           boolean is_odd_block = (edge_row / DCTSIZE) % 2;
           if (!is_odd_block) {
-            for (int i = 0; i < DCTSIZE; i++) {
-              mask[row+i][col] = 1;
+            for (int i = 1; i <= DCTSIZE; i++) {
+              mask[edge_row+i][col] = 1;
             }
 
             // Skip over the values we just set but had not checked before
