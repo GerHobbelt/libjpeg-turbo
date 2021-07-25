@@ -15,6 +15,13 @@ undefined C compiler behavior led to crashes ("SIGBUS: illegal alignment") on
 Android systems when running AArch32/Thumb builds of libjpeg-turbo built with
 recent versions of Clang.
 
+4. Added a command-line argument (`-copy icc`) to jpegtran that causes it to
+copy only the ICC profile markers from the source file and discard any other
+metadata.
+
+5. libjpeg-turbo should now build and run on CHERI-enabled architectures, which
+use capability pointers that are larger than the size of `size_t`.
+
 
 2.1.0
 =====
