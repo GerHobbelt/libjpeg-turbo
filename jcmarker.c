@@ -82,6 +82,11 @@ typedef enum {                  /* JPEG marker codes */
 
   M_TEM   = 0x01,
 
+  /* Marker for background mask value header */
+  M_MSK   = 0xaf,
+  /* Marker for background quantization values header */
+  M_BQT   = 0xb0,
+
   M_ERROR = 0x100
 } JPEG_MARKER;
 
@@ -179,6 +184,45 @@ emit_dqt(j_compress_ptr cinfo, int index)
     }
 
     qtbl->sent_table = TRUE;
+  }
+
+  return prec;
+}
+
+LOCAL(int)
+emit_bqt(j_compress_ptr cinfo, int index)
+/* Emit a BQT marker */
+/* Returns the precision used (0 = 8bits, 1 = 16bits) for baseline checking */
+{
+  JQUANT_TBL *qtbl = cinfo->quant_tbl_ptrs[index];
+  int prec;
+  int i;
+
+  if (qtbl == NULL)
+    ERREXIT1(cinfo, JERR_NO_QUANT_TABLE, index);
+
+  prec = 0;
+  for (i = 0; i < DCTSIZE2; i++) {
+    if (qtbl->bgQuantval[i] > 255)
+      prec = 1;
+  }
+
+  if (!qtbl->sent_bg_table) {
+    emit_marker(cinfo, M_BQT);
+
+    emit_2bytes(cinfo, prec ? DCTSIZE2 * 2 + 1 + 2 : DCTSIZE2 + 1 + 2);
+
+    emit_byte(cinfo, index + (prec << 4));
+
+    for (i = 0; i < DCTSIZE2; i++) {
+      /* The table entries must be emitted in zigzag order. */
+      unsigned int qval = qtbl->bgQuantval[jpeg_natural_order[i]];
+      if (prec)
+        emit_byte(cinfo, (int)(qval >> 8));
+      emit_byte(cinfo, (int)(qval & 0xFF));
+    }
+
+    qtbl->sent_bg_table = TRUE;
   }
 
   return prec;
@@ -429,6 +473,90 @@ emit_adobe_app14(j_compress_ptr cinfo)
   }
 }
 
+/* TODO: encode this as bounding boxes instead of a custom compression of values? */
+/* NOTE: the general problem of finding an arbitrary number of potentially
+ * overlapping bounding boxes from a mask will take some significant effort. */
+LOCAL(void)
+emit_msk(j_compress_ptr cinfo)
+/* Emit an MSK marker */
+{
+  JMASKARRAY mask = cinfo->mask;
+
+  if (mask == NULL)
+    ERREXIT(cinfo, JERR_NO_MASK);
+
+  // Encoding:
+  // MSK Marker
+  // Length (2 bytes): legnth of this message in bytes
+  // Width (2 bytes): width of mask
+  // Height (2 bytes): height of mask
+  // Value-count (2 bytes each): first bit is 0 or 1 (value), remaining 15
+  //     bytes represent how many many of those items in sequence there are.
+  //     Sequence goes left to right, top to bottom.
+  if (!cinfo->sent_mask) {
+    emit_marker(cinfo, M_MSK);
+
+    // We know there is at least one entry
+    UINT16 length = 2;
+    UINT16 value_count = 1;
+    UINT8 value = 0, prev_value = mask[0][0];
+
+    for (int row = 0; row < cinfo->image_height; row++) {
+      for (int col = 0; col < cinfo->image_width; col++) {
+        value = mask[row][col];
+        if (value != prev_value || value_count >= 0x7fff) {
+          // An entry will be added each time the value changes
+          length += 2;
+          value_count = 0;
+        } else {
+          value_count++;
+        }
+        prev_value = value;
+      }
+    }
+
+    // Add in length field, width field, and height field
+    length += 6;
+
+    emit_2bytes(cinfo, length);
+    emit_2bytes(cinfo, cinfo->image_width);
+    emit_2bytes(cinfo, cinfo->image_height);
+
+    value_count = 0;
+    boolean add_final = FALSE;
+    value = 0, prev_value = mask[0][0];
+
+    for (int row = 0; row < cinfo->image_height; row++) {
+      for (int col = 0; col < cinfo->image_width; col++) {
+        value = mask[row][col];
+        // If the value changes or the count goes above 2^15,
+        // we need to log the value and start a new one.
+        if (value == prev_value && value_count < 0x7fff) {
+          value_count++;
+          add_final = TRUE;
+        } else {
+          UINT16 encoded_value = ((UINT16) (prev_value & 0x01)) << 15;
+          encoded_value |= (value_count & 0x7fff);
+          emit_2bytes(cinfo, encoded_value);
+          add_final = FALSE;
+          // Reset to 1 because we just moved to a new element, and that
+          // element has a different value.
+          value_count = 1;
+        }
+        prev_value = value;
+      }
+    }
+
+    if (add_final) {
+      UINT16 encoded_value = ((UINT16) (value & 0x01)) << 15;
+      encoded_value |= (value_count & 0x7fff);
+      emit_2bytes(cinfo, encoded_value);
+    }
+
+    cinfo->sent_mask = TRUE;
+  }
+}
+
 
 /*
  * These routines allow writing an arbitrary marker with parameters.
@@ -509,6 +637,73 @@ write_frame_header(j_compress_ptr cinfo)
        ci++, compptr++) {
     prec += emit_dqt(cinfo, compptr->quant_tbl_no);
   }
+  /* now prec is nonzero iff there are any 16-bit quant tables. */
+
+  /* Check for a non-baseline specification.
+   * Note we assume that Huffman table numbers won't be changed later.
+   */
+  if (cinfo->arith_code || cinfo->progressive_mode ||
+      cinfo->data_precision != 8) {
+    is_baseline = FALSE;
+  } else {
+    is_baseline = TRUE;
+    for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+         ci++, compptr++) {
+      if (compptr->dc_tbl_no > 1 || compptr->ac_tbl_no > 1)
+        is_baseline = FALSE;
+    }
+    if (prec && is_baseline) {
+      is_baseline = FALSE;
+      /* If it's baseline except for quantizer size, warn the user */
+      TRACEMS(cinfo, 0, JTRC_16BIT_TABLES);
+    }
+  }
+
+  /* Emit the proper SOF marker */
+  if (cinfo->arith_code) {
+    if (cinfo->progressive_mode)
+      emit_sof(cinfo, M_SOF10); /* SOF code for progressive arithmetic */
+    else
+      emit_sof(cinfo, M_SOF9);  /* SOF code for sequential arithmetic */
+  } else {
+    if (cinfo->progressive_mode)
+      emit_sof(cinfo, M_SOF2);  /* SOF code for progressive Huffman */
+    else if (is_baseline)
+      emit_sof(cinfo, M_SOF0);  /* SOF code for baseline implementation */
+    else
+      emit_sof(cinfo, M_SOF1);  /* SOF code for non-baseline Huffman file */
+  }
+}
+
+
+METHODDEF(void)
+write_frame_header_bg(j_compress_ptr cinfo)
+{
+  int ci, prec;
+  boolean is_baseline;
+  jpeg_component_info *compptr;
+
+  /* Emit DQT for each quantization table.
+   * Note that emit_dqt() suppresses any duplicate tables.
+   */
+  prec = 0;
+  for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+       ci++, compptr++) {
+    prec += emit_dqt(cinfo, compptr->quant_tbl_no);
+  }
+
+  /* Emit BQT for each background quantization table.
+   * Note that emit_bqt() suppresses any duplicate tables.
+   */
+  prec = 0;
+  for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+       ci++, compptr++) {
+    prec += emit_bqt(cinfo, compptr->quant_tbl_no);
+  }
+
+  /* Emit MSK for an image with a background layer. */
+  emit_msk(cinfo);
+
   /* now prec is nonzero iff there are any 16-bit quant tables. */
 
   /* Check for a non-baseline specification.
@@ -653,7 +848,10 @@ jinit_marker_writer(j_compress_ptr cinfo)
   cinfo->marker = (struct jpeg_marker_writer *)marker;
   /* Initialize method pointers */
   marker->pub.write_file_header = write_file_header;
-  marker->pub.write_frame_header = write_frame_header;
+  if (cinfo->mask == NULL)
+    marker->pub.write_frame_header = write_frame_header;
+  else
+    marker->pub.write_frame_header = write_frame_header_bg;
   marker->pub.write_scan_header = write_scan_header;
   marker->pub.write_file_trailer = write_file_trailer;
   marker->pub.write_tables_only = write_tables_only;

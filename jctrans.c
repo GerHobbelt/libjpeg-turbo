@@ -103,6 +103,7 @@ jpeg_copy_critical_parameters(j_decompress_ptr srcinfo, j_compress_ptr dstinfo)
       MEMCOPY((*qtblptr)->quantval, srcinfo->quant_tbl_ptrs[tblno]->quantval,
               sizeof((*qtblptr)->quantval));
       (*qtblptr)->sent_table = FALSE;
+      (*qtblptr)->sent_bg_table = FALSE;
     }
   }
   /* Copy the source's per-component info.
@@ -288,7 +289,7 @@ start_pass_coef(j_compress_ptr cinfo, J_BUF_MODE pass_mode)
  */
 
 METHODDEF(boolean)
-compress_output(j_compress_ptr cinfo, JSAMPIMAGE input_buf)
+compress_output(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY *mask_buf)
 {
   my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION MCU_col_num;       /* index of current MCU within row */

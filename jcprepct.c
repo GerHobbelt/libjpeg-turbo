@@ -60,6 +60,7 @@ typedef struct {
    * until we have enough to do a downsample step.
    */
   JSAMPARRAY color_buf[MAX_COMPONENTS];
+  JMASKARRAY mask_buf[MAX_COMPONENTS];
 
   JDIMENSION rows_to_go;        /* counts rows remaining in source image */
   int next_buf_row;             /* index of next row to store in color_buf */
@@ -117,6 +118,18 @@ expand_bottom_edge(JSAMPARRAY image_data, JDIMENSION num_cols, int input_rows,
   }
 }
 
+LOCAL(void)
+expand_bottom_edge_mask(JMASKARRAY mask_data, JDIMENSION num_cols, int input_rows,
+                   int output_rows)
+{
+  register int row;
+
+  for (row = input_rows; row < output_rows; row++) {
+    jcopy_mask_rows(mask_data, input_rows - 1, mask_data, row, 1,
+                    num_cols);
+  }
+}
+
 
 /*
  * Process some data in the simple no-context case.
@@ -131,7 +144,7 @@ METHODDEF(void)
 pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                  JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                  JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
-                 JDIMENSION out_row_groups_avail)
+                 JDIMENSION out_row_groups_avail, JMASKARRAY *output_mask_buf)
 {
   my_prep_ptr prep = (my_prep_ptr)cinfo->prep;
   int numrows, ci;
@@ -148,6 +161,14 @@ pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                                        prep->color_buf,
                                        (JDIMENSION)prep->next_buf_row,
                                        numrows);
+
+    if (cinfo->mask != NULL) {
+      // Fill in the mask buffer as we scan through corresponding image pixels
+      for (ci = 0; ci < cinfo->num_components; ci++) {
+        jcopy_mask_rows(cinfo->mask, *in_row_ctr, prep->mask_buf[ci], 0, numrows, cinfo->image_width);
+      }
+    }
+
     *in_row_ctr += numrows;
     prep->next_buf_row += numrows;
     prep->rows_to_go -= numrows;
@@ -157,6 +178,8 @@ pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       for (ci = 0; ci < cinfo->num_components; ci++) {
         expand_bottom_edge(prep->color_buf[ci], cinfo->image_width,
                            prep->next_buf_row, cinfo->max_v_samp_factor);
+        expand_bottom_edge_mask(prep->mask_buf[ci], cinfo->image_width,
+                                prep->next_buf_row, cinfo->max_v_samp_factor);
       }
       prep->next_buf_row = cinfo->max_v_samp_factor;
     }
@@ -165,6 +188,13 @@ pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       (*cinfo->downsample->downsample) (cinfo,
                                         prep->color_buf, (JDIMENSION)0,
                                         output_buf, *out_row_group_ctr);
+
+      if (cinfo->mask != NULL) {
+        (*cinfo->downsample->downsample_mask) (cinfo,
+                                          prep->mask_buf, (JDIMENSION)0,
+                                          output_mask_buf, *out_row_group_ctr);
+      }
+
       prep->next_buf_row = 0;
       (*out_row_group_ctr)++;
     }
@@ -177,6 +207,12 @@ pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
         expand_bottom_edge(output_buf[ci], compptr->width_in_blocks * DCTSIZE,
                            (int)(*out_row_group_ctr * compptr->v_samp_factor),
                            (int)(out_row_groups_avail * compptr->v_samp_factor));
+
+        if (cinfo->mask != NULL) {
+          expand_bottom_edge_mask(output_mask_buf[ci], compptr->width_in_blocks * DCTSIZE,
+                                  (int)(*out_row_group_ctr * compptr->v_samp_factor),
+                                  (int)(out_row_groups_avail * compptr->v_samp_factor));
+        }
       }
       *out_row_group_ctr = out_row_groups_avail;
       break;                    /* can exit outer loop without test */
@@ -195,7 +231,7 @@ METHODDEF(void)
 pre_process_context(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                     JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                     JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
-                    JDIMENSION out_row_groups_avail)
+                    JDIMENSION out_row_groups_avail, JMASKARRAY *output_mask_buf)
 {
   my_prep_ptr prep = (my_prep_ptr)cinfo->prep;
   int numrows, ci;
@@ -243,6 +279,7 @@ pre_process_context(j_compress_ptr cinfo, JSAMPARRAY input_buf,
       (*cinfo->downsample->downsample) (cinfo, prep->color_buf,
                                         (JDIMENSION)prep->this_row_group,
                                         output_buf, *out_row_group_ctr);
+
       (*out_row_group_ctr)++;
       /* Advance pointers with wraparound as necessary. */
       prep->this_row_group += cinfo->max_v_samp_factor;
@@ -342,6 +379,12 @@ jinit_c_prep_controller(j_compress_ptr cinfo, boolean need_full_buffer)
     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
          ci++, compptr++) {
       prep->color_buf[ci] = (*cinfo->mem->alloc_sarray)
+        ((j_common_ptr)cinfo, JPOOL_IMAGE,
+         (JDIMENSION)(((long)compptr->width_in_blocks * DCTSIZE *
+                       cinfo->max_h_samp_factor) / compptr->h_samp_factor),
+         (JDIMENSION)cinfo->max_v_samp_factor);
+
+      prep->mask_buf[ci] = (JMASKARRAY) (*cinfo->mem->alloc_sarray)
         ((j_common_ptr)cinfo, JPOOL_IMAGE,
          (JDIMENSION)(((long)compptr->width_in_blocks * DCTSIZE *
                        cinfo->max_h_samp_factor) / compptr->h_samp_factor),

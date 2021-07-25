@@ -19,6 +19,7 @@
 
 /* Declarations for both compression & decompression */
 
+#include "jpeglib.h"
 typedef enum {            /* Operating modes for buffer controllers */
   JBUF_PASS_THRU,         /* Plain stripwise operation */
   /* Remaining modes require a full-image buffer to have been created */
@@ -96,13 +97,14 @@ struct jpeg_c_prep_controller {
                             JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                             JSAMPIMAGE output_buf,
                             JDIMENSION *out_row_group_ctr,
-                            JDIMENSION out_row_groups_avail);
+                            JDIMENSION out_row_groups_avail,
+                            JMASKARRAY *output_mask_buf);
 };
 
 /* Coefficient buffer control */
 struct jpeg_c_coef_controller {
   void (*start_pass) (j_compress_ptr cinfo, J_BUF_MODE pass_mode);
-  boolean (*compress_data) (j_compress_ptr cinfo, JSAMPIMAGE input_buf);
+  boolean (*compress_data) (j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY *mask_buf);
 };
 
 /* Colorspace conversion */
@@ -119,6 +121,9 @@ struct jpeg_downsampler {
   void (*downsample) (j_compress_ptr cinfo, JSAMPIMAGE input_buf,
                       JDIMENSION in_row_index, JSAMPIMAGE output_buf,
                       JDIMENSION out_row_group_index);
+  void (*downsample_mask) (j_compress_ptr cinfo, JMASKARRAY *input_buf,
+                           JDIMENSION in_row_index, JMASKARRAY *output_buf,
+                           JDIMENSION out_row_group_index);
 
   boolean need_context_rows;    /* TRUE if need rows above & below */
 };
@@ -130,7 +135,7 @@ struct jpeg_forward_dct {
   void (*forward_DCT) (j_compress_ptr cinfo, jpeg_component_info *compptr,
                        JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
                        JDIMENSION start_row, JDIMENSION start_col,
-                       JDIMENSION num_blocks);
+                       JDIMENSION num_blocks, JMASKARRAY mask_buf);
 };
 
 /* Entropy encoding */
@@ -252,10 +257,16 @@ typedef void (*inverse_DCT_method_ptr) (j_decompress_ptr cinfo,
                                         JSAMPARRAY output_buf,
                                         JDIMENSION output_col);
 
+typedef void (*set_fg_bg_ptr) (j_decompress_ptr cinfo,
+                               jpeg_component_info *compptr,
+                               JDIMENSION row,
+                               JDIMENSION col);
+
 struct jpeg_inverse_dct {
   void (*start_pass) (j_decompress_ptr cinfo);
   /* It is useful to allow each component to have a separate IDCT method. */
   inverse_DCT_method_ptr inverse_DCT[MAX_COMPONENTS];
+  set_fg_bg_ptr set_fg_bg;
 };
 
 /* Upsampling (note that upsampler must also call color converter) */
@@ -264,6 +275,13 @@ struct jpeg_upsampler {
   void (*upsample) (j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
                     JDIMENSION *in_row_group_ctr,
                     JDIMENSION in_row_groups_avail, JSAMPARRAY output_buf,
+                    JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
+
+  void (*downsample_mask) (j_decompress_ptr cinfo, JMASKARRAY input_buf);
+
+  void (*upsample_mask) (j_decompress_ptr cinfo, JMASKARRAY *input_buf,
+                    JDIMENSION *in_row_group_ctr,
+                    JDIMENSION in_row_groups_avail, JMASKARRAY output_buf,
                     JDIMENSION *out_row_ctr, JDIMENSION out_rows_avail);
 
   boolean need_context_rows;    /* TRUE if need rows above & below */
@@ -365,6 +383,9 @@ EXTERN(void) jcopy_sample_rows(JSAMPARRAY input_array, int source_row,
 EXTERN(void) jcopy_block_row(JBLOCKROW input_row, JBLOCKROW output_row,
                              JDIMENSION num_blocks);
 EXTERN(void) jzero_far(void *target, size_t bytestozero);
+EXTERN(void) jcopy_mask_rows(JMASKARRAY input_array, int source_row,
+                             JMASKARRAY output_array, int dest_row,
+                             int num_rows, JDIMENSION num_cols);
 /* Constant tables in jutils.c */
 #if 0                           /* This table is not actually needed in v6a */
 extern const int jpeg_zigzag_order[]; /* natural coef order to zigzag order */

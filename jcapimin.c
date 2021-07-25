@@ -139,7 +139,10 @@ jpeg_suppress_tables(j_compress_ptr cinfo, boolean suppress)
 
   for (i = 0; i < NUM_QUANT_TBLS; i++) {
     if ((qtbl = cinfo->quant_tbl_ptrs[i]) != NULL)
+    {
       qtbl->sent_table = suppress;
+      qtbl->sent_bg_table = suppress;
+    }
   }
 
   for (i = 0; i < NUM_HUFF_TBLS; i++) {
@@ -183,7 +186,7 @@ jpeg_finish_compress(j_compress_ptr cinfo)
       /* We bypass the main controller and invoke coef controller directly;
        * all work is being done from the coefficient buffer.
        */
-      if (!(*cinfo->coef->compress_data) (cinfo, (JSAMPIMAGE)NULL))
+      if (!(*cinfo->coef->compress_data) (cinfo, (JSAMPIMAGE)NULL, (JMASKARRAY *)NULL))
         ERREXIT(cinfo, JERR_CANT_SUSPEND);
     }
     (*cinfo->master->finish_pass) (cinfo);

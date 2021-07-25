@@ -276,6 +276,7 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
 
   cinfo->in_color_space = pf2cs[pixelFormat];
   cinfo->input_components = tjPixelSize[pixelFormat];
+  cinfo->mask = (JMASKARRAY) NULL;
   jpeg_set_defaults(cinfo);
 
 #ifndef NO_GETENV
@@ -332,6 +333,193 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
   cinfo->comp_info[2].v_samp_factor = 1;
   if (cinfo->num_components > 3)
     cinfo->comp_info[3].v_samp_factor = tjMCUHeight[subsamp] / 8;
+}
+
+
+static void fixMaskFor2xHorizontalDownsampling(struct jpeg_compress_struct *cinfo,
+                                             unsigned char **mask)
+{
+    // Need to check if horizontal subsampling will cause problems with mask
+    for (int row = 0; row < cinfo->image_height; row++) {
+      // Reset last_val each time we start a new row
+      unsigned char last_val = 0;
+      for (int col = 0; col < cinfo->image_width; col++) {
+        if (last_val == 0 && mask[row][col] == 1) {
+          // We have encountered a left edge in the mask
+
+          // The current column is the farthest left column where this section
+          // of mask is set. We need to check which DCT block it lies on. If it
+          // lies on an odd indexed block, then we will need to extend this
+          // edge to the left to ensure it starts on an even indexed block.
+          boolean is_odd_block = (col / DCTSIZE) % 2;
+          if (is_odd_block) {
+            for (int i = 1; i <= DCTSIZE; i++) {
+              mask[row][col-i] = 1;
+            }
+          }
+        }
+
+        if (last_val == 1 && mask[row][col] == 0) {
+          // We have encountered a right edge in the mask
+
+          // The previous column was the farthest right column where this
+          // section of mask is set. We need to check which DCT block it lies
+          // on. If it lies on an even indexed block, then we will need to
+          // extend this edge to the right to ensure it ends on an odd indexed
+          // block.
+          int edge_row = row - 1;
+          boolean is_odd_block = (edge_row / DCTSIZE) % 2;
+          if (!is_odd_block) {
+            for (int i = 1; i <= DCTSIZE; i++) {
+              mask[edge_row+i][col] = 1;
+            }
+
+            // Skip over the values we just set but had not checked before
+            row += DCTSIZE;
+        }
+
+        last_val = mask[row][col];
+      }
+    }
+  }
+}
+
+
+static void fixMaskFor2xVerticalDownsampling(struct jpeg_compress_struct *cinfo,
+                                           unsigned char **mask)
+{
+    // Need to check if vertical subsampling will cause problems with mask
+    for (int col = 0; col < cinfo->image_width; col++) {
+      // Reset last_val each time we start a new column
+      unsigned char last_val = 0;
+      for (int row = 0; row < cinfo->image_height; row++) {
+        if (last_val == 0 && mask[row][col] == 1) {
+          // We have encountered a top edge in the mask
+
+          // The current row is the top row where this section of mask is set.
+          // We need to check which DCT block it lies on. If it lies on an odd
+          // indexed block, then we will need to extend this edge upward to
+          // ensure it starts on an even indexed block.
+          boolean is_odd_block = (row / DCTSIZE) % 2;
+          if (is_odd_block) {
+            for (int i = 1; i <= DCTSIZE; i++) {
+              mask[row-i][col] = 1;
+            }
+          }
+        }
+
+        if (last_val == 1 && mask[row][col] == 0) {
+          // We have encountered a bottom edge in the mask
+
+          // The previous row was the bottom row where this section of mask is
+          // set. We need to check which DCT block it lies on. If it lies on an
+          // even indexed block, then we will need to extend this edge
+          // downward to ensure it ends on an odd indexed block.
+          int edge_row = row - 1;
+          boolean is_odd_block = (edge_row / DCTSIZE) % 2;
+          if (!is_odd_block) {
+            for (int i = 1; i <= DCTSIZE; i++) {
+              mask[edge_row+i][col] = 1;
+            }
+
+            // Skip over the values we just set but had not checked before
+            row += DCTSIZE;
+          }
+        }
+
+        last_val = mask[row][col];
+      }
+    }
+}
+
+
+static void setFgBgCompDefaults(struct jpeg_compress_struct *cinfo,
+                            int pixelFormat, int subsamp, int jpegQualFg,
+                            int jpegQualBg, int flags, unsigned char **mask)
+{
+#ifndef NO_GETENV
+  char *env = NULL;
+#endif
+
+  cinfo->in_color_space = pf2cs[pixelFormat];
+  cinfo->input_components = tjPixelSize[pixelFormat];
+  cinfo->mask = (JMASKARRAY) mask;
+  cinfo->sent_mask = FALSE;
+  jpeg_set_defaults(cinfo);
+
+#ifndef NO_GETENV
+  if ((env = getenv("TJ_OPTIMIZE")) != NULL && strlen(env) > 0 &&
+      !strcmp(env, "1"))
+    cinfo->optimize_coding = TRUE;
+  if ((env = getenv("TJ_ARITHMETIC")) != NULL && strlen(env) > 0 &&
+      !strcmp(env, "1"))
+    cinfo->arith_code = TRUE;
+  if ((env = getenv("TJ_RESTART")) != NULL && strlen(env) > 0) {
+    int temp = -1;
+    char tempc = 0;
+
+    if (sscanf(env, "%d%c", &temp, &tempc) >= 1 && temp >= 0 &&
+        temp <= 65535) {
+      if (toupper(tempc) == 'B') {
+        cinfo->restart_interval = temp;
+        cinfo->restart_in_rows = 0;
+      } else
+        cinfo->restart_in_rows = temp;
+    }
+  }
+#endif
+
+  if (jpegQualFg >= 0 && jpegQualBg >= 0) {
+    jpeg_set_fg_bg_quality(cinfo, jpegQualFg, jpegQualBg, TRUE);
+    if (jpegQualFg >= 96 || jpegQualBg >= 96 || flags & TJFLAG_ACCURATEDCT)
+      cinfo->dct_method = JDCT_ISLOW;
+    else
+      cinfo->dct_method = JDCT_FASTEST;
+  }
+  if (subsamp == TJSAMP_GRAY)
+    jpeg_set_colorspace(cinfo, JCS_GRAYSCALE);
+  else if (pixelFormat == TJPF_CMYK)
+    jpeg_set_colorspace(cinfo, JCS_YCCK);
+  else
+    jpeg_set_colorspace(cinfo, JCS_YCbCr);
+
+  if (flags & TJFLAG_PROGRESSIVE)
+    jpeg_simple_progression(cinfo);
+#ifndef NO_GETENV
+  else if ((env = getenv("TJ_PROGRESSIVE")) != NULL && strlen(env) > 0 &&
+           !strcmp(env, "1"))
+    jpeg_simple_progression(cinfo);
+#endif
+
+  cinfo->comp_info[0].h_samp_factor = tjMCUWidth[subsamp] / 8;
+  cinfo->comp_info[1].h_samp_factor = 1;
+  cinfo->comp_info[2].h_samp_factor = 1;
+  if (cinfo->num_components > 3)
+    cinfo->comp_info[3].h_samp_factor = tjMCUWidth[subsamp] / 8;
+  cinfo->comp_info[0].v_samp_factor = tjMCUHeight[subsamp] / 8;
+  cinfo->comp_info[1].v_samp_factor = 1;
+  cinfo->comp_info[2].v_samp_factor = 1;
+  if (cinfo->num_components > 3)
+    cinfo->comp_info[3].v_samp_factor = tjMCUHeight[subsamp] / 8;
+
+  // Deal with the case where subsampling causes the masks not to fall
+  // on the same boundary between chrominance and luminance channels.
+  // No work is needed for 4:4:4, and only 4:4:4, 4:2:2, and 4:2:0 are
+  // tested and supported.
+  if (subsamp == TJSAMP_444) {
+    // Nothing needed
+  } else if (subsamp == TJSAMP_422) {
+    // Need to check if horizontal subsampling will cause problems with mask
+    fixMaskFor2xHorizontalDownsampling(cinfo, mask);
+  } else if (subsamp == TJSAMP_420) {
+    // Need to check if horizontal subsampling will cause problems with mask
+    fixMaskFor2xHorizontalDownsampling(cinfo, mask);
+
+    // Need to check if vertical subsampling will cause problems with mask
+    fixMaskFor2xVerticalDownsampling(cinfo, mask);
+  } else {
+    fprintf(stderr, "WARNING: Using an unsupported subsampling for mask support\n");
+  }
 }
 
 
@@ -661,6 +849,75 @@ DLLEXPORT unsigned long tjPlaneSizeYUV(int componentID, int width, int stride,
 
 bailout:
   return (unsigned long)retval;
+}
+
+
+DLLEXPORT int tjCompressFgBg2(tjhandle handle, const unsigned char *srcBuf,
+                          int width, int pitch, int height, int pixelFormat,
+                          unsigned char **jpegBuf, unsigned long *jpegSize,
+                          int jpegSubsamp, int jpegQualFg, int jpegQualBg,
+                          unsigned char **jpegMask, int flags)
+{
+  int i, retval = 0, alloc = 1;
+  JSAMPROW *row_pointer = NULL;
+
+  GET_CINSTANCE(handle)
+  this->jerr.stopOnWarning = (flags & TJFLAG_STOPONWARNING) ? TRUE : FALSE;
+  if ((this->init & COMPRESS) == 0)
+    THROW("tjCompressFgBg2(): Instance has not been initialized for compression");
+
+  if (srcBuf == NULL || width <= 0 || pitch < 0 || height <= 0 ||
+      pixelFormat < 0 || pixelFormat >= TJ_NUMPF || jpegBuf == NULL ||
+      jpegSize == NULL || jpegSubsamp < 0 || jpegSubsamp >= NUMSUBOPT ||
+      jpegQualFg < 0 || jpegQualFg > 100 || jpegQualBg < 0 || jpegQualBg > 100)
+    THROW("tjCompressFgBg2(): Invalid argument");
+
+  if (pitch == 0) pitch = width * tjPixelSize[pixelFormat];
+
+  if ((row_pointer = (JSAMPROW *)malloc(sizeof(JSAMPROW) * height)) == NULL)
+    THROW("tjCompressFgBg2(): Memory allocation failure");
+
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+
+  cinfo->image_width = width;
+  cinfo->image_height = height;
+
+#ifndef NO_PUTENV
+  if (flags & TJFLAG_FORCEMMX) putenv("JSIMD_FORCEMMX=1");
+  else if (flags & TJFLAG_FORCESSE) putenv("JSIMD_FORCESSE=1");
+  else if (flags & TJFLAG_FORCESSE2) putenv("JSIMD_FORCESSE2=1");
+#endif
+
+  if (flags & TJFLAG_NOREALLOC) {
+    alloc = 0;  *jpegSize = tjBufSize(width, height, jpegSubsamp);
+  }
+  jpeg_mem_dest_tj(cinfo, jpegBuf, jpegSize, alloc);
+  setFgBgCompDefaults(cinfo, pixelFormat, jpegSubsamp, jpegQualFg, jpegQualBg, flags, jpegMask);
+
+  jpeg_start_compress(cinfo, TRUE);
+  for (i = 0; i < height; i++) {
+    if (flags & TJFLAG_BOTTOMUP)
+      row_pointer[i] = (JSAMPROW)&srcBuf[(height - i - 1) * (size_t)pitch];
+    else
+      row_pointer[i] = (JSAMPROW)&srcBuf[i * (size_t)pitch];
+  }
+  while (cinfo->next_scanline < cinfo->image_height)
+    jpeg_write_scanlines(cinfo, &row_pointer[cinfo->next_scanline],
+                         cinfo->image_height - cinfo->next_scanline);
+  jpeg_finish_compress(cinfo);
+
+bailout:
+  if (cinfo->global_state > CSTATE_START) {
+    if (alloc) (*cinfo->dest->term_destination) (cinfo);
+    jpeg_abort_compress(cinfo);
+  }
+  free(row_pointer);
+  if (this->jerr.warning) retval = -1;
+  this->jerr.stopOnWarning = FALSE;
+  return retval;
 }
 
 
@@ -1087,7 +1344,8 @@ DLLEXPORT int tjCompressFromYUVPlanes(tjhandle handle,
       } else
         yuvptr[i] = &inbuf[i][crow[i]];
     }
-    jpeg_write_raw_data(cinfo, yuvptr, cinfo->max_v_samp_factor * DCTSIZE);
+    // FIXME: we don't have a mask implemented here yet, so pass null
+    jpeg_write_raw_data(cinfo, yuvptr, cinfo->max_v_samp_factor * DCTSIZE, NULL);
   }
   jpeg_finish_compress(cinfo);
 
@@ -1242,6 +1500,67 @@ bailout:
   return retval;
 }
 
+
+DLLEXPORT int tjDecompressHeaderFgBg3(tjhandle handle,
+                                  const unsigned char *jpegBuf,
+                                  unsigned long jpegSize, int *width,
+                                  int *height, int *jpegSubsamp,
+                                  int *jpegColorspace,
+                                  const unsigned char *maskBuf,
+                                  int *hasMask)
+{
+  int retval = 0;
+
+  GET_DINSTANCE(handle);
+  if ((this->init & DECOMPRESS) == 0)
+    THROW("tjDecompressHeader3(): Instance has not been initialized for decompression");
+
+  if (jpegBuf == NULL || jpegSize <= 0 || width == NULL || height == NULL ||
+      jpegSubsamp == NULL || jpegColorspace == NULL)
+    THROW("tjDecompressHeader3(): Invalid argument");
+
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    return -1;
+  }
+
+  dinfo->mask_buf = (JMASKENTRY *) maskBuf;
+  dinfo->has_mask = FALSE;
+
+  jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
+  jpeg_read_header(dinfo, TRUE);
+
+  if (dinfo->has_mask) {
+    *hasMask = 1;
+  }
+
+  *width = dinfo->image_width;
+  *height = dinfo->image_height;
+  *jpegSubsamp = getSubsamp(dinfo);
+  switch (dinfo->jpeg_color_space) {
+  case JCS_GRAYSCALE:  *jpegColorspace = TJCS_GRAY;  break;
+  case JCS_RGB:        *jpegColorspace = TJCS_RGB;  break;
+  case JCS_YCbCr:      *jpegColorspace = TJCS_YCbCr;  break;
+  case JCS_CMYK:       *jpegColorspace = TJCS_CMYK;  break;
+  case JCS_YCCK:       *jpegColorspace = TJCS_YCCK;  break;
+  default:             *jpegColorspace = -1;  break;
+  }
+
+  jpeg_abort_decompress(dinfo);
+
+  if (*jpegSubsamp < 0)
+    THROW("tjDecompressHeader3(): Could not determine subsampling type for JPEG image");
+  if (*jpegColorspace < 0)
+    THROW("tjDecompressHeader3(): Could not determine colorspace of JPEG image");
+  if (*width < 1 || *height < 1)
+    THROW("tjDecompressHeader3(): Invalid data returned in header");
+
+bailout:
+  if (this->jerr.warning) retval = -1;
+  return retval;
+}
+
+
 DLLEXPORT int tjDecompressHeader2(tjhandle handle, unsigned char *jpegBuf,
                                   unsigned long jpegSize, int *width,
                                   int *height, int *jpegSubsamp)
@@ -1362,6 +1681,97 @@ bailout:
   this->jerr.stopOnWarning = FALSE;
   return retval;
 }
+
+
+DLLEXPORT int tjDecompressFgBg2(tjhandle handle, const unsigned char *jpegBuf,
+                            unsigned long jpegSize, unsigned char *dstBuf,
+                            int width, int pitch, int height, int pixelFormat,
+                            int flags, unsigned char **jpegMask)
+{
+  JSAMPROW *row_pointer = NULL;
+  int i, retval = 0, jpegwidth, jpegheight, scaledw, scaledh;
+  struct my_progress_mgr progress;
+
+  GET_DINSTANCE(handle);
+  this->jerr.stopOnWarning = (flags & TJFLAG_STOPONWARNING) ? TRUE : FALSE;
+  if ((this->init & DECOMPRESS) == 0)
+    THROW("tjDecompress2(): Instance has not been initialized for decompression");
+
+  if (jpegBuf == NULL || jpegSize <= 0 || dstBuf == NULL || width < 0 ||
+      pitch < 0 || height < 0 || pixelFormat < 0 || pixelFormat >= TJ_NUMPF)
+    THROW("tjDecompress2(): Invalid argument");
+
+#ifndef NO_PUTENV
+  if (flags & TJFLAG_FORCEMMX) putenv("JSIMD_FORCEMMX=1");
+  else if (flags & TJFLAG_FORCESSE) putenv("JSIMD_FORCESSE=1");
+  else if (flags & TJFLAG_FORCESSE2) putenv("JSIMD_FORCESSE2=1");
+#endif
+
+  if (flags & TJFLAG_LIMITSCANS) {
+    MEMZERO(&progress, sizeof(struct my_progress_mgr));
+    progress.pub.progress_monitor = my_progress_monitor;
+    progress.this = this;
+    dinfo->progress = &progress.pub;
+  } else
+    dinfo->progress = NULL;
+
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+
+  jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
+  jpeg_read_header(dinfo, TRUE);
+  this->dinfo.out_color_space = pf2cs[pixelFormat];
+  if (flags & TJFLAG_FASTDCT) this->dinfo.dct_method = JDCT_FASTEST;
+  if (flags & TJFLAG_FASTUPSAMPLE) dinfo->do_fancy_upsampling = FALSE;
+
+  jpegwidth = dinfo->image_width;  jpegheight = dinfo->image_height;
+  if (width == 0) width = jpegwidth;
+  if (height == 0) height = jpegheight;
+  for (i = 0; i < NUMSF; i++) {
+    scaledw = TJSCALED(jpegwidth, sf[i]);
+    scaledh = TJSCALED(jpegheight, sf[i]);
+    if (scaledw <= width && scaledh <= height)
+      break;
+  }
+  if (i >= NUMSF)
+    THROW("tjDecompress2(): Could not scale down to desired image dimensions");
+  width = scaledw;  height = scaledh;
+  dinfo->scale_num = sf[i].num;
+  dinfo->scale_denom = sf[i].denom;
+
+  dinfo->mask = (JMASKARRAY) jpegMask;
+
+  jpeg_start_decompress(dinfo);
+  if (pitch == 0) pitch = dinfo->output_width * tjPixelSize[pixelFormat];
+
+  if ((row_pointer =
+       (JSAMPROW *)malloc(sizeof(JSAMPROW) * dinfo->output_height)) == NULL)
+    THROW("tjDecompress2(): Memory allocation failure");
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+  for (i = 0; i < (int)dinfo->output_height; i++) {
+    if (flags & TJFLAG_BOTTOMUP)
+      row_pointer[i] = &dstBuf[(dinfo->output_height - i - 1) * (size_t)pitch];
+    else
+      row_pointer[i] = &dstBuf[i * (size_t)pitch];
+  }
+  while (dinfo->output_scanline < dinfo->output_height)
+    jpeg_read_scanlines(dinfo, &row_pointer[dinfo->output_scanline],
+                        dinfo->output_height - dinfo->output_scanline);
+  jpeg_finish_decompress(dinfo);
+
+bailout:
+  if (dinfo->global_state > DSTATE_START) jpeg_abort_decompress(dinfo);
+  free(row_pointer);
+  if (this->jerr.warning) retval = -1;
+  this->jerr.stopOnWarning = FALSE;
+  return retval;
+}
+
 
 DLLEXPORT int tjDecompress(tjhandle handle, unsigned char *jpegBuf,
                            unsigned long jpegSize, unsigned char *dstBuf,

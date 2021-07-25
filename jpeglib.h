@@ -70,12 +70,16 @@ typedef JSAMPLE *JSAMPROW;      /* ptr to one image row of pixel samples. */
 typedef JSAMPROW *JSAMPARRAY;   /* ptr to some rows (a 2-D sample array) */
 typedef JSAMPARRAY *JSAMPIMAGE; /* a 3-D sample array: top index is color */
 
+typedef JMASKENTRY *JMASKROW;   /* ptr to one mask row */
+typedef JMASKROW *JMASKARRAY;   /* a 2-D mask array of the image */
+
 typedef JCOEF JBLOCK[DCTSIZE2]; /* one block of coefficients */
 typedef JBLOCK *JBLOCKROW;      /* pointer to one row of coefficient blocks */
 typedef JBLOCKROW *JBLOCKARRAY;         /* a 2-D array of coefficient blocks */
 typedef JBLOCKARRAY *JBLOCKIMAGE;       /* a 3-D array of coefficient blocks */
 
 typedef JCOEF *JCOEFPTR;        /* useful in a couple of places */
+
 
 
 /* Types for JPEG compression parameters and working tables. */
@@ -89,12 +93,23 @@ typedef struct {
    * CAUTION: IJG versions prior to v6a kept this array in zigzag order.
    */
   UINT16 quantval[DCTSIZE2];    /* quantization step for each coefficient */
+  /* This array gives the coefficient quantizers in natural array order
+   * (not the zigzag order in which they are stored in a JPEG DQT marker).
+   * CAUTION: IJG versions prior to v6a kept this array in zigzag order.
+   */
+  UINT16 bgQuantval[DCTSIZE2];    /* quantization step for each coefficient */
   /* This field is used only during compression.  It's initialized FALSE when
    * the table is created, and set TRUE when it's been output to the file.
    * You could suppress output of a table by setting this to TRUE.
    * (See jpeg_suppress_tables for an example.)
    */
   boolean sent_table;           /* TRUE when table has been output */
+  /* This field is used only during compression.  It's initialized FALSE when
+   * the table is created, and set TRUE when it's been output to the file.
+   * You could suppress output of a table by setting this to TRUE.
+   * (See jpeg_suppress_tables for an example.)
+   */
+  boolean sent_bg_table;        /* TRUE when table has been output */
 } JQUANT_TBL;
 
 
@@ -161,6 +176,7 @@ typedef struct {
    */
   JDIMENSION downsampled_width;  /* actual width in samples */
   JDIMENSION downsampled_height; /* actual height in samples */
+
   /* This flag is used only for decompression.  In cases where some of the
    * components will be ignored (eg grayscale output from YCbCr image),
    * we can skip most computations for the unused components.
@@ -176,14 +192,22 @@ typedef struct {
   int last_col_width;           /* # of non-dummy blocks across in last MCU */
   int last_row_height;          /* # of non-dummy blocks down in last MCU */
 
+  int cur_row;
+  int prev_col;
+  int prev_local_row;
+
   /* Saved quantization table for component; NULL if none yet saved.
    * See jdinput.c comments about the need for this information.
    * This field is currently used only for decompression.
    */
   JQUANT_TBL *quant_table;
 
+  JMASKARRAY scaled_mask;
+
   /* Private per-component storage for DCT or IDCT subsystem. */
   void *dct_table;
+  void *fg_dct_table;
+  void *bg_dct_table;
 } jpeg_component_info;
 
 
@@ -340,6 +364,10 @@ struct jpeg_compress_struct {
 
   jpeg_component_info *comp_info;
   /* comp_info[i] describes component that appears i'th in SOF */
+
+  /* Mask for the image mapping pixels to layers */
+  JMASKARRAY mask;
+  boolean sent_mask;
 
   JQUANT_TBL *quant_tbl_ptrs[NUM_QUANT_TBLS];
 #if JPEG_LIB_VERSION >= 70
@@ -586,6 +614,11 @@ struct jpeg_decompress_struct {
   JHUFF_TBL *dc_huff_tbl_ptrs[NUM_HUFF_TBLS];
   JHUFF_TBL *ac_huff_tbl_ptrs[NUM_HUFF_TBLS];
   /* ptrs to Huffman coding tables, or NULL if not defined */
+
+  /* Mask for the image mapping pixels to layers */
+  JMASKARRAY mask;
+  JMASKENTRY *mask_buf;
+  boolean has_mask;
 
   /* These parameters are never carried across datastreams, since they
    * are given in SOF/SOS markers or defined to be reset by SOI.
@@ -932,6 +965,8 @@ EXTERN(void) jpeg_set_colorspace(j_compress_ptr cinfo,
 EXTERN(void) jpeg_default_colorspace(j_compress_ptr cinfo);
 EXTERN(void) jpeg_set_quality(j_compress_ptr cinfo, int quality,
                               boolean force_baseline);
+EXTERN(void) jpeg_set_fg_bg_quality(j_compress_ptr cinfo, int fg_quality,
+                              int bg_quality, boolean force_baseline);
 EXTERN(void) jpeg_set_linear_quality(j_compress_ptr cinfo, int scale_factor,
                                      boolean force_baseline);
 #if JPEG_LIB_VERSION >= 70
@@ -962,7 +997,7 @@ EXTERN(void) jpeg_calc_jpeg_dimensions(j_compress_ptr cinfo);
 
 /* Replaces jpeg_write_scanlines when writing raw downsampled data. */
 EXTERN(JDIMENSION) jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
-                                       JDIMENSION num_lines);
+                                       JDIMENSION num_lines, JMASKARRAY *mask_buf);
 
 /* Write a special marker.  See libjpeg.txt concerning safe usage. */
 EXTERN(void) jpeg_write_marker(j_compress_ptr cinfo, int marker,

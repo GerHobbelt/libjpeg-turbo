@@ -756,6 +756,11 @@ DLLEXPORT int tjCompress2(tjhandle handle, const unsigned char *srcBuf,
                           unsigned char **jpegBuf, unsigned long *jpegSize,
                           int jpegSubsamp, int jpegQual, int flags);
 
+DLLEXPORT int tjCompressFgBg2(tjhandle handle, const unsigned char *srcBuf,
+                          int width, int pitch, int height, int pixelFormat,
+                          unsigned char **jpegBuf, unsigned long *jpegSize,
+                          int jpegSubsamp, int jpegQualFg, int jpegQualBg,
+                          unsigned char **jpegMask, int flags);
 
 /**
  * Compress a YUV planar image into a JPEG image.
@@ -1161,6 +1166,15 @@ DLLEXPORT int tjDecompressHeader3(tjhandle handle,
                                   int *jpegColorspace);
 
 
+DLLEXPORT int tjDecompressHeaderFgBg3(tjhandle handle,
+                                  const unsigned char *jpegBuf,
+                                  unsigned long jpegSize, int *width,
+                                  int *height, int *jpegSubsamp,
+                                  int *jpegColorspace,
+                                  const unsigned char* maskBuf,
+                                  int *hasMask);
+
+
 /**
  * Returns a list of fractional scaling factors that the JPEG decompressor in
  * this implementation of TurboJPEG supports.
@@ -1229,6 +1243,11 @@ DLLEXPORT int tjDecompress2(tjhandle handle, const unsigned char *jpegBuf,
                             int width, int pitch, int height, int pixelFormat,
                             int flags);
 
+
+DLLEXPORT int tjDecompressFgBg2(tjhandle handle, const unsigned char *jpegBuf,
+                            unsigned long jpegSize, unsigned char *dstBuf,
+                            int width, int pitch, int height, int pixelFormat,
+                            int flags, unsigned char **jpegMask);
 
 /**
  * Decompress a JPEG image to a YUV planar image.  This function performs JPEG

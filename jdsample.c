@@ -31,6 +31,26 @@
 #include "jpegcomp.h"
 
 
+LOCAL(void)
+expand_right_edge(JMASKARRAY image_data, int num_rows, JDIMENSION input_cols,
+                  JDIMENSION output_cols)
+{
+  register JMASKROW ptr;
+  register JSAMPLE pixval;
+  register int count;
+  int row;
+  int numcols = (int)(output_cols - input_cols);
+
+  if (numcols > 0) {
+    for (row = 0; row < num_rows; row++) {
+      ptr = image_data[row] + input_cols;
+      pixval = ptr[-1];
+      for (count = numcols; count > 0; count--)
+        *ptr++ = pixval;
+    }
+  }
+}
+
 
 /*
  * Initialize for an upsampling pass.
@@ -108,6 +128,22 @@ sep_upsample(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     (*in_row_group_ctr)++;
 }
 
+METHODDEF(void)
+sep_downsample_mask(j_decompress_ptr cinfo, JMASKARRAY input_buf)
+{
+  my_upsample_ptr upsample = (my_upsample_ptr)cinfo->upsample;
+  int ci;
+  jpeg_component_info *compptr;
+  JMASKARRAY in_ptr, out_ptr;
+
+  for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+       ci++, compptr++) {
+    in_ptr = input_buf;
+    out_ptr = compptr->scaled_mask;
+    (*upsample->mask_methods[ci]) (cinfo, compptr, in_ptr, out_ptr);
+  }
+}
+
 
 /*
  * These are the routines invoked by sep_upsample to upsample pixel values
@@ -129,6 +165,18 @@ fullsize_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
   *output_data_ptr = input_data;
 }
 
+METHODDEF(void)
+fullsize_downsample_mask(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                         JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  /* Copy the data */
+  jcopy_mask_rows(input_data, 0, output_data, 0, cinfo->image_height,
+                  cinfo->image_width);
+
+  /* Edge-expand */
+  expand_right_edge(output_data, cinfo->image_height, cinfo->image_width,
+                    compptr->width_in_blocks * DCTSIZE);
+}
 
 /*
  * This is a no-op version used for "uninteresting" components.
@@ -142,6 +190,12 @@ noop_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
   *output_data_ptr = NULL;      /* safety check */
 }
 
+METHODDEF(void)
+noop_downsample_mask(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                         JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  output_data = NULL;
+}
 
 /*
  * This version handles any integral sampling ratios.
@@ -193,6 +247,41 @@ int_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
 }
 
 
+// FIXME: This doesn't work at this point in time
+METHODDEF(void)
+int_downsample_mask(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                    JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  int inrow, outrow, h_expand, v_expand, numpix, numpix2, h, v;
+  JDIMENSION outcol, outcol_h;  /* outcol_h == outcol*h_expand */
+  JDIMENSION output_cols = compptr->width_in_blocks * DCTSIZE;
+  JMASKROW inptr, outptr;
+  JLONG outvalue;
+
+  h_expand = cinfo->max_h_samp_factor / compptr->h_samp_factor;
+  v_expand = cinfo->max_v_samp_factor / compptr->v_samp_factor;
+  numpix = h_expand * v_expand;
+  numpix2 = numpix / 2;
+
+  // The mask in the header includes right padding. It does not include bottom padding.
+  inrow = 0;
+  for (outrow = 0; outrow < compptr->v_samp_factor; outrow++) {
+    outptr = output_data[outrow];
+    for (outcol = 0, outcol_h = 0; outcol < output_cols;
+         outcol++, outcol_h += h_expand) {
+      outvalue = 0;
+      for (v = 0; v < v_expand; v++) {
+        inptr = input_data[inrow + v] + outcol_h;
+        for (h = 0; h < h_expand; h++) {
+          outvalue |= (*inptr++);
+        }
+      }
+      *outptr++ = (JMASKENTRY) (outvalue == 0 ? 0 : 1);
+    }
+    inrow += v_expand;
+  }
+}
+
 /*
  * Fast processing for the common case of 2:1 horizontal and 1:1 vertical.
  * It's still a box filter.
@@ -216,6 +305,26 @@ h2v1_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
       invalue = *inptr++;
       *outptr++ = invalue;
       *outptr++ = invalue;
+    }
+  }
+}
+
+METHODDEF(void)
+h2v1_downsample_mask(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                     JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  int outrow;
+  JDIMENSION outcol;
+  JDIMENSION output_cols = compptr->width_in_blocks * DCTSIZE;
+  register JMASKROW inptr, outptr;
+
+  // The mask in the header includes right padding. It does not include bottom padding.
+  for (outrow = 0; outrow < cinfo->image_height; outrow++) {
+    outptr = output_data[outrow];
+    inptr = input_data[outrow];
+    for (outcol = 0; outcol < output_cols; outcol++) {
+      *outptr++ = (JMASKENTRY) ((inptr[0] | inptr[1]) == 0 ? 0 : 1);
+      inptr += 2;
     }
   }
 }
@@ -253,6 +362,31 @@ h2v2_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
   }
 }
 
+METHODDEF(void)
+h2v2_downsample_mask(j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  int inrow, outrow;
+  JDIMENSION outcol;
+  JDIMENSION output_cols = compptr->width_in_blocks * DCTSIZE;
+  // We are reducing the height by a factor of 2 in this case
+  JDIMENSION output_rows = cinfo->image_height / 2;
+  register JMASKROW inptr0, inptr1, outptr;
+
+  // The mask in the header includes right padding. It does not include bottom padding.
+  inrow = 0;
+  for (outrow = 0; outrow < output_rows; outrow++) {
+    outptr = output_data[outrow];
+    inptr0 = input_data[inrow];
+    inptr1 = input_data[inrow + 1];
+    for (outcol = 0; outcol < output_cols; outcol++) {
+      *outptr++ =
+        (JMASKENTRY) ((inptr0[0] | inptr0[1] | inptr1[0] | inptr1[1]) == 0 ? 0 : 1);
+      inptr0 += 2;  inptr1 += 2;
+    }
+    inrow += 2;
+  }
+}
 
 /*
  * Fancy processing for the common case of 2:1 horizontal and 1:1 vertical.
@@ -409,6 +543,56 @@ h2v2_fancy_upsample(j_decompress_ptr cinfo, jpeg_component_info *compptr,
  * Module initialization routine for upsampling.
  */
 
+LOCAL(void)
+jinit_mask_downsampler(j_decompress_ptr cinfo, my_upsample_ptr upsample){
+  int ci;
+  jpeg_component_info *compptr;
+  boolean need_buffer, do_fancy;
+  int h_in_group, v_in_group, h_out_group, v_out_group;
+
+  upsample->pub.downsample_mask = sep_downsample_mask;
+  /* Verify we can handle the sampling factors, select per-component methods,
+   * and create storage as needed.
+   */
+  for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+       ci++, compptr++) {
+    /* Compute size of an "input group" after IDCT scaling.  This many samples
+     * are to be converted to max_h_samp_factor * max_v_samp_factor pixels.
+     */
+    h_in_group = (compptr->h_samp_factor * compptr->_DCT_scaled_size) /
+                 cinfo->_min_DCT_scaled_size;
+    v_in_group = (compptr->v_samp_factor * compptr->_DCT_scaled_size) /
+                 cinfo->_min_DCT_scaled_size;
+    h_out_group = cinfo->max_h_samp_factor;
+    v_out_group = cinfo->max_v_samp_factor;
+    if (!compptr->component_needed) {
+      /* Don't bother to upsample an uninteresting component. */
+      upsample->mask_methods[ci] = noop_downsample_mask;
+    } else if (h_in_group == h_out_group && v_in_group == v_out_group) {
+      /* Fullsize components can be processed without any work. */
+      upsample->mask_methods[ci] = fullsize_downsample_mask;
+    } else if (h_in_group * 2 == h_out_group && v_in_group == v_out_group) {
+      upsample->mask_methods[ci] = h2v1_downsample_mask;
+    } else if (h_in_group * 2 == h_out_group &&
+               v_in_group * 2 == v_out_group) {
+      upsample->mask_methods[ci] = h2v2_downsample_mask;
+    } else if ((h_out_group % h_in_group) == 0 &&
+               (v_out_group % v_in_group) == 0) {
+      /* Generic integral-factors upsampling method */
+      //upsample->mask_methods[ci] = int_downsample_mask;
+      ERREXIT(cinfo, JERR_INT_MASK_SAMPLE_NOTIMPL);
+    } else
+      ERREXIT(cinfo, JERR_FRACT_SAMPLE_NOTIMPL);
+    if (need_buffer && !cinfo->master->jinit_upsampler_no_alloc) {
+      upsample->mask_buf[ci] = (JMASKARRAY) (*cinfo->mem->alloc_sarray)
+        ((j_common_ptr)cinfo, JPOOL_IMAGE,
+         (JDIMENSION)jround_up((long)cinfo->output_width,
+                               (long)cinfo->max_h_samp_factor),
+         (JDIMENSION)cinfo->max_v_samp_factor);
+    }
+  }
+}
+
 GLOBAL(void)
 jinit_upsampler(j_decompress_ptr cinfo)
 {
@@ -520,5 +704,9 @@ jinit_upsampler(j_decompress_ptr cinfo)
                                (long)cinfo->max_h_samp_factor),
          (JDIMENSION)cinfo->max_v_samp_factor);
     }
+  }
+
+  if (cinfo->mask != NULL) {
+    jinit_mask_downsampler(cinfo, upsample);
   }
 }

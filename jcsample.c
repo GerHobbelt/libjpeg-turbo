@@ -62,6 +62,12 @@ typedef void (*downsample1_ptr) (j_compress_ptr cinfo,
                                  JSAMPARRAY input_data,
                                  JSAMPARRAY output_data);
 
+/* Pointer to routine to downsample a single component */
+typedef void (*downsamplemask1_ptr) (j_compress_ptr cinfo,
+                                 jpeg_component_info *compptr,
+                                 JMASKARRAY input_data,
+                                 JMASKARRAY output_data);
+
 /* Private subobject */
 
 typedef struct {
@@ -69,6 +75,7 @@ typedef struct {
 
   /* Downsampling method pointers, one per component */
   downsample1_ptr methods[MAX_COMPONENTS];
+  downsamplemask1_ptr mask_methods[MAX_COMPONENTS];
 } my_downsampler;
 
 typedef my_downsampler *my_downsample_ptr;
@@ -135,6 +142,23 @@ sep_downsample(j_compress_ptr cinfo, JSAMPIMAGE input_buf,
   }
 }
 
+METHODDEF(void)
+sep_downsample_mask(j_compress_ptr cinfo, JMASKARRAY *input_buf,
+                    JDIMENSION in_row_index, JMASKARRAY *output_buf,
+                    JDIMENSION out_row_group_index)
+{
+  my_downsample_ptr downsample = (my_downsample_ptr)cinfo->downsample;
+  int ci;
+  jpeg_component_info *compptr;
+  JMASKARRAY in_ptr, out_ptr;
+
+  for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
+       ci++, compptr++) {
+    in_ptr = input_buf[ci] + in_row_index;
+    out_ptr = output_buf[ci] + (out_row_group_index * compptr->v_samp_factor);
+    (*downsample->mask_methods[ci]) (cinfo, compptr, in_ptr, out_ptr);
+  }
+}
 
 /*
  * Downsample pixel values of a single component.
@@ -183,6 +207,45 @@ int_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
   }
 }
 
+METHODDEF(void)
+int_downsample_mask(j_compress_ptr cinfo, jpeg_component_info *compptr,
+                    JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  int inrow, outrow, h_expand, v_expand, numpix, numpix2, h, v;
+  JDIMENSION outcol, outcol_h;  /* outcol_h == outcol*h_expand */
+  JDIMENSION output_cols = compptr->width_in_blocks * DCTSIZE;
+  JMASKROW inptr, outptr;
+  JLONG outvalue;
+
+  h_expand = cinfo->max_h_samp_factor / compptr->h_samp_factor;
+  v_expand = cinfo->max_v_samp_factor / compptr->v_samp_factor;
+  numpix = h_expand * v_expand;
+  numpix2 = numpix / 2;
+
+  /* Expand input data enough to let all the output samples be generated
+   * by the standard loop.  Special-casing padded output would be more
+   * efficient.
+   */
+  expand_right_edge(input_data, cinfo->max_v_samp_factor, cinfo->image_width,
+                    output_cols * h_expand);
+
+  inrow = 0;
+  for (outrow = 0; outrow < compptr->v_samp_factor; outrow++) {
+    outptr = output_data[outrow];
+    for (outcol = 0, outcol_h = 0; outcol < output_cols;
+         outcol++, outcol_h += h_expand) {
+      outvalue = 0;
+      for (v = 0; v < v_expand; v++) {
+        inptr = input_data[inrow + v] + outcol_h;
+        for (h = 0; h < h_expand; h++) {
+          outvalue |= (*inptr++);
+        }
+      }
+      *outptr++ = (JMASKENTRY) (outvalue == 0 ? 0 : 1);
+    }
+    inrow += v_expand;
+  }
+}
 
 /*
  * Downsample pixel values of a single component.
@@ -196,6 +259,19 @@ fullsize_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
 {
   /* Copy the data */
   jcopy_sample_rows(input_data, 0, output_data, 0, cinfo->max_v_samp_factor,
+                    cinfo->image_width);
+  /* Edge-expand */
+  expand_right_edge(output_data, cinfo->max_v_samp_factor, cinfo->image_width,
+                    compptr->width_in_blocks * DCTSIZE);
+}
+
+
+METHODDEF(void)
+fullsize_downsample_mask(j_compress_ptr cinfo, jpeg_component_info *compptr,
+                         JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  /* Copy the data */
+  jcopy_mask_rows(input_data, 0, output_data, 0, cinfo->max_v_samp_factor,
                     cinfo->image_width);
   /* Edge-expand */
   expand_right_edge(output_data, cinfo->max_v_samp_factor, cinfo->image_width,
@@ -244,6 +320,33 @@ h2v1_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
   }
 }
 
+METHODDEF(void)
+h2v1_downsample_mask(j_compress_ptr cinfo, jpeg_component_info *compptr,
+                     JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  int outrow;
+  JDIMENSION outcol;
+  JDIMENSION output_cols = compptr->width_in_blocks * DCTSIZE;
+  register JMASKROW inptr, outptr;
+  register int bias;
+
+  /* Expand input data enough to let all the output samples be generated
+   * by the standard loop.  Special-casing padded output would be more
+   * efficient.
+   */
+  expand_right_edge(input_data, cinfo->max_v_samp_factor, cinfo->image_width,
+                    output_cols * 2);
+
+  for (outrow = 0; outrow < compptr->v_samp_factor; outrow++) {
+    outptr = output_data[outrow];
+    inptr = input_data[outrow];
+    bias = 0;                   /* bias = 0,1,0,1,... for successive samples */
+    for (outcol = 0; outcol < output_cols; outcol++) {
+      *outptr++ = (JMASKENTRY) ((inptr[0] | inptr[1]) == 0 ? 0 : 1);
+      inptr += 2;
+    }
+  }
+}
 
 /*
  * Downsample pixel values of a single component.
@@ -276,8 +379,39 @@ h2v2_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     bias = 1;                   /* bias = 1,2,1,2,... for successive samples */
     for (outcol = 0; outcol < output_cols; outcol++) {
       *outptr++ =
-        (JSAMPLE)((inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1] + bias) >> 2);
-      bias ^= 3;                /* 1=>2, 2=>1 */
+        (JSAMPLE) ((inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1] + bias) >> 2) ;
+      inptr0 += 2;  inptr1 += 2;
+    }
+    inrow += 2;
+  }
+}
+
+
+METHODDEF(void)
+h2v2_downsample_mask(j_compress_ptr cinfo, jpeg_component_info *compptr,
+                JMASKARRAY input_data, JMASKARRAY output_data)
+{
+  int inrow, outrow;
+  JDIMENSION outcol;
+  JDIMENSION output_cols = compptr->width_in_blocks * DCTSIZE;
+  register JMASKROW inptr0, inptr1, outptr;
+  register int bias;
+
+  /* Expand input data enough to let all the output samples be generated
+   * by the standard loop.  Special-casing padded output would be more
+   * efficient.
+   */
+  expand_right_edge(input_data, cinfo->max_v_samp_factor, cinfo->image_width,
+                    output_cols * 2);
+
+  inrow = 0;
+  for (outrow = 0; outrow < compptr->v_samp_factor; outrow++) {
+    outptr = output_data[outrow];
+    inptr0 = input_data[inrow];
+    inptr1 = input_data[inrow + 1];
+    for (outcol = 0; outcol < output_cols; outcol++) {
+      *outptr++ =
+        (JMASKENTRY) ((inptr0[0] | inptr0[1] | inptr1[0] | inptr1[1]) == 0 ? 0 : 1);
       inptr0 += 2;  inptr1 += 2;
     }
     inrow += 2;
@@ -464,6 +598,7 @@ jinit_downsampler(j_compress_ptr cinfo)
   cinfo->downsample = (struct jpeg_downsampler *)downsample;
   downsample->pub.start_pass = start_pass_downsample;
   downsample->pub.downsample = sep_downsample;
+  downsample->pub.downsample_mask = sep_downsample_mask;
   downsample->pub.need_context_rows = FALSE;
 
   if (cinfo->CCIR601_sampling)
@@ -481,6 +616,7 @@ jinit_downsampler(j_compress_ptr cinfo)
       } else
 #endif
         downsample->methods[ci] = fullsize_downsample;
+      downsample->mask_methods[ci] = fullsize_downsample_mask;
     } else if (compptr->h_samp_factor * 2 == cinfo->max_h_samp_factor &&
                compptr->v_samp_factor == cinfo->max_v_samp_factor) {
       smoothok = FALSE;
@@ -488,6 +624,7 @@ jinit_downsampler(j_compress_ptr cinfo)
         downsample->methods[ci] = jsimd_h2v1_downsample;
       else
         downsample->methods[ci] = h2v1_downsample;
+      downsample->mask_methods[ci] = h2v1_downsample_mask;
     } else if (compptr->h_samp_factor * 2 == cinfo->max_h_samp_factor &&
                compptr->v_samp_factor * 2 == cinfo->max_v_samp_factor) {
 #ifdef INPUT_SMOOTHING_SUPPORTED
@@ -507,10 +644,12 @@ jinit_downsampler(j_compress_ptr cinfo)
         else
           downsample->methods[ci] = h2v2_downsample;
       }
+      downsample->mask_methods[ci] = h2v2_downsample_mask;
     } else if ((cinfo->max_h_samp_factor % compptr->h_samp_factor) == 0 &&
                (cinfo->max_v_samp_factor % compptr->v_samp_factor) == 0) {
       smoothok = FALSE;
       downsample->methods[ci] = int_downsample;
+      downsample->mask_methods[ci] = int_downsample_mask;
     } else
       ERREXIT(cinfo, JERR_FRACT_SAMPLE_NOTIMPL);
   }

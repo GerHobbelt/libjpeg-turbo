@@ -246,9 +246,14 @@ start_pass(j_decompress_ptr cinfo)
         /* For LL&M IDCT method, multipliers are equal to raw quantization
          * coefficients, but are stored as ints to ensure access efficiency.
          */
-        ISLOW_MULT_TYPE *ismtbl = (ISLOW_MULT_TYPE *)compptr->dct_table;
+        ISLOW_MULT_TYPE *ismtbl = (ISLOW_MULT_TYPE *)compptr->fg_dct_table;
         for (i = 0; i < DCTSIZE2; i++) {
           ismtbl[i] = (ISLOW_MULT_TYPE)qtbl->quantval[i];
+        }
+
+        ismtbl = (ISLOW_MULT_TYPE *)compptr->bg_dct_table;
+        for (i = 0; i < DCTSIZE2; i++) {
+          ismtbl[i] = (ISLOW_MULT_TYPE)qtbl->bgQuantval[i];
         }
       }
       break;
@@ -263,7 +268,7 @@ start_pass(j_decompress_ptr cinfo)
          * For integer operation, the multiplier table is to be scaled by
          * IFAST_SCALE_BITS.
          */
-        IFAST_MULT_TYPE *ifmtbl = (IFAST_MULT_TYPE *)compptr->dct_table;
+        IFAST_MULT_TYPE *ifmtbl = (IFAST_MULT_TYPE *)compptr->fg_dct_table;
 #define CONST_BITS  14
         static const INT16 aanscales[DCTSIZE2] = {
           /* precomputed values scaled up by 14 bits */
@@ -284,6 +289,14 @@ start_pass(j_decompress_ptr cinfo)
                                   (JLONG)aanscales[i]),
                     CONST_BITS - IFAST_SCALE_BITS);
         }
+
+        ifmtbl = (IFAST_MULT_TYPE *)compptr->bg_dct_table;
+        for (i = 0; i < DCTSIZE2; i++) {
+          ifmtbl[i] = (IFAST_MULT_TYPE)
+            DESCALE(MULTIPLY16V16((JLONG)qtbl->bgQuantval[i],
+                                  (JLONG)aanscales[i]),
+                    CONST_BITS - IFAST_SCALE_BITS);
+        }
       }
       break;
 #endif
@@ -295,7 +308,7 @@ start_pass(j_decompress_ptr cinfo)
          *   scalefactor[0] = 1
          *   scalefactor[k] = cos(k*PI/16) * sqrt(2)    for k=1..7
          */
-        FLOAT_MULT_TYPE *fmtbl = (FLOAT_MULT_TYPE *)compptr->dct_table;
+        FLOAT_MULT_TYPE *fmtbl = (FLOAT_MULT_TYPE *)compptr->fg_dct_table;
         int row, col;
         static const double aanscalefactor[DCTSIZE] = {
           1.0, 1.387039845, 1.306562965, 1.175875602,
@@ -311,6 +324,17 @@ start_pass(j_decompress_ptr cinfo)
             i++;
           }
         }
+
+        fmtbl = (FLOAT_MULT_TYPE *)compptr->bg_dct_table;
+        i = 0;
+        for (row = 0; row < DCTSIZE; row++) {
+          for (col = 0; col < DCTSIZE; col++) {
+            fmtbl[i] = (FLOAT_MULT_TYPE)
+              ((double)qtbl->bgQuantval[i] *
+               aanscalefactor[row] * aanscalefactor[col]);
+            i++;
+          }
+        }
       }
       break;
 #endif
@@ -318,7 +342,57 @@ start_pass(j_decompress_ptr cinfo)
       ERREXIT(cinfo, JERR_NOT_COMPILED);
       break;
     }
+
+    compptr->cur_row = 0;
+    compptr->prev_col = 0;
+    compptr->prev_local_row = 0;
   }
+}
+
+
+METHODDEF(void)
+set_fg_bg(j_decompress_ptr cinfo, jpeg_component_info *compptr, JDIMENSION local_row, JDIMENSION col) {
+  // For 4:2:0 downsampling, we process the luminance component in 2x2 groups
+  // of blocks. This means that we will process the block starting at (0,0)
+  // followed by the block at (0,8) followed by the block at (8,0) followed
+  // by the block at (8,8). Only then do we progress to the block starting
+  // at (0,16). Handle this special case with the following logic. In 4:4:4
+  // and 4:2:2 downsampling the row number is monotonically increasing.
+  if (col > compptr->prev_col && compptr->prev_local_row > local_row) {
+    compptr->cur_row -= DCTSIZE;
+  } else if (col < compptr->prev_col && compptr->prev_local_row < local_row) {
+    compptr->cur_row += DCTSIZE;
+  } else if (col < compptr->prev_col && compptr->prev_local_row >= local_row) {
+    compptr->cur_row += DCTSIZE;
+  } else if (col == compptr->prev_col && compptr->prev_local_row < local_row) {
+    // Deal with the special case where there is no 2x2 block at the right
+    // edge of the image. In this case, a single-column 2x1 block will be
+    // processed instead.
+    compptr->cur_row += DCTSIZE;
+  }
+
+  if (cinfo->mask != NULL) {
+    // If there is a mask and any of the values in this block are set, we need to
+    // treat this as an FG block. Otherwise, default to a BG block.
+    boolean found = FALSE;
+    compptr->dct_table = compptr->bg_dct_table;
+    for (JDIMENSION row = compptr->cur_row; row < compptr->cur_row + DCTSIZE; row++) {
+      for (JDIMENSION cur_col = col; cur_col < col + DCTSIZE; cur_col++) {
+        if (compptr->scaled_mask[row][cur_col] != 0) {
+          compptr->dct_table = compptr->fg_dct_table;
+          found = TRUE;
+          break;
+        }
+      }
+      if (found) break;
+    }
+  } else {
+    // If no mask is defined, everything is FG.
+    compptr->dct_table = compptr->fg_dct_table;
+  }
+
+  compptr->prev_col = col;
+  compptr->prev_local_row = local_row;
 }
 
 
@@ -338,15 +412,21 @@ jinit_inverse_dct(j_decompress_ptr cinfo)
                                 sizeof(my_idct_controller));
   cinfo->idct = (struct jpeg_inverse_dct *)idct;
   idct->pub.start_pass = start_pass;
+  idct->pub.set_fg_bg = set_fg_bg;
 
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
     /* Allocate and pre-zero a multiplier table for each component */
-    compptr->dct_table =
+    compptr->fg_dct_table =
       (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   sizeof(multiplier_table));
-    MEMZERO(compptr->dct_table, sizeof(multiplier_table));
+    MEMZERO(compptr->fg_dct_table, sizeof(multiplier_table));
+        compptr->bg_dct_table =
+      (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
+                                  sizeof(multiplier_table));
+    MEMZERO(compptr->bg_dct_table, sizeof(multiplier_table));
     /* Mark multiplier table not yet set up for any method */
+    compptr->dct_table = compptr->fg_dct_table;
     idct->cur_method[ci] = -1;
   }
 }

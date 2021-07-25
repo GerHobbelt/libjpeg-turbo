@@ -62,7 +62,59 @@ jpeg_add_quant_table(j_compress_ptr cinfo, int which_tbl,
 
   /* Initialize sent_table FALSE so table will be written to JPEG file. */
   (*qtblptr)->sent_table = FALSE;
+  (*qtblptr)->sent_bg_table = FALSE;
 }
+
+
+GLOBAL(void)
+jpeg_add_fg_bg_quant_table(j_compress_ptr cinfo, int which_tbl,
+                     const unsigned int *basic_table, int fg_scale_factor,
+                     int bg_scale_factor, boolean force_baseline)
+/* Define a quantization table equal to the basic_table times
+ * a scale factor (given as a percentage).
+ * If force_baseline is TRUE, the computed quantization table entries
+ * are limited to 1..255 for JPEG baseline compatibility.
+ */
+{
+  JQUANT_TBL **qtblptr;
+  int i;
+  long fg_temp ,bg_temp;
+
+  /* Safety check to ensure start_compress not called yet. */
+  if (cinfo->global_state != CSTATE_START)
+    ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
+
+  if (which_tbl < 0 || which_tbl >= NUM_QUANT_TBLS)
+    ERREXIT1(cinfo, JERR_DQT_INDEX, which_tbl);
+
+  qtblptr = &cinfo->quant_tbl_ptrs[which_tbl];
+
+  if (*qtblptr == NULL)
+    *qtblptr = jpeg_alloc_quant_table((j_common_ptr)cinfo);
+
+  for (i = 0; i < DCTSIZE2; i++) {
+    fg_temp = ((long)basic_table[i] * fg_scale_factor + 50L) / 100L;
+    /* limit the values to the valid range */
+    if (fg_temp <= 0L) fg_temp = 1L;
+    if (fg_temp > 32767L) fg_temp = 32767L; /* max quantizer needed for 12 bits */
+    if (force_baseline && fg_temp > 255L)
+      fg_temp = 255L;              /* limit to baseline range if requested */
+    (*qtblptr)->quantval[i] = (UINT16)fg_temp;
+
+    bg_temp = ((long)basic_table[i] * bg_scale_factor + 50L) / 100L;
+    /* limit the values to the valid range */
+    if (bg_temp <= 0L) bg_temp = 1L;
+    if (bg_temp > 32767L) bg_temp = 32767L; /* max quantizer needed for 12 bits */
+    if (force_baseline && bg_temp > 255L)
+      bg_temp = 255L;              /* limit to baseline range if requested */
+    (*qtblptr)->bgQuantval[i] = (UINT16)bg_temp;
+  }
+
+  /* Initialize sent_table FALSE so table will be written to JPEG file. */
+  (*qtblptr)->sent_table = FALSE;
+  (*qtblptr)->sent_bg_table = FALSE;
+}
+
 
 
 /* These are the sample quantization tables given in Annex K (Clause K.1) of
@@ -126,6 +178,24 @@ jpeg_set_linear_quality(j_compress_ptr cinfo, int scale_factor,
 }
 
 
+GLOBAL(void)
+jpeg_set_fg_bg_linear_quality(j_compress_ptr cinfo, int fg_scale_factor, int bg_scale_factor,
+                        boolean force_baseline)
+/* Set or change the 'quality' (quantization) setting, using default tables
+ * and a straight percentage-scaling quality scale.  In most cases it's better
+ * to use jpeg_set_quality (below); this entry point is provided for
+ * applications that insist on a linear percentage scaling.
+ */
+{
+  /* Set up two foreground quantization tables using the specified scaling */
+  jpeg_add_fg_bg_quant_table(cinfo, 0, std_luminance_quant_tbl,
+                       fg_scale_factor, bg_scale_factor, force_baseline);
+  jpeg_add_fg_bg_quant_table(cinfo, 1, std_chrominance_quant_tbl,
+                       fg_scale_factor, bg_scale_factor, force_baseline);
+}
+
+
+
 GLOBAL(int)
 jpeg_quality_scaling(int quality)
 /* Convert a user-specified quality rating to a percentage scaling factor
@@ -165,6 +235,23 @@ jpeg_set_quality(j_compress_ptr cinfo, int quality, boolean force_baseline)
 
   /* Set up standard quality tables */
   jpeg_set_linear_quality(cinfo, quality, force_baseline);
+}
+
+
+GLOBAL(void)
+jpeg_set_fg_bg_quality(j_compress_ptr cinfo, int fg_quality, int bg_quality, boolean force_baseline)
+/* Set or change the 'quality' (quantization) setting, using default tables.
+ * This is the standard quality-adjusting entry point for typical user
+ * interfaces; only those who want detailed control over quantization tables
+ * would use the preceding three routines directly.
+ */
+{
+  /* Convert user 0-100 rating to percentage scaling */
+  fg_quality = jpeg_quality_scaling(fg_quality);
+  bg_quality = jpeg_quality_scaling(bg_quality);
+
+  /* Set up standard quality tables */
+  jpeg_set_fg_bg_linear_quality(cinfo, fg_quality, bg_quality, force_baseline);
 }
 
 

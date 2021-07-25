@@ -141,6 +141,7 @@ decompress_onepass(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
                 yoffset + yindex < compptr->last_row_height) {
               output_col = start_col;
               for (xindex = 0; xindex < useful_width; xindex++) {
+                cinfo->idct->set_fg_bg(cinfo, compptr, yindex * DCTSIZE, output_col);
                 (*inverse_DCT) (cinfo, compptr,
                                 (JCOEFPTR)coef->MCU_buffer[blkn + xindex],
                                 output_ptr, output_col);
@@ -310,6 +311,9 @@ decompress_data(j_decompress_ptr cinfo, JSAMPIMAGE output_buf)
       output_col = 0;
       for (block_num = cinfo->master->first_MCU_col[ci];
            block_num <= cinfo->master->last_MCU_col[ci]; block_num++) {
+        // FIXME: this has not been tested, and it is not clear if it works.
+        // Only the onepass variant has been tested.
+        cinfo->idct->set_fg_bg(cinfo, compptr, block_row * DCTSIZE, output_col);
         (*inverse_DCT) (cinfo, compptr, (JCOEFPTR)buffer_ptr, output_ptr,
                         output_col);
         buffer_ptr++;

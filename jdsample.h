@@ -17,6 +17,11 @@ typedef void (*upsample1_ptr) (j_decompress_ptr cinfo,
                                JSAMPARRAY input_data,
                                JSAMPARRAY *output_data_ptr);
 
+typedef void (*downsample1_mask_ptr) (j_decompress_ptr cinfo,
+                               jpeg_component_info *compptr,
+                               JMASKARRAY input_data,
+                               JMASKARRAY output_data_ptr);
+
 /* Private subobject */
 
 typedef struct {
@@ -30,9 +35,11 @@ typedef struct {
    * simply set to point to the input data array, thereby avoiding copying.
    */
   JSAMPARRAY color_buf[MAX_COMPONENTS];
+  JMASKARRAY mask_buf[MAX_COMPONENTS];
 
   /* Per-component upsampling method pointers */
   upsample1_ptr methods[MAX_COMPONENTS];
+  downsample1_mask_ptr mask_methods[MAX_COMPONENTS];
 
   int next_row_out;             /* counts rows emitted from color_buf */
   JDIMENSION rows_to_go;        /* counts rows remaining in image */
