@@ -815,7 +815,7 @@ static int usage(const char *progName)
 #define main(cnt, arr)      jpegturbo_tjbench_main(cnt, arr)
 #endif
 
-int main(int argc, const char **argv)
+int main(int argc, const char** argv)
 {
   unsigned char *srcBuf = NULL;
   int w = 0, h = 0, i, j, minQual = -1, maxQual = -1;

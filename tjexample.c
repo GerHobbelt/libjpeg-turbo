@@ -162,7 +162,7 @@ static int usage(const char *programName)
 #define main(cnt, arr)      jpegturbo_tjexample_main(cnt, arr)
 #endif
 
-int main(int argc, const char **argv)
+int main(int argc, const char** argv)
 {
   tjscalingfactor scalingFactor = { 1, 1 };
   int outSubsamp = -1, outQual = -1;

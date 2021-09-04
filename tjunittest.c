@@ -887,7 +887,7 @@ static int bmpTest(void)
 #define main(cnt, arr)      jpegturbo_tjunittest_main(cnt, arr)
 #endif
 
-int main(int argc, const char **argv)
+int main(int argc, const char** argv)
 {
   int i, num4bf = 5;
 

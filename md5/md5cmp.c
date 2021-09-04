@@ -35,7 +35,7 @@
 #define main(cnt, arr)      jpegturbo_md5cmp_main(cnt, arr)
 #endif
 
-int main(int argc, const char **argv)
+int main(int argc, const char** argv)
 {
   char *md5sum = NULL, buf[65];
 

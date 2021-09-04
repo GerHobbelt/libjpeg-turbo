@@ -450,7 +450,7 @@ keymatch(const char *arg, const char *keyword, int minchars)
  */
 
 int
-main(int argc, const char **argv)
+main(int argc, const char** argv)
 {
   int argn;
   const char *arg;
