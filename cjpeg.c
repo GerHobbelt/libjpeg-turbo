@@ -255,7 +255,7 @@ usage(void)
 
 
 LOCAL(int)
-parse_switches(j_compress_ptr cinfo, int argc, const char **argv,
+parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
                int last_file_arg_seen, boolean for_real)
 /* Parse optional switches.
  * Returns argv[] index of first file-name argument (== argc if none).
@@ -549,7 +549,7 @@ parse_switches(j_compress_ptr cinfo, int argc, const char **argv,
  */
 
 int
-main(int argc, const char **argv)
+main(int argc, const char** argv)
 {
   struct jpeg_compress_struct cinfo = { 0 };
 #ifdef CJPEG_FUZZER

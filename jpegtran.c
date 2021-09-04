@@ -133,7 +133,7 @@ select_transform(JXFORM_CODE transform)
 
 
 LOCAL(int)
-parse_switches(j_compress_ptr cinfo, int argc, const char **argv,
+parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
                int last_file_arg_seen, boolean for_real)
 /* Parse optional switches.
  * Returns argv[] index of first file-name argument (== argc if none).
@@ -461,7 +461,7 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
  */
 
 int
-main(int argc, const char **argv)
+main(int argc, const char** argv)
 {
   struct jpeg_decompress_struct srcinfo = { 0 };
 #if TRANSFORMS_SUPPORTED
