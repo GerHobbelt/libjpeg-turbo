@@ -66,32 +66,14 @@ local opts_simd_none = {
   "jsimd_none.c",
 }
 
-local opts_simd_arm_base = {
-  "simd/arm/jcgray-neon.c",
-  "simd/arm/jcsample-neon.c",
-  "simd/arm/jdcolor-neon.c",
-  "simd/arm/jdsample-neon.c",
-  "simd/arm/jdmerge-neon.c",
-  "simd/arm/jquanti-neon.c",
-  "simd/arm/jfdctfst-neon.c",
-  "simd/arm/jfdctint-neon.c",
-  "simd/arm/jidctred-neon.c",
-  "simd/arm/jidctfst-neon.c",
-  "simd/arm/jcphuff-neon.c",
-}
-
-local opts_simd_arm32 = {
-  opts_simd_arm_base,
-  "simd/arm/aarch32/jchuff-neon.c",
-  "simd/arm/aarch32/jsimd_neon.S",
-  "simd/arm/aarch32/jsimd.c",
+local opts_simd_arm = {
+  "simd/arm/jsimd_arm.c",
+  "simd/arm/jsimd_neon_arm.S",
 }
 
 local opts_simd_arm64 = {
-  opts_simd_arm_base,
-  "simd/arm/aarch32/jchuff-neon.c",
-  "simd/arm/aarch64/jsimd_neon.S",
-  "simd/arm/aarch64/jsimd.c",
+  "simd/arm64/jsimd_arm64.c",
+  "simd/arm64/jsimd_neon_arm64.S",
 }
 
 if (_PLATFORM_ANDROID) then
@@ -99,10 +81,6 @@ if (_PLATFORM_ANDROID) then
 
   defines {
     "WITH_SIMD",
-  }
-
-  includedirs {
-    "simd/arm",
   }
 
   files {
@@ -115,12 +93,8 @@ if (_PLATFORM_ANDROID) then
     "WITH_SIMD",
   }
 
-  includedirs {
-    "simd/arm",
-  }
-
   files {
-    opts_simd_arm32,
+    opts_simd_arm,
   }
 
   configuration { "*x64*" }
@@ -143,10 +117,6 @@ if (_PLATFORM_COCOA) then
     "WITH_SIMD",
   }
 
-  includedirs {
-    "simd/arm",
-  }
-
   files {
     opts_simd_arm64,
   }
@@ -163,10 +133,6 @@ if (_PLATFORM_IOS) then
 
   defines {
     "WITH_SIMD",
-  }
-
-  includedirs {
-    "simd/arm",
   }
 
   files {
