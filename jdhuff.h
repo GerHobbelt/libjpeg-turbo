@@ -4,8 +4,7 @@
  * This file was part of the Independent JPEG Group's software:
  * Copyright (C) 1991-1997, Thomas G. Lane.
  * libjpeg-turbo Modifications:
- * Copyright (C) 2010-2011, 2015-2016, 2021, D. R. Commander.
- * Copyright (C) 2018, Matthias Räncker.
+ * Copyright (C) 2010-2011, 2015-2016, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
  *
@@ -78,11 +77,6 @@ EXTERN(void) jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC,
 
 typedef size_t bit_buf_type;            /* type of bit-extraction buffer */
 #define BIT_BUF_SIZE  64                /* size of buffer in bits */
-
-#elif defined(__x86_64__) && defined(__ILP32__)
-
-typedef unsigned long long bit_buf_type; /* type of bit-extraction buffer */
-#define BIT_BUF_SIZE  64                 /* size of buffer in bits */
 
 #else
 
@@ -234,10 +228,7 @@ slowlabel: \
       s |= GET_BITS(1); \
       nb++; \
     } \
-    if (nb > 16) \
-      s = 0; \
-    else \
-      s = htbl->pub->huffval[(int)(s + htbl->valoffset[nb]) & 0xFF]; \
+    s = htbl->pub->huffval[(int)(s + htbl->valoffset[nb]) & 0xFF]; \
   }
 
 /* Out-of-line case for Huffman code fetching */
