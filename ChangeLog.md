@@ -16,6 +16,10 @@ MCU block size for 4:4:4 JPEG images with non-unary sampling factors and thus
 unduly rejected some cropping regions, even though those regions aligned with
 8x8 MCU block boundaries.
 
+3. Fixed a regression introduced by 2.1 beta1[13] that caused the build system
+to enable the Arm Neon SIMD extensions when targetting Armv6 and other legacy
+architectures that do not support Neon instructions.
+
 
 2.1.1
 =====
@@ -41,9 +45,9 @@ metadata.
 5. libjpeg-turbo should now build and run on CHERI-enabled architectures, which
 use capability pointers that are larger than the size of `size_t`.
 
-6. Fixed a regression introduced by 2.1 beta1[5] that caused a segfault in the
-64-bit SSE2 Huffman encoder when attempting to losslessly transform a
-specially-crafted malformed JPEG image.
+6. Fixed a regression (CVE-2021-37972) introduced by 2.1 beta1[5] that caused a
+segfault in the 64-bit SSE2 Huffman encoder when attempting to losslessly
+transform a specially-crafted malformed JPEG image.
 
 
 2.1.0
