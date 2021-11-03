@@ -14,6 +14,8 @@
 
 /* This file is included by jccolor.c */
 
+#ifdef JPEG_INCLUDES_JCOLEXT_C 
+
 
 /*
  * Convert some rows of samples to the JPEG colorspace.
@@ -142,3 +144,7 @@ rgb_rgb_convert_internal(j_compress_ptr cinfo, JSAMPARRAY input_buf,
     }
   }
 }
+
+
+#endif
+

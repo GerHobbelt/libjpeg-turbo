@@ -14,6 +14,8 @@
 
 /* This file is included by jdcolor.c */
 
+#ifdef JPEG_INCLUDES_JDCOLEXT_C 
+
 
 /*
  * Convert some rows of samples to the output colorspace.
@@ -139,3 +141,6 @@ rgb_rgb_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     }
   }
 }
+
+
+#endif

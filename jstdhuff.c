@@ -12,6 +12,9 @@
  * not already set.
  */
 
+#ifdef JPEG_INTERNALS
+
+
 /*
  * Huffman table setup routines
  */
@@ -141,3 +144,6 @@ std_huff_tables(j_common_ptr cinfo)
   add_huff_table(cinfo, &ac_huff_tbl_ptrs[1], bits_ac_chrominance,
                  val_ac_chrominance);
 }
+
+
+#endif

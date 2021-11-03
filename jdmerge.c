@@ -44,6 +44,11 @@
 #include "jsimd.h"
 #include "jconfigint.h"
 
+
+#define JPEG_INCLUDES_JDMERGE_C 1
+#define JPEG_INCLUDES_JDMRG565_C 1
+
+
 #ifdef UPSAMPLE_MERGING_SUPPORTED
 
 

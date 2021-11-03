@@ -14,6 +14,8 @@
 
 /* This file is included by jdmerge.c */
 
+#ifdef JPEG_INCLUDES_JDMERGE_C 
+
 
 /*
  * Upsample and color convert for the case of 2:1 horizontal and 1:1 vertical.
@@ -182,3 +184,6 @@ h2v2_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
 #endif
   }
 }
+
+
+#endif

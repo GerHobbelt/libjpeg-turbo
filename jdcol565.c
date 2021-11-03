@@ -14,6 +14,8 @@
 
 /* This file is included by jdcolor.c */
 
+#ifdef JPEG_INCLUDES_JDCOL565_C 
+
 
 INLINE
 LOCAL(void)
@@ -382,3 +384,6 @@ gray_rgb565D_convert_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     }
   }
 }
+
+
+#endif

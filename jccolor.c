@@ -20,6 +20,8 @@
 #include "jconfigint.h"
 
 
+#define JPEG_INCLUDES_JCOLEXT_C 1
+
 /* Private subobject */
 
 typedef struct {
