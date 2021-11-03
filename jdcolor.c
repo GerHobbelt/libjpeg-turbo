@@ -21,6 +21,9 @@
 #include "jconfigint.h"
 
 
+#define JPEG_INCLUDES_JDCOLEXT_C 1
+#define JPEG_INCLUDES_JDCOL565_C 1
+
 /* Private subobject */
 
 typedef struct {

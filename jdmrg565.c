@@ -12,6 +12,8 @@
  * This file contains code for merged upsampling/color conversion.
  */
 
+#ifdef JPEG_INCLUDES_JDMRG565_C 
+
 
 INLINE
 LOCAL(void)
@@ -352,3 +354,6 @@ h2v2_merged_upsample_565D_internal(j_decompress_ptr cinfo,
     *(INT16 *)outptr1 = (INT16)rgb;
   }
 }
+
+
+#endif
