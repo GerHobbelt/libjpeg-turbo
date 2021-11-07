@@ -268,29 +268,13 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
                                       (DCTSIZE2 * 4) * sizeof(DCTELEM));
       }
       dtbl = fdct->divisors[qtblno];
-      if (cinfo->mask != NULL) {
-        if (fdct->bg_divisors[qtblno] == NULL) {
-          fdct->bg_divisors[qtblno] = (DCTELEM *)
-            (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
-                                        (DCTSIZE2 * 4) * sizeof(DCTELEM));
-        }
-        bg_dtbl = fdct->bg_divisors[qtblno];
-      }
       for (i = 0; i < DCTSIZE2; i++) {
 #if BITS_IN_JSAMPLE == 8
         if (!compute_reciprocal(qtbl->quantval[i] << 3, &dtbl[i]) &&
             fdct->quantize == jsimd_quantize)
           fdct->quantize = quantize;
-        // No need to check anything, but we must perform this operation
-        // on the bg quantval
-        if (cinfo->mask != NULL) {
-          compute_reciprocal(qtbl->bgQuantval[i] << 3, &bg_dtbl[i]);
-        }
 #else
         dtbl[i] = ((DCTELEM)qtbl->quantval[i]) << 3;
-        if (cinfo->mask != NULL) {
-          bg_dtbl[i] = ((DCTELEM)qtbl->bgQuantval[i]) << 3;
-        }
 #endif
       }
       break;
@@ -325,14 +309,6 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
         }
         dtbl = fdct->divisors[qtblno];
 
-        if (cinfo->mask != NULL) {
-          if (fdct->bg_divisors[qtblno] == NULL) {
-            fdct->bg_divisors[qtblno] = (DCTELEM *)
-              (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
-                                          (DCTSIZE2 * 4) * sizeof(DCTELEM));
-          }
-          bg_dtbl = fdct->bg_divisors[qtblno];
-        }
         for (i = 0; i < DCTSIZE2; i++) {
 #if BITS_IN_JSAMPLE == 8
           if (!compute_reciprocal(
@@ -341,27 +317,11 @@ start_pass_fdctmgr(j_compress_ptr cinfo)
                         CONST_BITS - 3), &dtbl[i]) &&
               fdct->quantize == jsimd_quantize)
             fdct->quantize = quantize;
-
-          if (cinfo->mask != NULL) {
-            // No need to check anything, but we must perform this operation
-            // on the bg quantval
-            compute_reciprocal(
-                  DESCALE(MULTIPLY16V16((JLONG)qtbl->bgQuantval[i],
-                                        (JLONG)aanscales[i]),
-                          CONST_BITS - 3), &bg_dtbl[i]);
-          }
 #else
           dtbl[i] = (DCTELEM)
             DESCALE(MULTIPLY16V16((JLONG)qtbl->quantval[i],
                                   (JLONG)aanscales[i]),
                     CONST_BITS - 3);
-          
-          if (cinfo->mask != NULL) {
-            bg_dtbl[i] = (DCTELEM)
-              DESCALE(MULTIPLY16V16((JLONG)qtbl->bgQuantval[i],
-                                    (JLONG)aanscales[i]),
-                      CONST_BITS - 3);
-          }
 #endif
         }
       }
@@ -572,8 +532,7 @@ is_block_mask_set(JMASKARRAY mask, JDIMENSION start_col)
 METHODDEF(void)
 forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
             JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
-            JDIMENSION start_row, JDIMENSION start_col, JDIMENSION num_blocks,
-            JMASKARRAY mask_buf)
+            JDIMENSION start_row, JDIMENSION start_col, JDIMENSION num_blocks)
 /* This version is used for integer DCT implementations. */
 {
   /* This routine is heavily used, so it's worth coding it tightly. */
@@ -599,7 +558,7 @@ forward_DCT(j_compress_ptr cinfo, jpeg_component_info *compptr,
   for (bi = 0; bi < num_blocks; bi++, start_col += DCTSIZE) {
     // Check if block is FG or BG, and pick the appropriate divisors.
     // If the mask is NULL, then there is no notion of background.
-    if (cinfo->mask == NULL || is_block_mask_set(mask_buf, start_col)) {
+    if (cinfo->mask == NULL) {
       cur_divisors = divisors; // FG block
     } else {
       cur_divisors = bg_divisors; // BG block
@@ -679,7 +638,7 @@ METHODDEF(void)
 forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
                   JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
                   JDIMENSION start_row, JDIMENSION start_col,
-                  JDIMENSION num_blocks, JMASKARRAY mask_buf)
+                  JDIMENSION num_blocks)
 /* This version is used for floating-point DCT implementations. */
 {
   /* This routine is heavily used, so it's worth coding it tightly. */
@@ -706,7 +665,7 @@ forward_DCT_float(j_compress_ptr cinfo, jpeg_component_info *compptr,
   for (bi = 0; bi < num_blocks; bi++, start_col += DCTSIZE) {
     // Check if block is FG or BG, and pick the appropriate divisors.
     // If the mask is NULL, then there is no notion of background.
-    if (cinfo->mask == NULL || is_block_mask_set(mask_buf, start_col))
+    if (cinfo->mask == NULL)
       cur_divisors = divisors; // FG block
     else
       cur_divisors = bg_divisors; // BG block

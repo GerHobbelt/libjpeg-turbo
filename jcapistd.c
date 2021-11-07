@@ -119,7 +119,7 @@ jpeg_write_scanlines(j_compress_ptr cinfo, JSAMPARRAY scanlines,
 
 GLOBAL(JDIMENSION)
 jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
-                    JDIMENSION num_lines, JMASKARRAY *mask_buf)
+                    JDIMENSION num_lines)
 {
   JDIMENSION lines_per_iMCU_row;
 
@@ -151,7 +151,7 @@ jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
     ERREXIT(cinfo, JERR_BUFFER_SIZE);
 
   /* Directly compress the row. */
-  if (!(*cinfo->coef->compress_data) (cinfo, data, mask_buf)) {
+  if (!(*cinfo->coef->compress_data) (cinfo, data)) {
     /* If compressor did not consume the whole row, suspend processing. */
     return 0;
   }

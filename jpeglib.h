@@ -365,10 +365,6 @@ struct jpeg_compress_struct {
   jpeg_component_info *comp_info;
   /* comp_info[i] describes component that appears i'th in SOF */
 
-  /* Mask for the image mapping pixels to layers */
-  JMASKARRAY mask;
-  boolean sent_mask;
-
   JQUANT_TBL *quant_tbl_ptrs[NUM_QUANT_TBLS];
 #if JPEG_LIB_VERSION >= 70
   int q_scale_factor[NUM_QUANT_TBLS];
@@ -997,7 +993,7 @@ EXTERN(void) jpeg_calc_jpeg_dimensions(j_compress_ptr cinfo);
 
 /* Replaces jpeg_write_scanlines when writing raw downsampled data. */
 EXTERN(JDIMENSION) jpeg_write_raw_data(j_compress_ptr cinfo, JSAMPIMAGE data,
-                                       JDIMENSION num_lines, JMASKARRAY *mask_buf);
+                                       JDIMENSION num_lines);
 
 /* Write a special marker.  See libjpeg.txt concerning safe usage. */
 EXTERN(void) jpeg_write_marker(j_compress_ptr cinfo, int marker,

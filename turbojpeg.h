@@ -760,7 +760,7 @@ DLLEXPORT int tjCompressFgBg2(tjhandle handle, const unsigned char *srcBuf,
                           int width, int pitch, int height, int pixelFormat,
                           unsigned char **jpegBuf, unsigned long *jpegSize,
                           int jpegSubsamp, int jpegQualFg, int jpegQualBg,
-                          unsigned char **jpegMask, int flags);
+                          int flags);
 
 /**
  * Compress a YUV planar image into a JPEG image.

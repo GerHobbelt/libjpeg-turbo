@@ -276,7 +276,6 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
 
   cinfo->in_color_space = pf2cs[pixelFormat];
   cinfo->input_components = tjPixelSize[pixelFormat];
-  cinfo->mask = (JMASKARRAY) NULL;
   jpeg_set_defaults(cinfo);
 
 #ifndef NO_GETENV
@@ -336,8 +335,7 @@ static void setCompDefaults(struct jpeg_compress_struct *cinfo,
 }
 
 
-static void fixMaskFor2xHorizontalDownsampling(struct jpeg_compress_struct *cinfo,
-                                             unsigned char **mask)
+static void fixMaskFor2xHorizontalDownsampling(struct jpeg_compress_struct *cinfo)
 {
     // Need to check if horizontal subsampling will cause problems with mask
     for (int row = 0; row < cinfo->image_height; row++) {
@@ -435,7 +433,7 @@ static void fixMaskFor2xVerticalDownsampling(struct jpeg_compress_struct *cinfo,
 
 static void setFgBgCompDefaults(struct jpeg_compress_struct *cinfo,
                             int pixelFormat, int subsamp, int jpegQualFg,
-                            int jpegQualBg, int flags, unsigned char **mask)
+                            int jpegQualBg, int flags)
 {
 #ifndef NO_GETENV
   char *env = NULL;
@@ -443,8 +441,6 @@ static void setFgBgCompDefaults(struct jpeg_compress_struct *cinfo,
 
   cinfo->in_color_space = pf2cs[pixelFormat];
   cinfo->input_components = tjPixelSize[pixelFormat];
-  cinfo->mask = (JMASKARRAY) mask;
-  cinfo->sent_mask = FALSE;
   jpeg_set_defaults(cinfo);
 
 #ifndef NO_GETENV
@@ -856,7 +852,7 @@ DLLEXPORT int tjCompressFgBg2(tjhandle handle, const unsigned char *srcBuf,
                           int width, int pitch, int height, int pixelFormat,
                           unsigned char **jpegBuf, unsigned long *jpegSize,
                           int jpegSubsamp, int jpegQualFg, int jpegQualBg,
-                          unsigned char **jpegMask, int flags)
+                          int flags)
 {
   int i, retval = 0, alloc = 1;
   JSAMPROW *row_pointer = NULL;
@@ -895,7 +891,7 @@ DLLEXPORT int tjCompressFgBg2(tjhandle handle, const unsigned char *srcBuf,
     alloc = 0;  *jpegSize = tjBufSize(width, height, jpegSubsamp);
   }
   jpeg_mem_dest_tj(cinfo, jpegBuf, jpegSize, alloc);
-  setFgBgCompDefaults(cinfo, pixelFormat, jpegSubsamp, jpegQualFg, jpegQualBg, flags, jpegMask);
+  setFgBgCompDefaults(cinfo, pixelFormat, jpegSubsamp, jpegQualFg, jpegQualBg, flags);
 
   jpeg_start_compress(cinfo, TRUE);
   for (i = 0; i < height; i++) {
@@ -1344,8 +1340,7 @@ DLLEXPORT int tjCompressFromYUVPlanes(tjhandle handle,
       } else
         yuvptr[i] = &inbuf[i][crow[i]];
     }
-    // FIXME: we don't have a mask implemented here yet, so pass null
-    jpeg_write_raw_data(cinfo, yuvptr, cinfo->max_v_samp_factor * DCTSIZE, NULL);
+    jpeg_write_raw_data(cinfo, yuvptr, cinfo->max_v_samp_factor * DCTSIZE);
   }
   jpeg_finish_compress(cinfo);
 

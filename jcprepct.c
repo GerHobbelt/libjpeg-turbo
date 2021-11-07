@@ -144,7 +144,7 @@ METHODDEF(void)
 pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                  JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                  JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
-                 JDIMENSION out_row_groups_avail, JMASKARRAY *output_mask_buf)
+                 JDIMENSION out_row_groups_avail)
 {
   my_prep_ptr prep = (my_prep_ptr)cinfo->prep;
   int numrows, ci;
@@ -161,13 +161,6 @@ pre_process_data(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                                        prep->color_buf,
                                        (JDIMENSION)prep->next_buf_row,
                                        numrows);
-
-    if (cinfo->mask != NULL) {
-      // Fill in the mask buffer as we scan through corresponding image pixels
-      for (ci = 0; ci < cinfo->num_components; ci++) {
-        jcopy_mask_rows(cinfo->mask, *in_row_ctr, prep->mask_buf[ci], 0, numrows, cinfo->image_width);
-      }
-    }
 
     *in_row_ctr += numrows;
     prep->next_buf_row += numrows;
@@ -231,7 +224,7 @@ METHODDEF(void)
 pre_process_context(j_compress_ptr cinfo, JSAMPARRAY input_buf,
                     JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                     JSAMPIMAGE output_buf, JDIMENSION *out_row_group_ctr,
-                    JDIMENSION out_row_groups_avail, JMASKARRAY *output_mask_buf)
+                    JDIMENSION out_row_groups_avail)
 {
   my_prep_ptr prep = (my_prep_ptr)cinfo->prep;
   int numrows, ci;

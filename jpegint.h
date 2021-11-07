@@ -97,14 +97,13 @@ struct jpeg_c_prep_controller {
                             JDIMENSION *in_row_ctr, JDIMENSION in_rows_avail,
                             JSAMPIMAGE output_buf,
                             JDIMENSION *out_row_group_ctr,
-                            JDIMENSION out_row_groups_avail,
-                            JMASKARRAY *output_mask_buf);
+                            JDIMENSION out_row_groups_avail);
 };
 
 /* Coefficient buffer control */
 struct jpeg_c_coef_controller {
   void (*start_pass) (j_compress_ptr cinfo, J_BUF_MODE pass_mode);
-  boolean (*compress_data) (j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY *mask_buf);
+  boolean (*compress_data) (j_compress_ptr cinfo, JSAMPIMAGE input_buf);
 };
 
 /* Colorspace conversion */
@@ -135,7 +134,7 @@ struct jpeg_forward_dct {
   void (*forward_DCT) (j_compress_ptr cinfo, jpeg_component_info *compptr,
                        JSAMPARRAY sample_data, JBLOCKROW coef_blocks,
                        JDIMENSION start_row, JDIMENSION start_col,
-                       JDIMENSION num_blocks, JMASKARRAY mask_buf);
+                       JDIMENSION num_blocks);
 };
 
 /* Entropy encoding */

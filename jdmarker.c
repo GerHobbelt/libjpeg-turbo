@@ -652,7 +652,6 @@ get_msk(j_decompress_ptr cinfo)
 /* Process a MSK marker */
 {
   JLONG length, width, height, encoded_value;
-  JMASKARRAY mask;
 
   INPUT_VARS(cinfo);
 

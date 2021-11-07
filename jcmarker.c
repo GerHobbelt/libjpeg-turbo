@@ -473,90 +473,6 @@ emit_adobe_app14(j_compress_ptr cinfo)
   }
 }
 
-/* TODO: encode this as bounding boxes instead of a custom compression of values? */
-/* NOTE: the general problem of finding an arbitrary number of potentially
- * overlapping bounding boxes from a mask will take some significant effort. */
-LOCAL(void)
-emit_msk(j_compress_ptr cinfo)
-/* Emit an MSK marker */
-{
-  JMASKARRAY mask = cinfo->mask;
-
-  if (mask == NULL)
-    ERREXIT(cinfo, JERR_NO_MASK);
-
-  // Encoding:
-  // MSK Marker
-  // Length (2 bytes): legnth of this message in bytes
-  // Width (2 bytes): width of mask
-  // Height (2 bytes): height of mask
-  // Value-count (2 bytes each): first bit is 0 or 1 (value), remaining 15
-  //     bytes represent how many many of those items in sequence there are.
-  //     Sequence goes left to right, top to bottom.
-  if (!cinfo->sent_mask) {
-    emit_marker(cinfo, M_MSK);
-
-    // We know there is at least one entry
-    UINT16 length = 2;
-    UINT16 value_count = 1;
-    UINT8 value = 0, prev_value = mask[0][0];
-
-    for (int row = 0; row < cinfo->image_height; row++) {
-      for (int col = 0; col < cinfo->image_width; col++) {
-        value = mask[row][col];
-        if (value != prev_value || value_count >= 0x7fff) {
-          // An entry will be added each time the value changes
-          length += 2;
-          value_count = 0;
-        } else {
-          value_count++;
-        }
-        prev_value = value;
-      }
-    }
-
-    // Add in length field, width field, and height field
-    length += 6;
-
-    emit_2bytes(cinfo, length);
-    emit_2bytes(cinfo, cinfo->image_width);
-    emit_2bytes(cinfo, cinfo->image_height);
-
-    value_count = 0;
-    boolean add_final = FALSE;
-    value = 0, prev_value = mask[0][0];
-
-    for (int row = 0; row < cinfo->image_height; row++) {
-      for (int col = 0; col < cinfo->image_width; col++) {
-        value = mask[row][col];
-        // If the value changes or the count goes above 2^15,
-        // we need to log the value and start a new one.
-        if (value == prev_value && value_count < 0x7fff) {
-          value_count++;
-          add_final = TRUE;
-        } else {
-          UINT16 encoded_value = ((UINT16) (prev_value & 0x01)) << 15;
-          encoded_value |= (value_count & 0x7fff);
-          emit_2bytes(cinfo, encoded_value);
-          add_final = FALSE;
-          // Reset to 1 because we just moved to a new element, and that
-          // element has a different value.
-          value_count = 1;
-        }
-        prev_value = value;
-      }
-    }
-
-    if (add_final) {
-      UINT16 encoded_value = ((UINT16) (value & 0x01)) << 15;
-      encoded_value |= (value_count & 0x7fff);
-      emit_2bytes(cinfo, encoded_value);
-    }
-
-    cinfo->sent_mask = TRUE;
-  }
-}
-
 
 /*
  * These routines allow writing an arbitrary marker with parameters.
@@ -700,9 +616,6 @@ write_frame_header_bg(j_compress_ptr cinfo)
        ci++, compptr++) {
     prec += emit_bqt(cinfo, compptr->quant_tbl_no);
   }
-
-  /* Emit MSK for an image with a background layer. */
-  emit_msk(cinfo);
 
   /* now prec is nonzero iff there are any 16-bit quant tables. */
 

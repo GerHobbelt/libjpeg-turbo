@@ -58,11 +58,11 @@ typedef my_coef_controller *my_coef_ptr;
 
 
 /* Forward declarations */
-METHODDEF(boolean) compress_data(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf);
+METHODDEF(boolean) compress_data(j_compress_ptr cinfo, JSAMPIMAGE input_buf);
 #ifdef FULL_COEF_BUFFER_SUPPORTED
 METHODDEF(boolean) compress_first_pass(j_compress_ptr cinfo,
-                                       JSAMPIMAGE input_buf, JMASKARRAY* mask_buf);
-METHODDEF(boolean) compress_output(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf);
+                                       JSAMPIMAGE input_buf);
+METHODDEF(boolean) compress_output(j_compress_ptr cinfo, JSAMPIMAGE input_buf);
 #endif
 
 
@@ -138,7 +138,7 @@ start_pass_coef(j_compress_ptr cinfo, J_BUF_MODE pass_mode)
  */
 
 METHODDEF(boolean)
-compress_data(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf)
+compress_data(j_compress_ptr cinfo, JSAMPIMAGE input_buf)
 {
   my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION MCU_col_num;       /* index of current MCU within row */
@@ -175,8 +175,7 @@ compress_data(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf)
             (*cinfo->fdct->forward_DCT) (cinfo, compptr,
                                          input_buf[compptr->component_index],
                                          coef->MCU_buffer[blkn],
-                                         ypos, xpos, (JDIMENSION)blockcnt,
-                                         mask_buf[compptr->component_index]);
+                                         ypos, xpos, (JDIMENSION)blockcnt);
             if (blockcnt < compptr->MCU_width) {
               /* Create some dummy blocks at the right edge of the image. */
               jzero_far((void *)coef->MCU_buffer[blkn + blockcnt],
@@ -243,7 +242,7 @@ compress_data(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf)
  */
 
 METHODDEF(boolean)
-compress_first_pass(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf)
+compress_first_pass(j_compress_ptr cinfo, JSAMPIMAGE input_buf)
 {
   my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION last_iMCU_row = cinfo->total_iMCU_rows - 1;
@@ -283,8 +282,7 @@ compress_first_pass(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask
       (*cinfo->fdct->forward_DCT) (cinfo, compptr,
                                    input_buf[ci], thisblockrow,
                                    (JDIMENSION)(block_row * DCTSIZE),
-                                   (JDIMENSION)0, blocks_across,
-                                   mask_buf[ci]);
+                                   (JDIMENSION)0, blocks_across);
       if (ndummy > 0) {
         /* Create dummy blocks at the right edge of the image. */
         thisblockrow += blocks_across; /* => first dummy block */
@@ -325,7 +323,7 @@ compress_first_pass(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask
    */
 
   /* Emit data to the entropy encoder, sharing code with subsequent passes */
-  return compress_output(cinfo, input_buf, mask_buf);
+  return compress_output(cinfo, input_buf);
 }
 
 
@@ -340,7 +338,7 @@ compress_first_pass(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask
  */
 
 METHODDEF(boolean)
-compress_output(j_compress_ptr cinfo, JSAMPIMAGE input_buf, JMASKARRAY* mask_buf)
+compress_output(j_compress_ptr cinfo, JSAMPIMAGE input_buf)
 {
   my_coef_ptr coef = (my_coef_ptr)cinfo->coef;
   JDIMENSION MCU_col_num;       /* index of current MCU within row */
