@@ -22,6 +22,10 @@
 #include "jpeglib.h"
 #include "jmemsys.h"            /* import the system-dependent declarations */
 
+
+#if !defined(BUILD_MONOLITHIC)
+
+
 #ifndef HAVE_STDLIB_H           /* <stdlib.h> should declare malloc(),free() */
 extern void *malloc(size_t size);
 extern void free(void *ptr);
@@ -113,3 +117,5 @@ jpeg_mem_term(j_common_ptr cinfo)
 {
   /* no work */
 }
+
+#endif

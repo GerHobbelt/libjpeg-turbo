@@ -30,6 +30,7 @@
 #include <string.h>
 #include "./md5.h"
 #include "../tjutil.h"
+#include "../monolithic_examples.h"
 
 #if defined(BUILD_MONOLITHIC)
 #define main(cnt, arr)      jpegturbo_md5cmp_main(cnt, arr)

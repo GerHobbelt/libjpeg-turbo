@@ -31,6 +31,7 @@
 #include "cdjpeg.h"             /* Common decls for cjpeg/djpeg applications */
 #include "jversion.h"           /* for version message */
 #include "jconfigint.h"
+#include "monolithic_examples.h"
 
 #ifndef HAVE_STDLIB_H           /* <stdlib.h> should declare free() */
 extern void free(void *ptr);
@@ -94,14 +95,14 @@ static IMAGE_FORMATS requested_fmt;
 
 static const char *progname;    /* program name for error messages */
 static const char *icc_filename;      /* for -icc switch */
-JDIMENSION max_scans;           /* for -maxscans switch */
+static JDIMENSION max_scans;           /* for -maxscans switch */
 static const char *outfilename;       /* for -outfile switch */
-boolean memsrc;                 /* for -memsrc switch */
-boolean report;                 /* for -report switch */
-boolean skip, crop;
-JDIMENSION skip_start, skip_end;
-JDIMENSION crop_x, crop_y, crop_width, crop_height;
-boolean strict;                 /* for -strict switch */
+static boolean memsrc;                 /* for -memsrc switch */
+static boolean report;                 /* for -report switch */
+static boolean skip, crop;
+static JDIMENSION skip_start, skip_end;
+static JDIMENSION crop_x, crop_y, crop_width, crop_height;
+static boolean strict;                 /* for -strict switch */
 #define INPUT_BUF_SIZE  4096
 
 
@@ -531,7 +532,7 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
 
 
 #if defined(BUILD_MONOLITHIC)
-#define main(cnt, arr)      jpegturbo_djpeg_test_main(cnt, arr)
+#define main(cnt, arr)      jpegturbo_djpeg_main(cnt, arr)
 #endif
 
 /*
@@ -600,6 +601,7 @@ main(int argc, const char** argv)
       fprintf(stderr, "%s: must name one input and one output file\n",
               progname);
       usage();
+      return EXIT_FAILURE;
     }
     outfilename = argv[file_index + 1];
   } else {
@@ -607,6 +609,7 @@ main(int argc, const char** argv)
       fprintf(stderr, "%s: must name one input and one output file\n",
               progname);
       usage();
+      return EXIT_FAILURE;
     }
   }
 #else
@@ -614,6 +617,7 @@ main(int argc, const char** argv)
   if (file_index < argc - 1) {
     fprintf(stderr, "%s: only one input file\n", progname);
     usage();
+    return EXIT_FAILURE;
   }
 #endif /* TWO_FILE_COMMANDLINE */
 
@@ -621,7 +625,7 @@ main(int argc, const char** argv)
   if (file_index < argc) {
     if ((input_file = fopen(argv[file_index], READ_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, argv[file_index]);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
   } else {
     /* default input file is stdin */
@@ -632,7 +636,7 @@ main(int argc, const char** argv)
   if (outfilename != NULL) {
     if ((output_file = fopen(outfilename, WRITE_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, outfilename);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
   } else {
     /* default output file is stdout */
@@ -653,7 +657,7 @@ main(int argc, const char** argv)
       inbuffer = (unsigned char *)realloc(inbuffer, insize + INPUT_BUF_SIZE);
       if (inbuffer == NULL) {
         fprintf(stderr, "%s: memory allocation failure\n", progname);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
       }
       nbytes = JFREAD(input_file, &inbuffer[insize], INPUT_BUF_SIZE);
       if (nbytes < INPUT_BUF_SIZE && ferror(input_file)) {
@@ -727,7 +731,7 @@ main(int argc, const char** argv)
     if (skip_end > cinfo.output_height - 1) {
       fprintf(stderr, "%s: skip region exceeds image height %d\n", progname,
               cinfo.output_height);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 
     /* Write output file header.  This is a hack to ensure that the destination
@@ -767,7 +771,7 @@ main(int argc, const char** argv)
         crop_y + crop_height > cinfo.output_height) {
       fprintf(stderr, "%s: crop dimensions exceed image dimensions %d x %d\n",
               progname, cinfo.output_width, cinfo.output_height);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 
     jpeg_crop_scanline(&cinfo, &crop_x, &crop_width);
@@ -788,7 +792,7 @@ main(int argc, const char** argv)
     if ((tmp = jpeg_skip_scanlines(&cinfo, crop_y)) != crop_y) {
       fprintf(stderr, "%s: jpeg_skip_scanlines() returned %d rather than %d\n",
               progname, tmp, crop_y);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     while (cinfo.output_scanline < crop_y + crop_height) {
       num_scanlines = jpeg_read_scanlines(&cinfo, dest_mgr->buffer,
@@ -801,7 +805,7 @@ main(int argc, const char** argv)
         cinfo.output_height - crop_y - crop_height) {
       fprintf(stderr, "%s: jpeg_skip_scanlines() returned %d rather than %d\n",
               progname, tmp, cinfo.output_height - crop_y - crop_height);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
 
   /* Normal full-image decompress */
@@ -830,7 +834,7 @@ main(int argc, const char** argv)
 
     if ((icc_file = fopen(icc_filename, WRITE_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, icc_filename);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     if (jpeg_read_icc_profile(&cinfo, &icc_profile, &icc_len)) {
       if (fwrite(icc_profile, icc_len, 1, icc_file) < 1) {
@@ -838,7 +842,7 @@ main(int argc, const char** argv)
                 icc_filename);
         free(icc_profile);
         fclose(icc_file);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
       }
       free(icc_profile);
       fclose(icc_file);
@@ -867,6 +871,5 @@ main(int argc, const char** argv)
     free(inbuffer);
 
   /* All done. */
-  exit(jerr.num_warnings ? EXIT_WARNING : EXIT_SUCCESS);
-  return 0;                     /* suppress no-return-value warnings */
+  return (jerr.num_warnings ? EXIT_WARNING : EXIT_SUCCESS);
 }

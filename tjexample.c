@@ -37,6 +37,7 @@
 #include <string.h>
 #include <errno.h>
 #include <turbojpeg.h>
+#include "monolithic_examples.h"
 
 
 #ifdef _WIN32
@@ -154,7 +155,7 @@ static int usage(const char *programName)
   printf("-accuratedct = Use the most accurate DCT/IDCT algorithms available in the\n");
   printf("     underlying codec.\n\n");
 
-  return 1;
+  return EXIT_FAILURE;
 }
 
 

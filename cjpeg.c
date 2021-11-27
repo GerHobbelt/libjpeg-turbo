@@ -33,6 +33,7 @@
 #include "cdjpeg.h"             /* Common decls for cjpeg/djpeg applications */
 #include "jversion.h"           /* for version message */
 #include "jconfigint.h"
+#include "monolithic_examples.h"
 
 #ifndef HAVE_STDLIB_H           /* <stdlib.h> should declare malloc(),free() */
 extern void *malloc(size_t size);
@@ -145,9 +146,9 @@ select_file_type(j_compress_ptr cinfo, FILE *infile)
 static const char *progname;    /* program name for error messages */
 static const char *icc_filename;      /* for -icc switch */
 static const char *outfilename;       /* for -outfile switch */
-boolean memdst;                 /* for -memdst switch */
-boolean report;                 /* for -report switch */
-boolean strict;                 /* for -strict switch */
+static boolean memdst;                 /* for -memdst switch */
+static boolean report;                 /* for -report switch */
+static boolean strict;                 /* for -strict switch */
 
 
 #ifdef CJPEG_FUZZER
@@ -560,7 +561,7 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
 
 
 #if defined(BUILD_MONOLITHIC)
-#define main(cnt, arr)      jpegturbo_cjpeg_test_main(cnt, arr)
+#define main(cnt, arr)      jpegturbo_cjpeg_main(cnt, arr)
 #endif
 
 /*
@@ -634,6 +635,7 @@ main(int argc, const char** argv)
         fprintf(stderr, "%s: must name one input and one output file\n",
                 progname);
         usage();
+        return EXIT_FAILURE;
       }
       outfilename = argv[file_index + 1];
     } else {
@@ -641,6 +643,7 @@ main(int argc, const char** argv)
         fprintf(stderr, "%s: must name one input and one output file\n",
                 progname);
         usage();
+        return EXIT_FAILURE;
       }
     }
   }
@@ -649,6 +652,7 @@ main(int argc, const char** argv)
   if (file_index < argc - 1) {
     fprintf(stderr, "%s: only one input file\n", progname);
     usage();
+    return EXIT_FAILURE;
   }
 #endif /* TWO_FILE_COMMANDLINE */
 
@@ -656,7 +660,7 @@ main(int argc, const char** argv)
   if (file_index < argc) {
     if ((input_file = fopen(argv[file_index], READ_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, argv[file_index]);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
   } else {
     /* default input file is stdin */
@@ -667,7 +671,7 @@ main(int argc, const char** argv)
   if (outfilename != NULL) {
     if ((output_file = fopen(outfilename, WRITE_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, outfilename);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
   } else if (!memdst) {
     /* default output file is stdout */
@@ -677,26 +681,26 @@ main(int argc, const char** argv)
   if (icc_filename != NULL) {
     if ((icc_file = fopen(icc_filename, READ_BINARY)) == NULL) {
       fprintf(stderr, "%s: can't open %s\n", progname, icc_filename);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     if (fseek(icc_file, 0, SEEK_END) < 0 ||
         (icc_len = ftell(icc_file)) < 1 ||
         fseek(icc_file, 0, SEEK_SET) < 0) {
       fprintf(stderr, "%s: can't determine size of %s\n", progname,
               icc_filename);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     if ((icc_profile = (JOCTET *)malloc(icc_len)) == NULL) {
       fprintf(stderr, "%s: can't allocate memory for ICC profile\n", progname);
       fclose(icc_file);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     if (fread(icc_profile, icc_len, 1, icc_file) < 1) {
       fprintf(stderr, "%s: can't read ICC profile from %s\n", progname,
               icc_filename);
       free(icc_profile);
       fclose(icc_file);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
     }
     fclose(icc_file);
   }
@@ -739,7 +743,7 @@ main(int argc, const char** argv)
 
 #ifdef CJPEG_FUZZER
   if (setjmp(myerr.setjmp_buffer))
-    HANDLE_ERROR()
+    HANDLE_ERROR();
 #endif
 
   /* Start compressor */

@@ -44,6 +44,7 @@
 #else
 #include <unistd.h>
 #endif
+#include "monolithic_examples.h"
 
 
 static int usage(const char *progName)

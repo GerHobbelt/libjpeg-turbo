@@ -33,6 +33,7 @@
 #include <jpeglib.h>
 #include <jerror.h>
 #include <setjmp.h>
+#include "monolithic_examples.h"
 
 #ifndef JCS_EXTENSIONS
 #define JCS_EXT_RGB  6
@@ -61,10 +62,10 @@ static void my_output_message(j_common_ptr cinfo)
 }
 
 #if defined(BUILD_MONOLITHIC)
-#define main      jpegturbo_jcstest_test_main
+#define main      jpegturbo_jcstest_main
 #endif
 
-int main(void)
+int main(int argc, const char **argv)
 {
   int jcs_valid = -1, jcs_alpha_valid = -1;
   struct jpeg_compress_struct cinfo = { 0 };

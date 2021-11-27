@@ -36,6 +36,7 @@
 #include <cdjpeg.h>
 #include "./tjutil.h"
 #include "./turbojpeg.h"
+#include "monolithic_examples.h"
 
 
 #define THROW(op, err) { \
