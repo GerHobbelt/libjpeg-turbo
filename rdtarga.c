@@ -502,7 +502,7 @@ jinit_read_targa(j_compress_ptr cinfo)
   source->pub.max_pixels = 0;
 #endif
 
-  return (cjpeg_source_ptr)source;
+  return &source->pub;
 }
 
 #endif /* TARGA_SUPPORTED */

@@ -37,6 +37,8 @@ extern void *malloc();
 #endif
 #endif
 
+#include "monolithic_examples.h"
+
 #ifdef DONT_USE_B_MODE          /* define mode parameters for fopen() */
 #define READ_BINARY     "r"
 #define WRITE_BINARY    "w"
@@ -401,7 +403,7 @@ keymatch(const char *arg, const char *keyword, int minchars)
 
 
 #if defined(BUILD_MONOLITHIC)
-#define main(cnt, arr)      jpegturbo_wrjpgcom_main(cnt, arr)
+#define main(cnt, arr)      jpegturbo_wrjpegcom_main(cnt, arr)
 #endif
 
 /*

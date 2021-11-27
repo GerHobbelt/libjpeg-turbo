@@ -360,7 +360,7 @@ jinit_write_ppm(j_decompress_ptr cinfo)
     dest->pub.put_pixel_rows = put_pixel_rows;
   }
 
-  return (djpeg_dest_ptr)dest;
+  return &dest->pub;
 }
 
 #endif /* PPM_SUPPORTED */

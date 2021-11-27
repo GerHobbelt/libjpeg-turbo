@@ -595,7 +595,7 @@ jinit_c_master_control(j_compress_ptr cinfo, boolean transcode_only)
   master = (my_master_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(my_comp_master));
-  cinfo->master = (struct jpeg_comp_master *)master;
+  cinfo->master = &master->pub;
   master->pub.prepare_for_pass = prepare_for_pass;
   master->pub.pass_startup = pass_startup;
   master->pub.finish_pass = finish_pass_master;

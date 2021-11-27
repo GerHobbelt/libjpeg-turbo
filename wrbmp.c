@@ -546,7 +546,7 @@ jinit_write_bmp(j_decompress_ptr cinfo, boolean is_os2,
     ((j_common_ptr)cinfo, JPOOL_IMAGE, row_width, (JDIMENSION)1);
   dest->pub.buffer_height = 1;
 
-  return (djpeg_dest_ptr)dest;
+  return &dest->pub;
 }
 
 #endif /* BMP_SUPPORTED */

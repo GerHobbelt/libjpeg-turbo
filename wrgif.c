@@ -574,7 +574,7 @@ jinit_write_gif(j_decompress_ptr cinfo, boolean is_lzw)
     dest->hash_value = NULL;
   }
 
-  return (djpeg_dest_ptr)dest;
+  return &dest->pub;
 }
 
 #endif /* GIF_SUPPORTED */

@@ -773,7 +773,7 @@ jinit_read_ppm(j_compress_ptr cinfo)
   source->pub.max_pixels = 0;
 #endif
 
-  return (cjpeg_source_ptr)source;
+  return &source->pub;
 }
 
 #endif /* PPM_SUPPORTED */

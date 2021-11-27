@@ -252,7 +252,7 @@ jinit_write_targa(j_decompress_ptr cinfo)
     ((j_common_ptr)cinfo, JPOOL_IMAGE, dest->buffer_width, (JDIMENSION)1);
   dest->pub.buffer_height = 1;
 
-  return (djpeg_dest_ptr)dest;
+  return &dest->pub;
 }
 
 #endif /* TARGA_SUPPORTED */

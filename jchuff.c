@@ -1124,7 +1124,7 @@ jinit_huff_encoder(j_compress_ptr cinfo)
   entropy = (huff_entropy_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(huff_entropy_encoder));
-  cinfo->entropy = (struct jpeg_entropy_encoder *)entropy;
+  cinfo->entropy = &entropy->pub;
   entropy->pub.start_pass = start_pass_huff;
 
   /* Mark tables unallocated */

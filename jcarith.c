@@ -187,11 +187,11 @@ finish_pass(j_compress_ptr cinfo)
     if (e->zc)  /* output final pending zero bytes */
       do emit_byte(0x00, cinfo);
       while (--e->zc);
-    emit_byte((e->c >> 19) & 0xFF, cinfo);
+    emit_byte((int) ((e->c >> 19) & 0xFF), cinfo);
     if (((e->c >> 19) & 0xFF) == 0xFF)
       emit_byte(0x00, cinfo);
     if (e->c & 0x7F800L) {
-      emit_byte((e->c >> 11) & 0xFF, cinfo);
+      emit_byte((int) ((e->c >> 11) & 0xFF), cinfo);
       if (((e->c >> 11) & 0xFF) == 0xFF)
         emit_byte(0x00, cinfo);
     }
@@ -229,7 +229,7 @@ arith_encode(j_compress_ptr cinfo, unsigned char *st, int val)
   register JLONG qe, temp;
   register int sv;
 
-  /* Fetch values from our compact representation of Table D.2:
+  /* Fetch values from our compact representation of Table D.3(D.2):
    * Qe values and probability estimation state machine
    */
   sv = *st;
@@ -286,7 +286,8 @@ arith_encode(j_compress_ptr cinfo, unsigned char *st, int val)
         /* Note: The 3 spacer bits in the C register guarantee
          * that the new buffer byte can't be 0xFF here
          * (see page 160 in the P&M JPEG book). */
-        e->buffer = temp & 0xFF;  /* new output byte, might overflow later */
+        /* New output byte, might overflow later */
+        e->buffer = (int) (temp & 0xFF);
       } else if (temp == 0xFF) {
         ++e->sc;  /* stack 0xFF byte (which might overflow later) */
       } else {
@@ -308,7 +309,8 @@ arith_encode(j_compress_ptr cinfo, unsigned char *st, int val)
             emit_byte(0x00, cinfo);
           } while (--e->sc);
         }
-        e->buffer = temp & 0xFF;  /* new output byte (can still overflow) */
+        /* New output byte (can still overflow) */
+        e->buffer = (int) (temp & 0xFF);
       }
       e->c &= 0x7FFFFL;
       e->ct += 8;
@@ -368,7 +370,6 @@ METHODDEF(boolean)
 encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
-  JBLOCKROW block;
   unsigned char *st;
   int blkn, ci, tbl;
   int v, v2, m;
@@ -387,14 +388,13 @@ encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
   /* Encode the MCU data blocks */
   for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
-    block = MCU_data[blkn];
     ci = cinfo->MCU_membership[blkn];
     tbl = cinfo->cur_comp_info[ci]->dc_tbl_no;
 
     /* Compute the DC value after the required point transform by Al.
      * This is simply an arithmetic right shift.
      */
-    m = IRIGHT_SHIFT((int)((*block)[0]), cinfo->Al);
+    m = IRIGHT_SHIFT((int) (MCU_data[blkn][0][0]), cinfo->Al);
 
     /* Sections F.1.4.1 & F.1.4.4.1: Encoding of DC coefficients */
 
@@ -917,7 +917,7 @@ jinit_arith_encoder(j_compress_ptr cinfo)
   entropy = (arith_entropy_ptr)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                 sizeof(arith_entropy_encoder));
-  cinfo->entropy = (struct jpeg_entropy_encoder *)entropy;
+  cinfo->entropy = &entropy->pub;
   entropy->pub.start_pass = start_pass;
   entropy->pub.finish_pass = finish_pass;
 

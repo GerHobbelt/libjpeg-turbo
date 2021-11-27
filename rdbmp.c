@@ -683,7 +683,7 @@ jinit_read_bmp(j_compress_ptr cinfo, boolean use_inversion_array)
 
   source->use_inversion_array = use_inversion_array;
 
-  return (cjpeg_source_ptr)source;
+  return &source->pub;
 }
 
 #endif /* BMP_SUPPORTED */
