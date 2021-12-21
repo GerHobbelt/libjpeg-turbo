@@ -145,6 +145,5 @@ rgb_rgb_convert_internal(j_compress_ptr cinfo, JSAMPARRAY input_buf,
   }
 }
 
-
 #endif
 

@@ -4,7 +4,7 @@
  * This file was part of the Independent JPEG Group's software:
  * Copyright (C) 1991-1997, Thomas G. Lane.
  * libjpeg-turbo Modifications:
- * Copyright (C) 2009-2011, 2014-2016, 2018-2019, 2021, D. R. Commander.
+ * Copyright (C) 2009-2011, 2014-2016, 2018-2021, D. R. Commander.
  * Copyright (C) 2015, Matthieu Darbois.
  * Copyright (C) 2018, Matthias Räncker.
  * Copyright (C) 2020, Arm Limited.
@@ -1024,6 +1024,9 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
    * next shortest nonzero BITS entry is converted into a prefix for two code
    * words one bit longer.
    */
+
+  if (bits[0] == 0)
+    ERREXIT(cinfo, JERR_HUFF_CLEN_OVERFLOW);
 
   for (i = MAX_CLEN; i > 16; i--) {
     while (bits[i] > 0) {
