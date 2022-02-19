@@ -5,7 +5,7 @@
  * Copyright (C) 1991-1997, Thomas G. Lane.
  * Modified 2009 by Bill Allombert, Guido Vollbeding.
  * libjpeg-turbo Modifications:
- * Copyright (C) 2015-2017, 2020-2021, D. R. Commander.
+ * Copyright (C) 2015-2017, 2020-2022, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
  *
@@ -181,13 +181,13 @@ get_text_gray_rgb_row(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
       GRAY_RGB_READ_LOOP(read_pbm_integer(cinfo, infile, maxval),
                          ptr[aindex] = 0xFF;)
     else
-      GRAY_RGB_READ_LOOP(read_pbm_integer(cinfo, infile, maxval),)
+      GRAY_RGB_READ_LOOP(read_pbm_integer(cinfo, infile, maxval), {})
   } else {
     if (aindex >= 0)
       GRAY_RGB_READ_LOOP(rescale[read_pbm_integer(cinfo, infile, maxval)],
                          ptr[aindex] = 0xFF;)
     else
-      GRAY_RGB_READ_LOOP(rescale[read_pbm_integer(cinfo, infile, maxval)],)
+      GRAY_RGB_READ_LOOP(rescale[read_pbm_integer(cinfo, infile, maxval)], {})
   }
   return 1;
 }
@@ -255,13 +255,13 @@ get_text_rgb_row(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
       RGB_READ_LOOP(read_pbm_integer(cinfo, infile, maxval),
                     ptr[aindex] = 0xFF;)
     else
-      RGB_READ_LOOP(read_pbm_integer(cinfo, infile, maxval),)
+      RGB_READ_LOOP(read_pbm_integer(cinfo, infile, maxval), {})
   } else {
     if (aindex >= 0)
       RGB_READ_LOOP(rescale[read_pbm_integer(cinfo, infile, maxval)],
                     ptr[aindex] = 0xFF;)
     else
-      RGB_READ_LOOP(rescale[read_pbm_integer(cinfo, infile, maxval)],)
+      RGB_READ_LOOP(rescale[read_pbm_integer(cinfo, infile, maxval)], {})
   }
   return 1;
 }
@@ -347,12 +347,12 @@ get_gray_rgb_row(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     if (aindex >= 0)
       GRAY_RGB_READ_LOOP(*bufferptr++, ptr[aindex] = 0xFF;)
     else
-      GRAY_RGB_READ_LOOP(*bufferptr++,)
+      GRAY_RGB_READ_LOOP(*bufferptr++, {})
   } else {
     if (aindex >= 0)
       GRAY_RGB_READ_LOOP(rescale[UCH(*bufferptr++)], ptr[aindex] = 0xFF;)
     else
-      GRAY_RGB_READ_LOOP(rescale[UCH(*bufferptr++)],)
+      GRAY_RGB_READ_LOOP(rescale[UCH(*bufferptr++)], {})
   }
   return 1;
 }
@@ -415,12 +415,12 @@ get_rgb_row(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
     if (aindex >= 0)
       RGB_READ_LOOP(*bufferptr++, ptr[aindex] = 0xFF;)
     else
-      RGB_READ_LOOP(*bufferptr++,)
+      RGB_READ_LOOP(*bufferptr++, {})
   } else {
     if (aindex >= 0)
       RGB_READ_LOOP(rescale[UCH(*bufferptr++)], ptr[aindex] = 0xFF;)
     else
-      RGB_READ_LOOP(rescale[UCH(*bufferptr++)],)
+      RGB_READ_LOOP(rescale[UCH(*bufferptr++)], {})
   }
   return 1;
 }
@@ -732,8 +732,8 @@ start_input_ppm(j_compress_ptr cinfo, cjpeg_source_ptr sinfo)
       (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   (size_t)(((long)MAX(maxval, 255) + 1L) *
                                            sizeof(JSAMPLE)));
-    MEMZERO(source->rescale, (size_t)(((long)MAX(maxval, 255) + 1L) *
-                                      sizeof(JSAMPLE)));
+    memset(source->rescale, 0, (size_t)(((long)MAX(maxval, 255) + 1L) *
+                                        sizeof(JSAMPLE)));
     half_maxval = maxval / 2;
     for (val = 0; val <= (long)maxval; val++) {
       /* The multiplication here must be done in 32 bits to avoid overflow */

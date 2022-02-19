@@ -35,11 +35,6 @@
 #include "jconfigint.h"
 #include "monolithic_examples.h"
 
-#ifndef HAVE_STDLIB_H           /* <stdlib.h> should declare malloc(),free() */
-extern void *malloc(size_t size);
-extern void free(void *ptr);
-#endif
-
 #ifdef USE_CCOMMAND             /* command-line reader for Macintosh */
 #ifdef __MWERKS__
 #include <SIOUX.h>              /* Metrowerks needs this */
