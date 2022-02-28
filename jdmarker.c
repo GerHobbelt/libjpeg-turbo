@@ -376,6 +376,10 @@ id_found:
   /* Count another SOS marker */
   cinfo->input_scan_number++;
 
+  if (cinfo->input_scan_number > 60) {
+	ERREXIT1(cinfo, JERR_IMAGE_TOO_BIG, cinfo->input_scan_number);
+  }
+  
   INPUT_SYNC(cinfo);
   return TRUE;
 }

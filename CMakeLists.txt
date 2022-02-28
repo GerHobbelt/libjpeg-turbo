@@ -210,6 +210,14 @@ boolean_number(WITH_SIMD)
 option(WITH_TURBOJPEG "Include the TurboJPEG API library and associated test programs" TRUE)
 boolean_number(WITH_TURBOJPEG)
 option(WITH_FUZZ "Build fuzz targets" FALSE)
+option(NO_GETENV "Enable GETENV to control memory usage and force code paths externally" TRUE)
+boolean_number(NO_GETENV)
+option(WITH_3DNOW "Enable 3DNow supprt" FALSE)
+boolean_number(WITH_3DNOW)
+option(WITH_FULLTRACING "Enable tracing/debug messages" FALSE)
+boolean_number(WITH_FULLTRACING)
+option(JPEGLIB_ENABLE_COMPRESS "Enable compressor part" FALSE)
+boolean_number(JPEGLIB_ENABLE_COMPRESS)
 
 macro(report_option var desc)
   if(${var})
@@ -235,6 +243,7 @@ endif()
 
 report_option(ENABLE_SHARED "Shared libraries")
 report_option(ENABLE_STATIC "Static libraries")
+report_option(JPEGLIB_ENABLE_COMPRESS "Compression support")
 
 if(ENABLE_SHARED)
   set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
@@ -286,6 +295,8 @@ endif()
 if(NOT WITH_JPEG8)
   report_option(WITH_MEM_SRCDST "In-memory source/destination managers")
 endif()
+
+report_option(WITH_3DNOW "AMD 3DNow support")
 
 set(SO_AGE 2)
 if(WITH_MEM_SRCDST)
@@ -360,7 +371,7 @@ if(MSVC)
       endif()
     endforeach()
   endif()
-  add_definitions(-D_CRT_NONSTDC_NO_WARNINGS)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_CRT_NONSTDC_NO_WARNINGS /W3 /wd4996 /Zp4")
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -391,7 +402,7 @@ string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UC)
 set(EFFECTIVE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
 message(STATUS "Compiler flags = ${EFFECTIVE_C_FLAGS}")
 
-set(EFFECTIVE_LD_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${CMAKE_BUILD_TYPE_UC}}")
+set(EFFECTIVE_LD_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_EXE_LINKER_FLAGS_${CMAKE_BUILD_TYPE_UC}} ")
 message(STATUS "Linker flags = ${EFFECTIVE_LD_FLAGS}")
 
 include(CheckCSourceCompiles)
@@ -538,24 +549,36 @@ if(CMAKE_EXECUTABLE_SUFFIX_TMP)
 endif()
 message(STATUS "CMAKE_EXECUTABLE_SUFFIX = ${CMAKE_EXECUTABLE_SUFFIX}")
 
-set(JPEG_SOURCES jcapimin.c jcapistd.c jccoefct.c jccolor.c jcdctmgr.c jchuff.c
-  jcicc.c jcinit.c jcmainct.c jcmarker.c jcmaster.c jcomapi.c jcparam.c
-  jcphuff.c jcprepct.c jcsample.c jctrans.c jdapimin.c jdapistd.c jdatadst.c
+set(JPEG_SOURCES jcomapi.c jdapimin.c jdapistd.c jdatadst.c
   jdatasrc.c jdcoefct.c jdcolor.c jddctmgr.c jdhuff.c jdicc.c jdinput.c
   jdmainct.c jdmarker.c jdmaster.c jdmerge.c jdphuff.c jdpostct.c jdsample.c
   jdtrans.c jerror.c jfdctflt.c jfdctfst.c jfdctint.c jidctflt.c jidctfst.c
   jidctint.c jidctred.c jquant1.c jquant2.c jutils.c jmemmgr.c jmemnobs.c)
 
+if(JPEGLIB_ENABLE_COMPRESS)
+	set(JPEG_SOURCES jcapimin.c jcapistd.c jccoefct.c jccolor.c jcdctmgr.c jchuff.c
+	  jcicc.c jcinit.c jcmainct.c jcmarker.c jcmaster.c jcparam.c
+	  jcphuff.c jcprepct.c jcsample.c jctrans.c ${JPEG_SOURCES})
+endif()  
+  
 if(WITH_ARITH_ENC OR WITH_ARITH_DEC)
   set(JPEG_SOURCES ${JPEG_SOURCES} jaricom.c)
 endif()
 
-if(WITH_ARITH_ENC)
+if(WITH_ARITH_ENC AND JPEGLIB_ENABLE_COMPRESS)
   set(JPEG_SOURCES ${JPEG_SOURCES} jcarith.c)
 endif()
 
 if(WITH_ARITH_DEC)
   set(JPEG_SOURCES ${JPEG_SOURCES} jdarith.c)
+endif()
+
+if(MSVC)
+  if(JPEGLIB_ENABLE_COMPRESS)
+    configure_file("win/jpeg62-rw.def" "win/jpeg62.def" COPYONLY)
+  else()
+    configure_file("win/jpeg62-ro.def" "win/jpeg62.def" COPYONLY)
+  endif()
 endif()
 
 if(WITH_SIMD)

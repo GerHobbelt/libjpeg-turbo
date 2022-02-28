@@ -19,7 +19,9 @@
 
 #define JSIMD_NONE     0x00
 #define JSIMD_MMX      0x01
+#ifdef WITH_3DNOW
 #define JSIMD_3DNOW    0x02
+#endif
 #define JSIMD_SSE      0x04
 #define JSIMD_SSE2     0x08
 #define JSIMD_NEON     0x10
@@ -1027,8 +1029,10 @@ EXTERN(void) jsimd_convsamp_altivec
   (JSAMPARRAY sample_data, JDIMENSION start_col, DCTELEM *workspace);
 
 /* Floating Point Sample Conversion */
+#ifdef WITH_3DNOW
 EXTERN(void) jsimd_convsamp_float_3dnow
   (JSAMPARRAY sample_data, JDIMENSION start_col, FAST_FLOAT *workspace);
+#endif
 
 EXTERN(void) jsimd_convsamp_float_sse
   (JSAMPARRAY sample_data, JDIMENSION start_col, FAST_FLOAT *workspace);
@@ -1071,7 +1075,9 @@ EXTERN(void) jsimd_fdct_ifast_mmi(DCTELEM *data);
 EXTERN(void) jsimd_fdct_ifast_altivec(DCTELEM *data);
 
 /* Floating Point Forward DCT */
+#ifdef WITH_3DNOW
 EXTERN(void) jsimd_fdct_float_3dnow(FAST_FLOAT *data);
+#endif
 
 extern const int jconst_fdct_float_sse[];
 EXTERN(void) jsimd_fdct_float_sse(FAST_FLOAT *data);
@@ -1099,8 +1105,10 @@ EXTERN(void) jsimd_quantize_altivec
   (JCOEFPTR coef_block, DCTELEM *divisors, DCTELEM *workspace);
 
 /* Floating Point Quantization */
+#ifdef WITH_3DNOW
 EXTERN(void) jsimd_quantize_float_3dnow
   (JCOEFPTR coef_block, FAST_FLOAT *divisors, FAST_FLOAT *workspace);
+#endif
 
 EXTERN(void) jsimd_quantize_float_sse
   (JCOEFPTR coef_block, FAST_FLOAT *divisors, FAST_FLOAT *workspace);
@@ -1208,9 +1216,11 @@ EXTERN(void) jsimd_idct_ifast_altivec
    JDIMENSION output_col);
 
 /* Floating Point Inverse DCT */
+#ifdef WITH_3DNOW
 EXTERN(void) jsimd_idct_float_3dnow
   (void *dct_table, JCOEFPTR coef_block, JSAMPARRAY output_buf,
    JDIMENSION output_col);
+#endif
 
 extern const int jconst_idct_float_sse[];
 EXTERN(void) jsimd_idct_float_sse

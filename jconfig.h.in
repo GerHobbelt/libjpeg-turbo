@@ -21,6 +21,16 @@
 /* Use accelerated SIMD routines. */
 #cmakedefine WITH_SIMD 1
 
+/* Disable GETENV */
+#cmakedefine NO_GETENV
+/* Support 3DNow */
+
+/* Enable full tracing */
+#cmakedefine WITH_FULLTRACING 1
+
+/* Enable compressor part */
+#cmakedefine JPEGLIB_ENABLE_COMPRESS 1
+
 /*
  * Define BITS_IN_JSAMPLE as either
  *   8   for 8-bit sample values (the usual setting)
