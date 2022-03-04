@@ -1,4 +1,3 @@
-#ifdef JPEGLIB_ENABLE_COMPRESS
 static const unsigned char jpeg_nbits_table[65536] = {
    0,  1,  2,  2,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  4,  4,
    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,
@@ -4097,4 +4096,3 @@ static const unsigned char jpeg_nbits_table[65536] = {
   16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
   16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16
 };
-#endif
