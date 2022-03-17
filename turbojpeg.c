@@ -95,7 +95,8 @@ static void my_emit_message(j_common_ptr cinfo, int msg_level)
   myerr->emit_message(cinfo, msg_level);
   if (msg_level < 0) {
     myerr->warning = TRUE;
-    if (myerr->stopOnWarning) longjmp(myerr->setjmp_buffer, 1);
+    if (myerr->stopOnWarning)
+		longjmp(myerr->setjmp_buffer, 1);
   }
 }
 
