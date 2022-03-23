@@ -39,16 +39,6 @@
 
 #include <ctype.h>              /* to declare isprint() */
 
-#ifdef USE_CCOMMAND             /* command-line reader for Macintosh */
-#ifdef __MWERKS__
-#include <SIOUX.h>              /* Metrowerks needs this */
-#include <console.h>            /* ... and this */
-#endif
-#ifdef THINK_C
-#include <console.h>            /* Think declares it here */
-#endif
-#endif
-
 
 /* Create the add-on message string table. */
 
@@ -554,11 +544,6 @@ main(int argc, const char** argv)
   unsigned long insize = 0;
 #endif
   JDIMENSION num_scanlines;
-
-  /* On Mac, fetch a command line. */
-#ifdef USE_CCOMMAND
-  argc = ccommand(&argv);
-#endif
 
   progname = argv[0];
   if (progname == NULL || progname[0] == 0)

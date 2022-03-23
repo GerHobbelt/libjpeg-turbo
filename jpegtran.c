@@ -24,16 +24,6 @@
 #include "jconfigint.h"
 #include "monolithic_examples.h"
 
-#ifdef USE_CCOMMAND             /* command-line reader for Macintosh */
-#ifdef __MWERKS__
-#include <SIOUX.h>              /* Metrowerks needs this */
-#include <console.h>            /* ... and this */
-#endif
-#ifdef THINK_C
-#include <console.h>            /* Think declares it here */
-#endif
-#endif
-
 
  /*
   * Argument-parsing code.
@@ -553,11 +543,6 @@ main(int argc, const char** argv)
 	FILE* icc_file;
 	JOCTET* icc_profile = NULL;
 	long icc_len = 0;
-
-	/* On Mac, fetch a command line. */
-#ifdef USE_CCOMMAND
-	argc = ccommand(&argv);
-#endif
 
 	progname = argv[0];
 	if (progname == NULL || progname[0] == 0)
