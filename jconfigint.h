@@ -1,5 +1,5 @@
 /* libjpeg-turbo build number */
-#define BUILD  "20210125"
+#define BUILD "20220802"
 
 /* Compiler's inline keyword */
 #undef inline
@@ -12,10 +12,10 @@
 #endif
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME  "libjpeg-turbo"
+#define PACKAGE_NAME "libjpeg-turbo"
 
 /* Version number of package */
-#define VERSION  "2.0.6"
+#define VERSION "2.1.3"
 
 /* The size of `size_t', as reported by the compiler through the
  * builtin macro __SIZEOF_SIZE_T__. If the compiler does not
@@ -24,7 +24,7 @@
  * library. */
 #ifdef __SIZEOF_SIZE_T__
 #define SIZEOF_SIZE_T __SIZEOF_SIZE_T__
-#elif __WORDSIZE==64 || defined(_WIN64)
+#elif __WORDSIZE == 64 || defined(_WIN64)
 #define SIZEOF_SIZE_T 8
 #else
 #define SIZEOF_SIZE_T 4
@@ -46,4 +46,14 @@
 #elif (SIZEOF_SIZE_T == 4)
 #define HAVE_BITSCANFORWARD
 #endif
+#endif
+
+#if defined(__has_attribute)
+#if __has_attribute(fallthrough)
+#define FALLTHROUGH __attribute__((fallthrough));
+#else
+#define FALLTHROUGH
+#endif
+#else
+#define FALLTHROUGH
 #endif

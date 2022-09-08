@@ -59,122 +59,12 @@ files {
   "jmemnobs.c",
   "jquant1.c",
   "jquant2.c",
+  "jsimd_none.c",
   "jutils.c",
 }
 
-local opts_simd_none = {
-  "jsimd_none.c",
-}
-
-local opts_simd_arm = {
-  "simd/arm/jsimd_arm.c",
-  "simd/arm/jsimd_neon_arm.S",
-}
-
-local opts_simd_arm64 = {
-  "simd/arm64/jsimd_arm64.c",
-  "simd/arm64/jsimd_neon_arm64.S",
-}
-
-if (_PLATFORM_ANDROID) then
-  configuration { "*arm64*" }
-
-  defines {
-    "WITH_SIMD",
-  }
-
-  files {
-    opts_simd_arm64,
-  }
-
-  configuration { "*armv7*" }
-
-  defines {
-    "WITH_SIMD",
-  }
-
-  files {
-    opts_simd_arm,
-  }
-
-  configuration { "*x64*" }
-
-  files {
-    opts_simd_none,
-  }
-
-  configuration { "*x86*" }
-
-  files {
-    opts_simd_none,
-  }
-end
-
-if (_PLATFORM_COCOA) then
-  configuration { "*arm64*" }
-
-  defines {
-    "WITH_SIMD",
-  }
-
-  files {
-    opts_simd_arm64,
-  }
-
-  configuration { "*x64*" }
-
-  files {
-    opts_simd_none,
-  }
-end
-
-if (_PLATFORM_IOS) then
-  configuration { "*arm64*" }
-
-  defines {
-    "WITH_SIMD",
-  }
-
-  files {
-    opts_simd_arm64,
-  }
-
-  configuration { "*x64*" }
-
-  files {
-    opts_simd_none,
-  }
-end
-
-if (_PLATFORM_LINUX) then
-  files {
-    opts_simd_none,
-  }
-end
-
-if (_PLATFORM_MACOS) then
-  files {
-    opts_simd_none,
-  }
-end
-
-if (_PLATFORM_WINDOWS) then
-  defines {
-    "TURBO_FOR_WINDOWS",
-  }
-
-  files {
-    opts_simd_none,
-  }
-end
-
 if (_PLATFORM_WINUWP) then
   defines {
-    "TURBO_FOR_WINDOWS",
     "_CRT_SECURE_NO_WARNINGS",
-  }
-
-  files {
-    opts_simd_none,
   }
 end
