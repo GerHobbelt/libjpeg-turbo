@@ -42,7 +42,6 @@
 #include "jpeglib.h"
 #include "jdmerge.h"
 #include "jsimd.h"
-#include "jconfigint.h"
 
 
 #define JPEG_INCLUDES_JDMERGE_C 1

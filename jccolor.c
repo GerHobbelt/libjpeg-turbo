@@ -17,7 +17,6 @@
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jsimd.h"
-#include "jconfigint.h"
 
 
 #define JPEG_INCLUDES_JCOLEXT_C 1

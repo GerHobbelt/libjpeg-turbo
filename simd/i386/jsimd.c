@@ -21,7 +21,6 @@
 #include "../../jdct.h"
 #include "../../jsimddct.h"
 #include "../jsimd.h"
-#include "jconfigint.h"
 
 /*
  * In the PIC cases, we have no guarantee that constants will keep
@@ -32,13 +31,11 @@
 #define IS_ALIGNED_SSE(ptr)  (IS_ALIGNED(ptr, 4)) /* 16 byte alignment */
 #define IS_ALIGNED_AVX(ptr)  (IS_ALIGNED(ptr, 5)) /* 32 byte alignment */
 
-static unsigned int simd_support = (unsigned int)(~0);
-static unsigned int simd_huffman = 1;
+static THREAD_LOCAL unsigned int simd_support = (unsigned int)(~0);
+static THREAD_LOCAL unsigned int simd_huffman = 1;
 
 /*
  * Check what SIMD accelerations are supported.
- *
- * FIXME: This code is racy under a multi-threaded environment.
  */
 LOCAL(void)
 init_simd(void)
