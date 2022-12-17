@@ -24,6 +24,10 @@ libjpeg-turbo (`-DWITH_12BIT=1`), passing samples with values greater than 4095
 or less than 0 to `jpeg_write_scanlines()` caused a buffer overrun or underrun
 in the RGB-to-YCbCr color converter.
 
+4. Fixed a floating point exception that occurred when attempting to use the
+jpegtran `-drop` and `-trim` options to losslessly transform a
+specially-crafted malformed JPEG image.
+
 
 2.1.4
 =====
@@ -369,11 +373,11 @@ methods in the TurboJPEG Java API.
 
 2. Fixed or worked around multiple issues with `jpeg_skip_scanlines()`:
 
-     - Fixed segfaults or "Corrupt JPEG data: premature end of data segment"
-errors in `jpeg_skip_scanlines()` that occurred when decompressing 4:2:2 or
-4:2:0 JPEG images using merged (non-fancy) upsampling/color conversion (that
-is, when setting `cinfo.do_fancy_upsampling` to `FALSE`.)  2.0.0[6] was a
-similar fix, but it did not cover all cases.
+     - Fixed segfaults (CVE-2020-35538) or "Corrupt JPEG data: premature end of
+data segment" errors in `jpeg_skip_scanlines()` that occurred when
+decompressing 4:2:2 or 4:2:0 JPEG images using merged (non-fancy)
+upsampling/color conversion (that is, when setting `cinfo.do_fancy_upsampling`
+to `FALSE`.)  2.0.0[6] was a similar fix, but it did not cover all cases.
      - `jpeg_skip_scanlines()` now throws an error if two-pass color
 quantization is enabled.  Two-pass color quantization never worked properly
 with `jpeg_skip_scanlines()`, and the issues could not readily be fixed.
