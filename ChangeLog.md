@@ -19,6 +19,11 @@ transformer (unlike the decompressor) is not generally exposed to arbitrary
 data exploits, and given that 12-bit-per-component builds of libjpeg-turbo are
 uncommon, this issue did not likely pose a security risk.
 
+3. Fixed an issue whereby, when using a 12-bit-per-component build of
+libjpeg-turbo (`-DWITH_12BIT=1`), passing samples with values greater than 4095
+or less than 0 to `jpeg_write_scanlines()` caused a buffer overrun or underrun
+in the RGB-to-YCbCr color converter.
+
 
 2.1.4
 =====
@@ -178,10 +183,10 @@ progressive JPEG format described in the report
 ["Two Issues with the JPEG Standard"](https://libjpeg-turbo.org/pmwiki/uploads/About/TwoIssueswiththeJPEGStandard.pdf).
 
 7. The PPM reader now throws an error, rather than segfaulting (due to a buffer
-overrun) or generating incorrect pixels, if an application attempts to use the
-`tjLoadImage()` function to load a 16-bit binary PPM file (a binary PPM file
-with a maximum value greater than 255) into a grayscale image buffer or to load
-a 16-bit binary PGM file into an RGB image buffer.
+overrun, CVE-2021-46822) or generating incorrect pixels, if an application
+attempts to use the `tjLoadImage()` function to load a 16-bit binary PPM file
+(a binary PPM file with a maximum value greater than 255) into a grayscale
+image buffer or to load a 16-bit binary PGM file into an RGB image buffer.
 
 8. Fixed an issue in the PPM reader that caused incorrect pixels to be
 generated when using the `tjLoadImage()` function to load a 16-bit binary PPM
