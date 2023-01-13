@@ -27,14 +27,18 @@
 #include "../../jsimddct.h"
 #include "../jsimd.h"
 
-#include <stdio.h>
-#include <string.h>
 #include <ctype.h>
 
-#if defined(__OpenBSD__)
+#if defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#elif defined(__OpenBSD__)
 #include <sys/param.h>
 #include <sys/sysctl.h>
 #include <machine/cpu.h>
+#elif defined(__FreeBSD__)
+#include <machine/cpu.h>
+#include <sys/auxv.h>
 #endif
 
 static unsigned int simd_support = ~0;
@@ -118,10 +122,16 @@ init_simd(void)
   int bufsize = 1024; /* an initial guess for the line buffer size limit */
 #elif defined(__amigaos4__)
   uint32 altivec = 0;
+#elif defined(__APPLE__)
+  int mib[2] = { CTL_HW, HW_VECTORUNIT };
+  int altivec;
+  size_t len = sizeof(altivec);
 #elif defined(__OpenBSD__)
   int mib[2] = { CTL_MACHDEP, CPU_ALTIVEC };
   int altivec;
   size_t len = sizeof(altivec);
+#elif defined(__FreeBSD__)
+  unsigned long cpufeatures = 0;
 #endif
 
   if (simd_support != ~0U)
@@ -129,7 +139,7 @@ init_simd(void)
 
   simd_support = 0;
 
-#if defined(__ALTIVEC__) || defined(__APPLE__)
+#if defined(__ALTIVEC__)
   simd_support |= JSIMD_ALTIVEC;
 #elif defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
   while (!parse_proc_cpuinfo(bufsize)) {
@@ -141,8 +151,12 @@ init_simd(void)
   IExec->GetCPUInfoTags(GCIT_VectorUnit, &altivec, TAG_DONE);
   if (altivec == VECTORTYPE_ALTIVEC)
     simd_support |= JSIMD_ALTIVEC;
-#elif defined(__OpenBSD__)
+#elif defined(__APPLE__) || defined(__OpenBSD__)
   if (sysctl(mib, 2, &altivec, &len, NULL, 0) == 0 && altivec != 0)
+    simd_support |= JSIMD_ALTIVEC;
+#elif defined(__FreeBSD__)
+  elf_aux_info(AT_HWCAP, &cpufeatures, sizeof(cpufeatures));
+  if (cpufeatures & PPC_FEATURE_HAS_ALTIVEC)
     simd_support |= JSIMD_ALTIVEC;
 #endif
 

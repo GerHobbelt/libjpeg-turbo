@@ -1,6 +1,6 @@
 /*
- * Copyright (C)2011-2012, 2014-2015, 2017, 2019 D. R. Commander.
- *                                               All Rights Reserved.
+ * Copyright (C)2011-2012, 2014-2015, 2017, 2019, 2021-2022
+ *           D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,10 @@
  * This program demonstrates how to compress, decompress, and transform JPEG
  * images using the TurboJPEG C API
  */
+
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -288,8 +292,10 @@ int main(int argc, char **argv)
         THROW_TJ("initializing transformer");
       xform.options |= TJXOPT_TRIM;
       if (tjTransform(tjInstance, jpegBuf, jpegSize, 1, &dstBuf, &dstSize,
-                      &xform, flags) < 0)
+                      &xform, flags) < 0) {
+        tjFree(dstBuf);
         THROW_TJ("transforming input image");
+      }
       tjFree(jpegBuf);
       jpegBuf = dstBuf;
       jpegSize = dstSize;
@@ -388,9 +394,9 @@ int main(int argc, char **argv)
   }
 
 bailout:
-  if (imgBuf) tjFree(imgBuf);
+  tjFree(imgBuf);
   if (tjInstance) tjDestroy(tjInstance);
-  if (jpegBuf) tjFree(jpegBuf);
+  tjFree(jpegBuf);
   if (jpegFile) fclose(jpegFile);
   return retval;
 }
