@@ -114,7 +114,6 @@ endif()
 
 add_executable(jcstest ../jcstest.c)
 target_link_libraries(jcstest jpeg)
-<<<<<<< HEAD
 if(OS2)
   set_target_properties(jcstest PROPERTIES
     OS2_DEF_VENDOR "$ENV{VENDOR}"
