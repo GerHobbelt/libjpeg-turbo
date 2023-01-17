@@ -20,6 +20,8 @@
 
 %include "jsimdext.inc"
 
+%ifndef WIN64
+
 struc working_state
 .next_output_byte:   resp 1     ; => next byte to write in buffer
 .free_in_buffer:     resp 1     ; # of byte spaces remaining in buffer
@@ -759,3 +761,5 @@ EXTN(jsimd_huff_encode_one_block_sse2):
 ; For some reason, the OS X linker does not honor the request to align the
 ; segment unless we do this.
     align       32
+
+%endif

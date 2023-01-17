@@ -49,7 +49,7 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
     SECTION     SEG_TEXT
     BITS        64
 
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -60,7 +60,7 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define RGB_BLUE  EXT_RGB_BLUE
 %define RGB_PIXELSIZE  EXT_RGB_PIXELSIZE
 %define jsimd_ycc_rgb_convert_avx2  jsimd_ycc_extrgb_convert_avx2
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -71,7 +71,7 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define RGB_BLUE  EXT_RGBX_BLUE
 %define RGB_PIXELSIZE  EXT_RGBX_PIXELSIZE
 %define jsimd_ycc_rgb_convert_avx2  jsimd_ycc_extrgbx_convert_avx2
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -82,7 +82,7 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define RGB_BLUE  EXT_BGR_BLUE
 %define RGB_PIXELSIZE  EXT_BGR_PIXELSIZE
 %define jsimd_ycc_rgb_convert_avx2  jsimd_ycc_extbgr_convert_avx2
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -93,7 +93,7 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define RGB_BLUE  EXT_BGRX_BLUE
 %define RGB_PIXELSIZE  EXT_BGRX_PIXELSIZE
 %define jsimd_ycc_rgb_convert_avx2  jsimd_ycc_extbgrx_convert_avx2
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -104,7 +104,7 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define RGB_BLUE  EXT_XBGR_BLUE
 %define RGB_PIXELSIZE  EXT_XBGR_PIXELSIZE
 %define jsimd_ycc_rgb_convert_avx2  jsimd_ycc_extxbgr_convert_avx2
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -115,4 +115,4 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define RGB_BLUE  EXT_XRGB_BLUE
 %define RGB_PIXELSIZE  EXT_XRGB_PIXELSIZE
 %define jsimd_ycc_rgb_convert_avx2  jsimd_ycc_extxrgb_convert_avx2
-%include "x86_64/jdcolext-avx2.asm"
+%include "x86_64/jdcolext-avx2.inc"

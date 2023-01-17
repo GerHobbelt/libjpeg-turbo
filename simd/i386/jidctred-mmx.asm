@@ -22,6 +22,8 @@
 %include "jsimdext.inc"
 %include "jdct.inc"
 
+%ifndef WIN64
+
 ; --------------------------------------------------------------------------
 
 %define CONST_BITS    13
@@ -702,3 +704,5 @@ EXTN(jsimd_idct_2x2_mmx):
 ; For some reason, the OS X linker does not honor the request to align the
 ; segment unless we do this.
     align       32
+
+%endif

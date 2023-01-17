@@ -16,6 +16,8 @@
 
 %include "jsimdext.inc"
 
+%ifndef WIN64
+
 ; --------------------------------------------------------------------------
     SECTION     SEG_TEXT
     BITS        32
@@ -133,3 +135,5 @@ EXTN(jpeg_simd_cpu_support):
 ; For some reason, the OS X linker does not honor the request to align the
 ; segment unless we do this.
     align       32
+
+%endif
