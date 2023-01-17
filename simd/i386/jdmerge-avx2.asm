@@ -137,4 +137,10 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
   jsimd_h2v2_extxrgb_merged_upsample_avx2
 %include "i386/jdmrgext-avx2.inc"
 
+%else
+
+	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+    SECTION     SEG_TEXT
+	nop
+
 %endif

@@ -122,4 +122,10 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extxrgb_ycc_convert_avx2
 %include "i386/jccolext-avx2.inc"
 
+%else
+
+	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+    SECTION     SEG_TEXT
+	nop
+
 %endif

@@ -114,4 +114,10 @@ PD_ONEHALF     times 2 dd (1 << (SCALEBITS - 1))
 %define jsimd_rgb_gray_convert_mmx  jsimd_extxrgb_gray_convert_mmx
 %include "i386/jcgryext-mmx.inc"
 
+%else
+
+	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+    SECTION     SEG_TEXT
+	nop
+
 %endif

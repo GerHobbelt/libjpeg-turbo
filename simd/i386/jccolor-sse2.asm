@@ -121,4 +121,10 @@ PD_ONEHALF      times 4 dd  (1 << (SCALEBITS - 1))
 %define jsimd_rgb_ycc_convert_sse2  jsimd_extxrgb_ycc_convert_sse2
 %include "i386/jccolext-sse2.inc"
 
+%else
+
+	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+    SECTION     SEG_TEXT
+	nop
+
 %endif

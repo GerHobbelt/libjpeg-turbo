@@ -118,4 +118,10 @@ PD_ONEHALF      times 2 dd  1 << (SCALEBITS - 1)
 %define jsimd_ycc_rgb_convert_mmx  jsimd_ycc_extxrgb_convert_mmx
 %include "i386/jdcolext-mmx.inc"
 
+%else
+
+	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+    SECTION     SEG_TEXT
+	nop
+
 %endif

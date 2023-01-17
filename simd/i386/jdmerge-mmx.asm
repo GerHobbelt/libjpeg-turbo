@@ -124,4 +124,10 @@ PD_ONEHALF      times 2 dd  1 << (SCALEBITS - 1)
 %define jsimd_h2v2_merged_upsample_mmx  jsimd_h2v2_extxrgb_merged_upsample_mmx
 %include "i386/jdmrgext-mmx.inc"
 
+%else
+
+	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+    SECTION     SEG_TEXT
+	nop
+
 %endif
