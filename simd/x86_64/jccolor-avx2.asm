@@ -52,7 +52,7 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
     SECTION     SEG_TEXT
     BITS        64
 
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -63,7 +63,7 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_BLUE  EXT_RGB_BLUE
 %define RGB_PIXELSIZE  EXT_RGB_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extrgb_ycc_convert_avx2
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -74,7 +74,7 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_BLUE  EXT_RGBX_BLUE
 %define RGB_PIXELSIZE  EXT_RGBX_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extrgbx_ycc_convert_avx2
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -85,7 +85,7 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_BLUE  EXT_BGR_BLUE
 %define RGB_PIXELSIZE  EXT_BGR_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extbgr_ycc_convert_avx2
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -96,7 +96,7 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_BLUE  EXT_BGRX_BLUE
 %define RGB_PIXELSIZE  EXT_BGRX_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extbgrx_ycc_convert_avx2
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -107,7 +107,7 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_BLUE  EXT_XBGR_BLUE
 %define RGB_PIXELSIZE  EXT_XBGR_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extxbgr_ycc_convert_avx2
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -118,4 +118,4 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_BLUE  EXT_XRGB_BLUE
 %define RGB_PIXELSIZE  EXT_XRGB_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extxrgb_ycc_convert_avx2
-%include "jccolext-avx2.asm"
+%include "x86_64/jccolext-avx2.asm"

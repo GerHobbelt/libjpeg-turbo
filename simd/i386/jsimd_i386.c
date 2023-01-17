@@ -22,6 +22,9 @@
 #include "../../jsimddct.h"
 #include "../jsimd.h"
 
+// https://learn.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=msvc-170
+#if ((defined(_M_IX86_FP) && (_M_IX86_FP >= 2)) || defined(__AVX__)) && !defined(_M_X64)
+
 /*
  * In the PIC cases, we have no guarantee that constants will keep
  * their alignment. This macro allows us to verify it at runtime.
@@ -1265,4 +1268,6 @@ jsimd_encode_mcu_AC_refine_prepare(const JCOEF *block,
                                                  jpeg_natural_order_start,
                                                  Sl, Al, absvalues, bits);
 }
+#endif
+
 #endif

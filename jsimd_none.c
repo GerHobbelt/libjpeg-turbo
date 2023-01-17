@@ -20,6 +20,9 @@
 #include "jdct.h"
 #include "jsimddct.h"
 
+ // https://learn.microsoft.com/en-us/cpp/preprocessor/predefined-macros?view=msvc-170
+#if (!defined(_M_IX86_FP) || (_M_IX86_FP < 2)) && !defined(_M_X64) && !defined(__AVX__)
+
 GLOBAL(int)
 jsimd_can_rgb_ycc(void)
 {
@@ -429,3 +432,5 @@ jsimd_encode_mcu_AC_refine_prepare(const JCOEF *block,
 {
   return 0;
 }
+
+#endif

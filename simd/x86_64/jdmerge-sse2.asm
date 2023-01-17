@@ -48,7 +48,7 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
     SECTION     SEG_TEXT
     BITS        64
 
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -62,7 +62,7 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
   jsimd_h2v1_extrgb_merged_upsample_sse2
 %define jsimd_h2v2_merged_upsample_sse2 \
   jsimd_h2v2_extrgb_merged_upsample_sse2
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -76,7 +76,7 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
   jsimd_h2v1_extrgbx_merged_upsample_sse2
 %define jsimd_h2v2_merged_upsample_sse2 \
   jsimd_h2v2_extrgbx_merged_upsample_sse2
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -90,7 +90,7 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
   jsimd_h2v1_extbgr_merged_upsample_sse2
 %define jsimd_h2v2_merged_upsample_sse2 \
   jsimd_h2v2_extbgr_merged_upsample_sse2
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -104,7 +104,7 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
   jsimd_h2v1_extbgrx_merged_upsample_sse2
 %define jsimd_h2v2_merged_upsample_sse2 \
   jsimd_h2v2_extbgrx_merged_upsample_sse2
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -118,7 +118,7 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
   jsimd_h2v1_extxbgr_merged_upsample_sse2
 %define jsimd_h2v2_merged_upsample_sse2 \
   jsimd_h2v2_extxbgr_merged_upsample_sse2
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
 
 %undef RGB_RED
 %undef RGB_GREEN
@@ -132,4 +132,4 @@ PD_ONEHALF      times 4 dd  1 << (SCALEBITS - 1)
   jsimd_h2v1_extxrgb_merged_upsample_sse2
 %define jsimd_h2v2_merged_upsample_sse2 \
   jsimd_h2v2_extxrgb_merged_upsample_sse2
-%include "jdmrgext-sse2.asm"
+%include "x86_64/jdmrgext-sse2.asm"
