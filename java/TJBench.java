@@ -782,18 +782,18 @@ final class TJBench {
         minArg = 2;
         if (argv.length < minArg)
           usage();
+        String[] quals = argv[1].split("-", 2);
         try {
-          minQual = Integer.parseInt(argv[1]);
+          minQual = Integer.parseInt(quals[0]);
         } catch (NumberFormatException e) {}
         if (minQual < 1 || minQual > 100)
           throw new Exception("Quality must be between 1 and 100.");
-        int dashIndex = argv[1].indexOf('-');
-        if (dashIndex > 0 && argv[1].length() > dashIndex + 1) {
+        if (quals.length > 1) {
           try {
-            maxQual = Integer.parseInt(argv[1].substring(dashIndex + 1));
+            maxQual = Integer.parseInt(quals[1]);
           } catch (NumberFormatException e) {}
         }
-        if (maxQual < 1 || maxQual > 100)
+        if (maxQual < 1 || maxQual > 100 || maxQual < minQual)
           maxQual = minQual;
       }
 
@@ -813,6 +813,7 @@ final class TJBench {
           } else if (argv[i].equalsIgnoreCase("-progressive")) {
             System.out.println("Using progressive entropy coding\n");
             flags |= TJ.FLAG_PROGRESSIVE;
+            xformOpt |= TJTransform.OPT_PROGRESSIVE;
           } else if (argv[i].equalsIgnoreCase("-rgb"))
             pf = TJ.PF_RGB;
           else if (argv[i].equalsIgnoreCase("-rgbx"))
@@ -946,8 +947,9 @@ final class TJBench {
 
       if ((sf.getNum() != 1 || sf.getDenom() != 1) && doTile) {
         System.out.println("Disabling tiled compression/decompression tests, because those tests do not");
-        System.out.println("work when scaled decompression is enabled.");
+        System.out.println("work when scaled decompression is enabled.\n");
         doTile = false;
+        xformOpt &= (~TJTransform.OPT_CROP);
       }
 
       if (!decompOnly) {
