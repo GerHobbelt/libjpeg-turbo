@@ -4,7 +4,7 @@
  * This file was part of the Independent JPEG Group's software:
  * Copyright (C) 1994-1996, Thomas G. Lane.
  * libjpeg-turbo Modifications:
- * Copyright (C) 2011, 2015, 2020, D. R. Commander.
+ * Copyright (C) 2011, 2015, 2020, 2023, D. R. Commander.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
  *
@@ -59,7 +59,7 @@ h2v1_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr[RGB_GREEN] = range_limit[y + cgreen];
     outptr[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr[RGB_ALPHA] = 0xFF;
+    outptr[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     outptr += RGB_PIXELSIZE;
     y  = *inptr0++;
@@ -67,7 +67,7 @@ h2v1_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr[RGB_GREEN] = range_limit[y + cgreen];
     outptr[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr[RGB_ALPHA] = 0xFF;
+    outptr[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     outptr += RGB_PIXELSIZE;
   }
@@ -83,7 +83,7 @@ h2v1_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr[RGB_GREEN] = range_limit[y + cgreen];
     outptr[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr[RGB_ALPHA] = 0xFF;
+    outptr[RGB_ALPHA] = MAXJSAMPLE;
 #endif
   }
 }
@@ -133,7 +133,7 @@ h2v2_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr0[RGB_GREEN] = range_limit[y + cgreen];
     outptr0[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr0[RGB_ALPHA] = 0xFF;
+    outptr0[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     outptr0 += RGB_PIXELSIZE;
     y  = *inptr00++;
@@ -141,7 +141,7 @@ h2v2_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr0[RGB_GREEN] = range_limit[y + cgreen];
     outptr0[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr0[RGB_ALPHA] = 0xFF;
+    outptr0[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     outptr0 += RGB_PIXELSIZE;
     y  = *inptr01++;
@@ -149,7 +149,7 @@ h2v2_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr1[RGB_GREEN] = range_limit[y + cgreen];
     outptr1[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr1[RGB_ALPHA] = 0xFF;
+    outptr1[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     outptr1 += RGB_PIXELSIZE;
     y  = *inptr01++;
@@ -157,7 +157,7 @@ h2v2_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr1[RGB_GREEN] = range_limit[y + cgreen];
     outptr1[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr1[RGB_ALPHA] = 0xFF;
+    outptr1[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     outptr1 += RGB_PIXELSIZE;
   }
@@ -173,14 +173,14 @@ h2v2_merged_upsample_internal(j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
     outptr0[RGB_GREEN] = range_limit[y + cgreen];
     outptr0[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr0[RGB_ALPHA] = 0xFF;
+    outptr0[RGB_ALPHA] = MAXJSAMPLE;
 #endif
     y  = *inptr01;
     outptr1[RGB_RED] =   range_limit[y + cred];
     outptr1[RGB_GREEN] = range_limit[y + cgreen];
     outptr1[RGB_BLUE] =  range_limit[y + cblue];
 #ifdef RGB_ALPHA
-    outptr1[RGB_ALPHA] = 0xFF;
+    outptr1[RGB_ALPHA] = MAXJSAMPLE;
 #endif
   }
 }
