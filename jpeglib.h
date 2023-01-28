@@ -267,11 +267,13 @@ typedef enum {
 
 /* Common fields between JPEG compression and decompression master structs. */
 
+typedef struct jpeg_cust_mem_data_s jpeg_cust_mem_data; // see jmemcust.h
+
 #define jpeg_common_fields \
   struct jpeg_error_mgr *err;   /* Error handler module */ \
   struct jpeg_memory_mgr *mem;  /* Memory manager module */ \
   struct jpeg_progress_mgr *progress; /* Progress monitor, or NULL if none */ \
-  void *client_data;            /* Available for use by application */ \
+  jpeg_cust_mem_data *client_data;  /* Available for use by application */ \
   boolean is_decompressor;      /* So common code can tell which is which */ \
   int global_state              /* For checking call sequence validity */
 

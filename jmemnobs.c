@@ -17,14 +17,12 @@
  * to process big images.
  */
 
+#if !defined(BUILD_MONOLITHIC)
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jmemsys.h"            /* import the system-dependent declarations */
-
-
-#if !defined(BUILD_MONOLITHIC)
-
 
 
 /*

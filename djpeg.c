@@ -534,8 +534,8 @@ my_emit_message(j_common_ptr cinfo, int msg_level)
 int
 main(int argc, const char** argv)
 {
-  struct jpeg_decompress_struct cinfo;
-  struct jpeg_error_mgr jerr;
+  struct jpeg_decompress_struct cinfo = { 0 };
+  struct jpeg_error_mgr jerr = { 0 };
   struct cdjpeg_progress_mgr progress;
   int file_index;
   djpeg_dest_ptr dest_mgr = NULL;

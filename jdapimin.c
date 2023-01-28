@@ -51,7 +51,7 @@ jpeg_CreateDecompress(j_decompress_ptr cinfo, int version, size_t structsize)
    */
   {
     struct jpeg_error_mgr *err = cinfo->err;
-    void *client_data = cinfo->client_data; /* ignore Purify complaint here */
+	jpeg_cust_mem_data *client_data = cinfo->client_data; /* ignore Purify complaint here */
     memset(cinfo, 0, sizeof(struct jpeg_decompress_struct));
     cinfo->err = err;
     cinfo->client_data = client_data;
