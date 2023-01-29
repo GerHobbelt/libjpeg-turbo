@@ -17,8 +17,6 @@
  * to process big images.
  */
 
-#if !defined(BUILD_MONOLITHIC)
-
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -30,13 +28,13 @@
  * routines malloc() and free().
  */
 
-GLOBAL(void *)
+static void *
 jpeg_get_small(j_common_ptr cinfo, size_t sizeofobject)
 {
   return (void *)malloc(sizeofobject);
 }
 
-GLOBAL(void)
+static void
 jpeg_free_small(j_common_ptr cinfo, void *object, size_t sizeofobject)
 {
   free(object);
@@ -47,13 +45,13 @@ jpeg_free_small(j_common_ptr cinfo, void *object, size_t sizeofobject)
  * "Large" objects are treated the same as "small" ones.
  */
 
-GLOBAL(void *)
+static void *
 jpeg_get_large(j_common_ptr cinfo, size_t sizeofobject)
 {
   return (void *)malloc(sizeofobject);
 }
 
-GLOBAL(void)
+static void
 jpeg_free_large(j_common_ptr cinfo, void *object, size_t sizeofobject)
 {
   free(object);
@@ -64,7 +62,7 @@ jpeg_free_large(j_common_ptr cinfo, void *object, size_t sizeofobject)
  * This routine computes the total memory space available for allocation.
  */
 
-GLOBAL(size_t)
+static size_t
 jpeg_mem_available(j_common_ptr cinfo, size_t min_bytes_needed,
                    size_t max_bytes_needed, size_t already_allocated)
 {
@@ -86,7 +84,7 @@ jpeg_mem_available(j_common_ptr cinfo, size_t min_bytes_needed,
  * this should never be called and we can just error out.
  */
 
-GLOBAL(void)
+static void
 jpeg_open_backing_store(j_common_ptr cinfo, backing_store_ptr info,
                         long total_bytes_needed)
 {
@@ -99,16 +97,34 @@ jpeg_open_backing_store(j_common_ptr cinfo, backing_store_ptr info,
  * cleanup required.  Here, there isn't any.
  */
 
-GLOBAL(long)
+static long
 jpeg_mem_init(j_common_ptr cinfo)
 {
   return 0;                     /* just set max_memory_to_use to 0 */
 }
 
-GLOBAL(void)
+static void
 jpeg_mem_term(j_common_ptr cinfo)
 {
   /* no work */
 }
 
-#endif
+// ---------------------------------------------------------
+
+int jpeg_nobs_sys_mem_register(j_common_ptr cinfo)
+{
+	cinfo->sys_mem_if.get_small = jpeg_get_small;
+	cinfo->sys_mem_if.free_small = jpeg_free_small;
+
+	cinfo->sys_mem_if.get_large = jpeg_get_large;
+	cinfo->sys_mem_if.free_large = jpeg_free_large;
+
+	cinfo->sys_mem_if.mem_available = jpeg_mem_available;
+
+	cinfo->sys_mem_if.open_backing_store = jpeg_open_backing_store;
+
+	cinfo->sys_mem_if.mem_init = jpeg_mem_init;
+	cinfo->sys_mem_if.mem_term = jpeg_mem_term;
+
+	return 0;
+}

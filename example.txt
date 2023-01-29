@@ -91,7 +91,7 @@ write_JPEG_file(char *filename, int quality)
    * compression/decompression processes, in existence at once.  We refer
    * to any one struct (and its associated working data) as a "JPEG object".
    */
-  struct jpeg_compress_struct cinfo;
+  struct jpeg_compress_struct cinfo = { 0 };
   /* This struct represents a JPEG error handler.  It is declared separately
    * because applications often want to supply a specialized error handler
    * (see the second half of this file for an example).  But here we just
@@ -100,7 +100,7 @@ write_JPEG_file(char *filename, int quality)
    * Note that this struct must live as long as the main JPEG parameter
    * struct, to avoid dangling-pointer problems.
    */
-  struct jpeg_error_mgr jerr;
+  struct jpeg_error_mgr jerr = { 0 };
   /* More stuff */
   FILE *outfile;                /* target file */
   JSAMPROW row_pointer[1];      /* pointer to JSAMPLE row[s] */

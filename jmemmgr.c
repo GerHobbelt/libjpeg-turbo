@@ -312,7 +312,7 @@ alloc_small(j_common_ptr cinfo, int pool_id, size_t sizeofobject)
       slop = (size_t)(MAX_ALLOC_CHUNK - min_request);
     /* Try to get space, if fail reduce slop and try again */
     for (;;) {
-      hdr_ptr = (small_pool_ptr)jpeg_get_small(cinfo, min_request + slop);
+      hdr_ptr = (small_pool_ptr)cinfo->sys_mem_if.get_small(cinfo, min_request + slop);
       if (hdr_ptr != NULL)
         break;
       slop /= 2;
@@ -385,7 +385,7 @@ alloc_large(j_common_ptr cinfo, int pool_id, size_t sizeofobject)
   if (pool_id < 0 || pool_id >= JPOOL_NUMPOOLS)
     ERREXIT1(cinfo, JERR_BAD_POOL_ID, pool_id); /* safety check */
 
-  hdr_ptr = (large_pool_ptr)jpeg_get_large(cinfo, sizeofobject +
+  hdr_ptr = (large_pool_ptr)cinfo->sys_mem_if.get_large(cinfo, sizeofobject +
                                            sizeof(large_pool_hdr) +
                                            ALIGN_SIZE - 1);
   if (hdr_ptr == NULL)
@@ -676,7 +676,7 @@ realize_virt_arrays(j_common_ptr cinfo)
     return;                     /* no unrealized arrays, no work */
 
   /* Determine amount of memory to actually use; this is system-dependent. */
-  avail_mem = jpeg_mem_available(cinfo, space_per_minheight, maximum_space,
+  avail_mem = cinfo->sys_mem_if.mem_available(cinfo, space_per_minheight, maximum_space,
                                  mem->total_space_allocated);
 
   /* If the maximum space needed is available, make all the buffers full
@@ -705,7 +705,7 @@ realize_virt_arrays(j_common_ptr cinfo)
       } else {
         /* It doesn't fit in memory, create backing store. */
         sptr->rows_in_mem = (JDIMENSION)(max_minheights * sptr->maxaccess);
-        jpeg_open_backing_store(cinfo, &sptr->b_s_info,
+		cinfo->sys_mem_if.open_backing_store(cinfo, &sptr->b_s_info,
                                 (long)sptr->rows_in_array *
                                 (long)sptr->samplesperrow *
                                 (long)sizeof(JSAMPLE));
@@ -729,7 +729,7 @@ realize_virt_arrays(j_common_ptr cinfo)
       } else {
         /* It doesn't fit in memory, create backing store. */
         bptr->rows_in_mem = (JDIMENSION)(max_minheights * bptr->maxaccess);
-        jpeg_open_backing_store(cinfo, &bptr->b_s_info,
+		cinfo->sys_mem_if.open_backing_store(cinfo, &bptr->b_s_info,
                                 (long)bptr->rows_in_array *
                                 (long)bptr->blocksperrow *
                                 (long)sizeof(JBLOCK));
@@ -1030,7 +1030,7 @@ free_pool(j_common_ptr cinfo, int pool_id)
     space_freed = lhdr_ptr->bytes_used +
                   lhdr_ptr->bytes_left +
                   sizeof(large_pool_hdr) + ALIGN_SIZE - 1;
-    jpeg_free_large(cinfo, (void *)lhdr_ptr, space_freed);
+	cinfo->sys_mem_if.free_large(cinfo, (void *)lhdr_ptr, space_freed);
     mem->total_space_allocated -= space_freed;
     lhdr_ptr = next_lhdr_ptr;
   }
@@ -1043,7 +1043,7 @@ free_pool(j_common_ptr cinfo, int pool_id)
     small_pool_ptr next_shdr_ptr = shdr_ptr->next;
     space_freed = shdr_ptr->bytes_used + shdr_ptr->bytes_left +
                   sizeof(small_pool_hdr) + ALIGN_SIZE - 1;
-    jpeg_free_small(cinfo, (void *)shdr_ptr, space_freed);
+	cinfo->sys_mem_if.free_small(cinfo, (void *)shdr_ptr, space_freed);
     mem->total_space_allocated -= space_freed;
     shdr_ptr = next_shdr_ptr;
   }
@@ -1069,10 +1069,12 @@ self_destruct(j_common_ptr cinfo)
   }
 
   /* Release the memory manager control block too. */
-  jpeg_free_small(cinfo, (void *)cinfo->mem, sizeof(my_memory_mgr));
+  cinfo->sys_mem_if.free_small(cinfo, (void *)cinfo->mem, sizeof(my_memory_mgr));
   cinfo->mem = NULL;            /* ensures I will be called only once */
 
-  jpeg_mem_term(cinfo);         /* system-dependent cleanup */
+  cinfo->sys_mem_if.mem_term(cinfo);         /* system-dependent cleanup */
+
+  memset(&cinfo->sys_mem_if, 0, sizeof(cinfo->sys_mem_if));
 }
 
 
@@ -1089,6 +1091,7 @@ jinit_memory_mgr(j_common_ptr cinfo)
   int pool;
   size_t test_mac;
 
+  memset(&cinfo->sys_mem_if, 0, sizeof(cinfo->sys_mem_if));
   cinfo->mem = NULL;            /* for safety if init fails */
 
   /* Check for configuration errors.
@@ -1110,13 +1113,25 @@ jinit_memory_mgr(j_common_ptr cinfo)
       (MAX_ALLOC_CHUNK % ALIGN_SIZE) != 0)
     ERREXIT(cinfo, JERR_BAD_ALLOC_CHUNK);
 
-  max_to_use = jpeg_mem_init(cinfo); /* system-dependent initialization */
+  if (cinfo->client_init_callback)
+  {
+	  if (cinfo->client_init_callback(cinfo))
+		  ERREXIT(cinfo, JERR_BAD_CLIENT_INFO_CALLBACK);
+  }
+  else
+  {
+	  // TODO: default implementation?
+	  if (jpeg_nobs_sys_mem_register(cinfo))
+		  ERREXIT(cinfo, JERR_BAD_CLIENT_INFO_CALLBACK);
+  }
+
+  max_to_use = cinfo->sys_mem_if.mem_init(cinfo); /* system-dependent initialization */
 
   /* Attempt to allocate memory manager's control block */
-  mem = (my_mem_ptr)jpeg_get_small(cinfo, sizeof(my_memory_mgr));
+  mem = (my_mem_ptr)cinfo->sys_mem_if.get_small(cinfo, sizeof(my_memory_mgr));
 
   if (mem == NULL) {
-    jpeg_mem_term(cinfo);       /* system-dependent cleanup */
+    cinfo->sys_mem_if.mem_term(cinfo);       /* system-dependent cleanup */
     ERREXIT1(cinfo, JERR_OUT_OF_MEMORY, 0);
   }
 

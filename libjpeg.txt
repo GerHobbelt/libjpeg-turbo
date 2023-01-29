@@ -274,8 +274,8 @@ initialize the rest of the JPEG object.
 
 Typical code for this step, if you are using the default error handler, is
 
-        struct jpeg_compress_struct cinfo;
-        struct jpeg_error_mgr jerr;
+        struct jpeg_compress_struct cinfo = { 0 };
+        struct jpeg_error_mgr jerr = { 0 };
         ...
         cinfo.err = jpeg_std_error(&jerr);
         jpeg_create_compress(&cinfo);

@@ -30,6 +30,7 @@
 #endif
 #include "jmorecfg.h"           /* seldom changed options */
 
+#include "jmemsys.h"
 
 #ifdef __cplusplus
 #ifndef DONT_USE_EXTERN_C
@@ -267,15 +268,18 @@ typedef enum {
 
 /* Common fields between JPEG compression and decompression master structs. */
 
-typedef struct jpeg_cust_mem_data_s jpeg_cust_mem_data; // see jmemcust.h
+struct jpeg_common_struct;
+typedef int jpeg_init_callback_t(struct jpeg_common_struct *cinfo);
 
-#define jpeg_common_fields \
-  struct jpeg_error_mgr *err;   /* Error handler module */ \
-  struct jpeg_memory_mgr *mem;  /* Memory manager module */ \
-  struct jpeg_progress_mgr *progress; /* Progress monitor, or NULL if none */ \
-  jpeg_cust_mem_data *client_data;  /* Available for use by application */ \
-  boolean is_decompressor;      /* So common code can tell which is which */ \
-  int global_state              /* For checking call sequence validity */
+#define jpeg_common_fields																		\
+  int global_state;             /* For checking call sequence validity */						\
+  jpeg_system_mem_t sys_mem_if; /* system-level heap memory + back storage setup handlers */	\
+  struct jpeg_error_mgr *err;   /* Error handler module */										\
+  struct jpeg_memory_mgr *mem;  /* Memory manager module */										\
+  struct jpeg_progress_mgr *progress; /* Progress monitor, or NULL if none */					\
+  void *client_data_ref;        /* Available for use by application */							\
+  jpeg_init_callback_t *client_init_callback; /* Available for use by application */			\
+  boolean is_decompressor       /* So common code can tell which is which */
 
 /* Routines that are to be used by both halves of the library are declared
  * to receive a pointer to this structure.  There are no actual instances of

@@ -51,10 +51,12 @@ jpeg_CreateCompress(j_compress_ptr cinfo, int version, size_t structsize)
    */
   {
     struct jpeg_error_mgr *err = cinfo->err;
-	jpeg_cust_mem_data *client_data = cinfo->client_data; /* ignore Purify complaint here */
+	void* client_data = cinfo->client_data_ref; /* ignore Purify complaint here */
+	jpeg_init_callback_t* client_cb = cinfo->client_init_callback;
     memset(cinfo, 0, sizeof(struct jpeg_compress_struct));
     cinfo->err = err;
-    cinfo->client_data = client_data;
+	cinfo->client_data_ref = client_data;
+	cinfo->client_init_callback = client_cb;
   }
   cinfo->is_decompressor = FALSE;
 

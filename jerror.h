@@ -211,6 +211,7 @@ JMESSAGE(JWRN_BOGUS_ICC, "Corrupt JPEG data: bad ICC marker")
 JMESSAGE(JERR_BAD_DROP_SAMPLING,
          "Component index %d: mismatching sampling ratio %d:%d, %d:%d, %c")
 #endif
+	JMESSAGE(JERR_BAD_CLIENT_INFO_CALLBACK, "Failed to set up the jpeg-turbo library through the client_callback interface.")
 
 #ifdef JMAKE_ENUM_LIST
 

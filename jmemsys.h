@@ -20,6 +20,10 @@
  * symbol supplied in jconfig.h.
  */
 
+#ifndef _JPEGTURBO_MEMSYS_H_
+#define _JPEGTURBO_MEMSYS_H_
+
+typedef struct jpeg_common_struct *j_common_ptr;
 
 /*
  * These two functions are used to allocate and release small chunks of
@@ -31,9 +35,9 @@
  * size of the object being freed, just in case it's needed.
  */
 
-EXTERN(void *) jpeg_get_small(j_common_ptr cinfo, size_t sizeofobject);
-EXTERN(void) jpeg_free_small(j_common_ptr cinfo, void *object,
-                             size_t sizeofobject);
+typedef void * jpeg_get_small_f (j_common_ptr cinfo, size_t sizeofobject);
+typedef void jpeg_free_small_f (j_common_ptr cinfo, void * object,
+				  size_t sizeofobject);
 
 /*
  * These two functions are used to allocate and release large chunks of
@@ -43,8 +47,8 @@ EXTERN(void) jpeg_free_small(j_common_ptr cinfo, void *object,
  * large chunks.
  */
 
-EXTERN(void *) jpeg_get_large(j_common_ptr cinfo, size_t sizeofobject);
-EXTERN(void) jpeg_free_large(j_common_ptr cinfo, void *object,
+typedef void *jpeg_get_large_f(j_common_ptr cinfo, size_t sizeofobject);
+typedef void jpeg_free_large_f(j_common_ptr cinfo, void *object,
                              size_t sizeofobject);
 
 /*
@@ -84,7 +88,7 @@ EXTERN(void) jpeg_free_large(j_common_ptr cinfo, void *object,
  * Conversely, zero may be returned to always use the minimum amount of memory.
  */
 
-EXTERN(size_t) jpeg_mem_available(j_common_ptr cinfo, size_t min_bytes_needed,
+typedef size_t jpeg_mem_available_f(j_common_ptr cinfo, size_t min_bytes_needed,
                                   size_t max_bytes_needed,
                                   size_t already_allocated);
 
@@ -119,15 +123,19 @@ typedef union {
 
 typedef struct backing_store_struct *backing_store_ptr;
 
+typedef void read_backing_store_f(j_common_ptr cinfo, backing_store_ptr info,
+							void *buffer_address, long file_offset,
+							long byte_count);
+typedef void write_backing_store_f(j_common_ptr cinfo, backing_store_ptr info,
+							 void *buffer_address, long file_offset,
+							 long byte_count);
+typedef void close_backing_store_f(j_common_ptr cinfo, backing_store_ptr info);
+
 typedef struct backing_store_struct {
   /* Methods for reading/writing/closing this backing-store object */
-  void (*read_backing_store) (j_common_ptr cinfo, backing_store_ptr info,
-                              void *buffer_address, long file_offset,
-                              long byte_count);
-  void (*write_backing_store) (j_common_ptr cinfo, backing_store_ptr info,
-                               void *buffer_address, long file_offset,
-                               long byte_count);
-  void (*close_backing_store) (j_common_ptr cinfo, backing_store_ptr info);
+  read_backing_store_f *read_backing_store;
+  write_backing_store_f *write_backing_store;
+  close_backing_store_f *close_backing_store;
 
   /* Private fields for system-dependent backing-store management */
 #ifdef USE_MSDOS_MEMMGR
@@ -157,7 +165,7 @@ typedef struct backing_store_struct {
  * just take an error exit.)
  */
 
-EXTERN(void) jpeg_open_backing_store(j_common_ptr cinfo,
+typedef void jpeg_open_backing_store_f(j_common_ptr cinfo,
                                      backing_store_ptr info,
                                      long total_bytes_needed);
 
@@ -174,5 +182,50 @@ EXTERN(void) jpeg_open_backing_store(j_common_ptr cinfo,
  * all opened backing-store objects have been closed.
  */
 
-EXTERN(long) jpeg_mem_init(j_common_ptr cinfo);
-EXTERN(void) jpeg_mem_term(j_common_ptr cinfo);
+typedef long jpeg_mem_init_f(j_common_ptr cinfo);
+typedef void jpeg_mem_term_f(j_common_ptr cinfo);
+
+//----------------------------------------------------------
+
+typedef struct {
+	jpeg_get_small_f *get_small;
+	jpeg_free_small_f *free_small;
+
+	jpeg_get_large_f *get_large;
+	jpeg_free_large_f *free_large;
+
+	jpeg_mem_available_f *mem_available;
+
+	jpeg_open_backing_store_f *open_backing_store;
+
+	jpeg_mem_init_f *mem_init;
+	jpeg_mem_term_f *mem_term;
+
+} jpeg_system_mem_t;
+
+/*
+ * Fills out the jpeg_system_mem_t instance inside `cinfo` with
+ * a default cross-platform malloc/free implementation, providing
+ * the 	
+ * - jpeg_get_small
+ * - jpeg_free_small
+ * - jpeg_get_large
+ * - jpeg_free_large
+ * - jpeg_mem_available
+ * - jpeg_open_backing_store
+ * - jpeg_mem_init
+ * - jpeg_mem_term
+ * system-level memory I/F for jpeg-turbo.
+ *
+ * You can pass this function (or a replacement) as the callback 
+ * in `cinfo->client_callback`.
+ *
+ * NOTE: if `cinfo->client_callback` is NULL, this particular
+ * `jpeg_nobs_sys_mem_register` API will be automatically invoked
+ * by default. 
+ * 
+ * Return 0 on success, non-zero on failure.
+ */
+EXTERN(int) jpeg_nobs_sys_mem_register(j_common_ptr cinfo);
+
+#endif
