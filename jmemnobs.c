@@ -111,8 +111,17 @@ jpeg_mem_term(j_common_ptr cinfo)
 
 // ---------------------------------------------------------
 
+static jpeg_sys_mem_register_t *default_cinfo_client_callback = NULL;
+
 int jpeg_nobs_sys_mem_register(j_common_ptr cinfo)
 {
+	// execute user specified global default setup function?
+	if (default_cinfo_client_callback)
+		return default_cinfo_client_callback(cinfo);
+
+	// no user-speecified setup provided: usee the default
+	// we defined above instead.
+
 	cinfo->sys_mem_if.get_small = jpeg_get_small;
 	cinfo->sys_mem_if.free_small = jpeg_free_small;
 
@@ -127,4 +136,11 @@ int jpeg_nobs_sys_mem_register(j_common_ptr cinfo)
 	cinfo->sys_mem_if.mem_term = jpeg_mem_term;
 
 	return 0;
+}
+
+void jpeg_sys_mem_set_default_setup(jpeg_sys_mem_register_t *client_callback)
+{
+	// NULL is handled automatically as jpeg_nobs_sys_mem_register() will
+	// use a deefault implementation then:
+	default_cinfo_client_callback = client_callback;
 }

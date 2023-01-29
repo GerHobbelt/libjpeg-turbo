@@ -228,4 +228,32 @@ typedef struct {
  */
 EXTERN(int) jpeg_nobs_sys_mem_register(j_common_ptr cinfo);
 
+typedef int jpeg_sys_mem_register_t(j_common_ptr cinfo);
+
+/*
+ * Specifies a global default `jpeg_system_mem_t` system memory
+ * manager (malloc/free) to use by libjpeg-turbo as replacement
+ * for its own default `jpeg_nobs_sys_mem_register`.
+ * 
+ * This then defines the
+ * - jpeg_get_small
+ * - jpeg_free_small
+ * - jpeg_get_large
+ * - jpeg_free_large
+ * - jpeg_mem_available
+ * - jpeg_open_backing_store
+ * - jpeg_mem_init
+ * - jpeg_mem_term
+ * system-level memory I/F for jpeg-turbo.
+ *
+ * Passing in NULL for the callback, while *reset* the default
+ * to use `jpeg_nobs_sys_mem_register`.
+ *
+ * NOTE: if `cinfo->client_callback` is NULL, the callback
+ * provided by this API will be invoked instead, serving as
+ * 'default mem sys' provider.
+ */
+ EXTERN(void) jpeg_sys_mem_set_default_setup(jpeg_sys_mem_register_t *client_callback);
+
+
 #endif

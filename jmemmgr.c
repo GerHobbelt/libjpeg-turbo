@@ -1120,7 +1120,6 @@ jinit_memory_mgr(j_common_ptr cinfo)
   }
   else
   {
-	  // TODO: default implementation?
 	  if (jpeg_nobs_sys_mem_register(cinfo))
 		  ERREXIT(cinfo, JERR_BAD_CLIENT_INFO_CALLBACK);
   }
