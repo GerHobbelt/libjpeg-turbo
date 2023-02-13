@@ -392,7 +392,8 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
     } else if (keymatch(arg, "lossless", 1)) {
       /* Enable lossless mode. */
 #ifdef C_LOSSLESS_SUPPORTED
-      char ch = ',', *ptr;
+		char ch = ',';
+		const char* ptr;
 
       if (++argn >= argc)       /* advance to next argument */
         usage();
