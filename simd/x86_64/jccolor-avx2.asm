@@ -16,6 +16,8 @@
 
 %include "jsimdext.inc"
 
+%ifdef WIN64
+
 ; --------------------------------------------------------------------------
 
 %define SCALEBITS  16
@@ -119,3 +121,11 @@ PD_ONEHALF      times 8 dd  (1 << (SCALEBITS - 1))
 %define RGB_PIXELSIZE  EXT_XRGB_PIXELSIZE
 %define jsimd_rgb_ycc_convert_avx2  jsimd_extxrgb_ycc_convert_avx2
 %include "x86_64/jccolext-avx2.inc"
+
+%else
+
+	; dummy to appease NASM when compiling this file in monolithic build mode (32 bit)
+    SECTION     SEG_TEXT
+	nop
+
+%endif

@@ -18,6 +18,8 @@
 
 %include "jsimdext.inc"
 
+%ifdef WIN64
+
 ; --------------------------------------------------------------------------
     SECTION     SEG_CONST
 
@@ -694,3 +696,11 @@ EXTN(jsimd_h2v2_upsample_avx2):
 ; For some reason, the OS X linker does not honor the request to align the
 ; segment unless we do this.
     align       32
+
+%else
+
+	; dummy to appease NASM when compiling this file in monolithic build mode (32 bit)
+    SECTION     SEG_TEXT
+	nop
+
+%endif

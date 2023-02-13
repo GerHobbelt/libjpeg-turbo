@@ -764,7 +764,7 @@ EXTN(jsimd_huff_encode_one_block_sse2):
 
 %else
 
-	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+	; dummy to appease NASM when compiling this file in monolithic build mode (64 bit)
     SECTION     SEG_TEXT
 	nop
 

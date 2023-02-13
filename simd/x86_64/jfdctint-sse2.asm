@@ -22,6 +22,8 @@
 %include "jsimdext.inc"
 %include "jdct.inc"
 
+%ifdef WIN64
+
 ; --------------------------------------------------------------------------
 
 %define CONST_BITS  13
@@ -617,3 +619,11 @@ EXTN(jsimd_fdct_islow_sse2):
 ; For some reason, the OS X linker does not honor the request to align the
 ; segment unless we do this.
     align       32
+
+%else
+
+	; dummy to appease NASM when compiling this file in monolithic build mode (32 bit)
+    SECTION     SEG_TEXT
+	nop
+
+%endif

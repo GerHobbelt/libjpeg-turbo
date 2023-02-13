@@ -22,6 +22,8 @@
 %include "jsimdext.inc"
 %include "jdct.inc"
 
+%ifdef WIN64
+
 ; --------------------------------------------------------------------------
 
 %macro unpcklps2 2  ; %1=(0 1 2 3) / %2=(4 5 6 7) => %1=(0 1 4 5)
@@ -480,3 +482,11 @@ EXTN(jsimd_idct_float_sse2):
 ; For some reason, the OS X linker does not honor the request to align the
 ; segment unless we do this.
     align       32
+
+%else
+
+	; dummy to appease NASM when compiling this file in monolithic build mode (32 bit)
+    SECTION     SEG_TEXT
+	nop
+
+%endif

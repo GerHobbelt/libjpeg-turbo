@@ -17,6 +17,8 @@
 
 %include "jsimdext.inc"
 
+%ifdef WIN64
+
 ; --------------------------------------------------------------------------
 
 %define SCALEBITS  16
@@ -134,3 +136,11 @@ PD_ONEHALF      times 8  dd  1 << (SCALEBITS - 1)
 %define jsimd_h2v2_merged_upsample_avx2 \
   jsimd_h2v2_extxrgb_merged_upsample_avx2
 %include "x86_64/jdmrgext-avx2.inc"
+
+%else
+
+	; dummy to appease NASM when compiling this file in monolithic build mode (32 bit)
+    SECTION     SEG_TEXT
+	nop
+
+%endif

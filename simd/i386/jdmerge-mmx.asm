@@ -126,7 +126,7 @@ PD_ONEHALF      times 2 dd  1 << (SCALEBITS - 1)
 
 %else
 
-	; dummy to appease NASM when compiling this fime in monolithic build mode (64 bit)
+	; dummy to appease NASM when compiling this file in monolithic build mode (64 bit)
     SECTION     SEG_TEXT
 	nop
 
