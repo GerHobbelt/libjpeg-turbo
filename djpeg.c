@@ -695,9 +695,16 @@ main(int argc, const char** argv)
       ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
       break;
 #endif
-    } else if (cinfo.data_precision == 12)
-      dest_mgr = j12init_write_ppm(&cinfo);
-    else
+	}
+	else if (cinfo.data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+		dest_mgr = j12init_write_ppm(&cinfo);
+#else
+ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
+break;
+#endif
+	}
+	else
       dest_mgr = jinit_write_ppm(&cinfo);
     break;
 #endif
@@ -740,6 +747,7 @@ main(int argc, const char** argv)
     if (cinfo.data_precision == 16)
       ERREXIT(&cinfo, JERR_NOTIMPL);
     else if (cinfo.data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       /* Process data */
       while (cinfo.output_scanline < skip_start) {
         num_scanlines = jpeg12_read_scanlines(&cinfo, dest_mgr->buffer12,
@@ -757,7 +765,10 @@ main(int argc, const char** argv)
                                               dest_mgr->buffer_height);
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
       }
-    } else {
+#else
+      ERREXIT(&cinfo, JERR_NOTIMPL);
+#endif
+	} else {
       /* Process data */
       while (cinfo.output_scanline < skip_start) {
         num_scanlines = jpeg_read_scanlines(&cinfo, dest_mgr->buffer,
@@ -793,9 +804,13 @@ main(int argc, const char** argv)
 
     if (cinfo.data_precision == 16)
       ERREXIT(&cinfo, JERR_NOTIMPL);
-    else if (cinfo.data_precision == 12)
+    else if (cinfo.data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       jpeg12_crop_scanline(&cinfo, &crop_x, &crop_width);
-    else
+#else
+      ERREXIT(&cinfo, JERR_NOTIMPL);
+#endif
+    } else
       jpeg_crop_scanline(&cinfo, &crop_x, &crop_width);
     if (dest_mgr->calc_buffer_dimensions)
       (*dest_mgr->calc_buffer_dimensions) (&cinfo, dest_mgr);
@@ -813,6 +828,7 @@ main(int argc, const char** argv)
     if (cinfo.data_precision == 16)
       ERREXIT(&cinfo, JERR_NOTIMPL);
     else if (cinfo.data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       /* Process data */
       if ((tmp = jpeg12_skip_scanlines(&cinfo, crop_y)) != crop_y) {
         fprintf(stderr, "%s: jpeg12_skip_scanlines() returned %u rather than %u\n",
@@ -832,6 +848,9 @@ main(int argc, const char** argv)
                 progname, tmp, cinfo.output_height - crop_y - crop_height);
         exit(EXIT_FAILURE);
       }
+#else
+      ERREXIT(&cinfo, JERR_NOTIMPL);
+#endif
     } else {
       /* Process data */
       if ((tmp = jpeg_skip_scanlines(&cinfo, crop_y)) != crop_y) {
@@ -871,12 +890,16 @@ main(int argc, const char** argv)
       ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
 #endif
     } else if (cinfo.data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       /* Process data */
       while (cinfo.output_scanline < cinfo.output_height) {
         num_scanlines = jpeg12_read_scanlines(&cinfo, dest_mgr->buffer12,
                                               dest_mgr->buffer_height);
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
       }
+#else
+      ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
+#endif
     } else {
       /* Process data */
       while (cinfo.output_scanline < cinfo.output_height) {

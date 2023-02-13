@@ -575,9 +575,14 @@ master_selection(j_decompress_ptr cinfo)
 #else
         ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 #endif
-      else if (cinfo->data_precision == 12)
-        j12init_1pass_quantizer(cinfo);
-      else
+	  else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+		  j12init_1pass_quantizer(cinfo);
+#else
+		  ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	  }
+	  else
         jinit_1pass_quantizer(cinfo);
       master->quantizer_1pass = cinfo->cquantize;
 #else
@@ -594,9 +599,14 @@ master_selection(j_decompress_ptr cinfo)
 #else
         ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 #endif
-      else if (cinfo->data_precision == 12)
-        j12init_2pass_quantizer(cinfo);
-      else
+	  else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+		  j12init_2pass_quantizer(cinfo);
+#else
+		  ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	  }
+	  else
         jinit_2pass_quantizer(cinfo);
       master->quantizer_2pass = cinfo->cquantize;
 #else
@@ -630,8 +640,12 @@ master_selection(j_decompress_ptr cinfo)
         ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 #endif
       } else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
         j12init_color_deconverter(cinfo);
         j12init_upsampler(cinfo);
+#else
+		  ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
       } else {
         jinit_color_deconverter(cinfo);
         jinit_upsampler(cinfo);
@@ -643,8 +657,13 @@ master_selection(j_decompress_ptr cinfo)
 #else
       ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 #endif
-    else if (cinfo->data_precision == 12)
-      j12init_d_post_controller(cinfo, cinfo->enable_2pass_quant);
+	else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+		j12init_d_post_controller(cinfo, cinfo->enable_2pass_quant);
+#else
+		ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	}
     else
       jinit_d_post_controller(cinfo, cinfo->enable_2pass_quant);
   }
@@ -683,9 +702,14 @@ master_selection(j_decompress_ptr cinfo)
     if (cinfo->data_precision == 16)
       ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
     /* Inverse DCT */
-    if (cinfo->data_precision == 12)
-      j12init_inverse_dct(cinfo);
-    else
+	if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+		j12init_inverse_dct(cinfo);
+#else
+		ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	}
+	else
       jinit_inverse_dct(cinfo);
     /* Entropy decoding: either Huffman or arithmetic coding. */
     if (cinfo->arith_code) {
@@ -708,9 +732,14 @@ master_selection(j_decompress_ptr cinfo)
     /* Initialize principal buffer controllers. */
     use_c_buffer = cinfo->inputctl->has_multiple_scans ||
                    cinfo->buffered_image;
-    if (cinfo->data_precision == 12)
+    if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       j12init_d_coef_controller(cinfo, use_c_buffer);
-    else
+#else
+      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	}
+	else
       jinit_d_coef_controller(cinfo, use_c_buffer);
   }
 
@@ -722,10 +751,14 @@ master_selection(j_decompress_ptr cinfo)
 #else
       ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
 #endif
-    else if (cinfo->data_precision == 12)
+    else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       j12init_d_main_controller(cinfo,
                                 FALSE /* never need full buffer here */);
-    else
+#else
+      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	} else
       jinit_d_main_controller(cinfo, FALSE /* never need full buffer here */);
   }
 

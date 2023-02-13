@@ -127,9 +127,14 @@ select_file_type(j_compress_ptr cinfo, FILE *infile)
       ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
       break;
 #endif
-    } else if (cinfo->data_precision == 12)
+	} else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
       return j12init_read_ppm(cinfo);
-    else
+#else
+	  ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+	  break;
+#endif
+	} else
       return jinit_read_ppm(cinfo);
 #endif
 #ifdef TARGA_SUPPORTED
@@ -810,10 +815,14 @@ main(int argc, const char** argv)
     ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
 #endif
   } else if (cinfo.data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
     while (cinfo.next_scanline < cinfo.image_height) {
       num_scanlines = (*src_mgr->get_pixel_rows) (&cinfo, src_mgr);
       (void)jpeg12_write_scanlines(&cinfo, src_mgr->buffer12, num_scanlines);
     }
+#else
+	ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
+#endif
   } else {
     while (cinfo.next_scanline < cinfo.image_height) {
       num_scanlines = (*src_mgr->get_pixel_rows) (&cinfo, src_mgr);
