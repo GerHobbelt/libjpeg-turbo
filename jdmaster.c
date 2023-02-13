@@ -624,9 +624,14 @@ master_selection(j_decompress_ptr cinfo)
 #ifdef UPSAMPLE_MERGING_SUPPORTED
       if (cinfo->data_precision == 16)
         ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
-      else if (cinfo->data_precision == 12)
-        j12init_merged_upsampler(cinfo); /* does color conversion too */
-      else
+	  else if (cinfo->data_precision == 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+		  j12init_merged_upsampler(cinfo); /* does color conversion too */
+#else
+		  ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
+	  }
+	  else
         jinit_merged_upsampler(cinfo); /* does color conversion too */
 #else
       ERREXIT(cinfo, JERR_NOT_COMPILED);
