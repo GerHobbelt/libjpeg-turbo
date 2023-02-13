@@ -33,6 +33,7 @@
  * quality-setting files than with low-quality ones.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

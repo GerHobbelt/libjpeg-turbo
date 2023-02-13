@@ -11,6 +11,10 @@
  * file.
  */
 
+#ifndef _JDCOEFCT_H_
+#define _JDCOEFCT_H_ 1
+
+
 #define JPEG_INTERNALS
 #include "jpeglib.h"
 
@@ -59,6 +63,7 @@ typedef struct {
 #endif
 } my_coef_controller;
 
+
 typedef my_coef_controller *my_coef_ptr;
 
 
@@ -86,3 +91,6 @@ start_iMCU_row(j_decompress_ptr cinfo)
 }
 
 #endif /* BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED) */
+
+
+#endif

@@ -30,11 +30,14 @@
 /* TurboJPEG/LJT:  this implements the TurboJPEG API using libjpeg or
    libjpeg-turbo */
 
+#define JPEG_INTERNAL_OPTIONS
+#define JPEG_INTERNALS
+#include "jinclude.h"
+#include "jpeglib.h"
+#include "jmorecfg.h"
+
 #include <ctype.h>
 #include <limits.h>
-#include <jinclude.h>
-#define JPEG_INTERNALS
-#include <jpeglib.h>
 #include <jerror.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -1135,13 +1138,17 @@ DLLEXPORT unsigned long tjPlaneSizeYUV(int componentID, int width, int stride,
 
 
 /* tj3Compress*() is implemented in turbojpeg-mp.c */
+#undef BITS_IN_JSAMPLE
 #define BITS_IN_JSAMPLE  8
+#pragma message("######################### 8bits")
 #include "turbojpeg-mp.c"
 #undef BITS_IN_JSAMPLE
 #define BITS_IN_JSAMPLE  12
+#pragma message("######################### 12bits")
 #include "turbojpeg-mp.c"
 #undef BITS_IN_JSAMPLE
 #define BITS_IN_JSAMPLE  16
+#pragma message("######################### 16bits")
 #include "turbojpeg-mp.c"
 #undef BITS_IN_JSAMPLE
 

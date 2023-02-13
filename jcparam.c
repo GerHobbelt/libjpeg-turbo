@@ -16,6 +16,7 @@
  * must know a lot more about the innards of the JPEG code.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -94,7 +95,6 @@ static const unsigned int std_chrominance_quant_tbl[DCTSIZE2] = {
 };
 
 
-#if JPEG_LIB_VERSION >= 70
 GLOBAL(void)
 jpeg_default_qtables(j_compress_ptr cinfo, boolean force_baseline)
 /* Set or change the 'quality' (quantization) setting, using default tables
@@ -108,7 +108,6 @@ jpeg_default_qtables(j_compress_ptr cinfo, boolean force_baseline)
   jpeg_add_quant_table(cinfo, 1, std_chrominance_quant_tbl,
                        cinfo->q_scale_factor[1], force_baseline);
 }
-#endif
 
 
 GLOBAL(void)

@@ -13,6 +13,10 @@
  * progressive encoder (jcphuff.c).  No other modules need to see these.
  */
 
+#ifndef _JCHUFF_H_
+#define _JCHUFF_H_ 1
+
+
 /* The legal range of a DCT coefficient is
  *  -1024 .. +1023  for 8-bit data;
  * -16384 .. +16383 for 12-bit data.
@@ -42,3 +46,6 @@ EXTERN(void) jpeg_make_c_derived_tbl(j_compress_ptr cinfo, boolean isDC,
 /* Generate an optimal table definition given the specified counts */
 EXTERN(void) jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl,
                                     long freq[]);
+
+
+#endif

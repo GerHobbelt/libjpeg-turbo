@@ -21,11 +21,14 @@
  * dequantization multiplier table needed by the IDCT routine.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jdct.h"               /* Private declarations for DCT subsystem */
 #include "jsimddct.h"
+#include "jmorecfg.h"
+#include "jsamplecomp.h"
 #include "jpegapicomp.h"
 
 

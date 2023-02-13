@@ -19,7 +19,10 @@
  * Also, the input side (only) is used when reading a file for transcoding.
  */
 
+#define JPEG_INTERNAL_OPTIONS
+#define JPEG_INTERNALS
 #include "jinclude.h"
+#include "jpeglib.h"
 #include "jdcoefct.h"
 #include "jpegapicomp.h"
 #include "jsamplecomp.h"

@@ -15,6 +15,7 @@
  * compressor proper; it holds downsampled data in the JPEG colorspace.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

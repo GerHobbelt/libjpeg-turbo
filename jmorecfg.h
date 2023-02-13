@@ -16,6 +16,9 @@
  * optimizations.  Most users will not need to touch this file.
  */
 
+#ifndef _JMORECFG_H_
+#define _JMORECFG_H_
+
 
 /*
  * Maximum number of components (color channels) allowed in JPEG image.
@@ -383,3 +386,6 @@ static const int rgb_pixelsize[JPEG_NUMCS] = {
 #endif
 
 #endif /* JPEG_INTERNAL_OPTIONS */
+
+
+#endif

@@ -25,7 +25,12 @@
  *   Pub. by IEEE Computer Society Press, Los Alamitos, CA. ISBN 0-8186-8944-7.
  */
 
+#define JPEG_INTERNAL_OPTIONS
+#define JPEG_INTERNALS
 #include "jinclude.h"
+#include "jpeglib.h"
+#include "jmorecfg.h"
+#include "jsamplecomp.h"
 #include "jdsample.h"
 #include "jsimd.h"
 #include "jpegapicomp.h"

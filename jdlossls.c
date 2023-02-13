@@ -14,6 +14,7 @@
  * sample scaling routines for the lossless JPEG decompressor.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

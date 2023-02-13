@@ -187,8 +187,6 @@ Ljsimd_huff_encode_one_block_neon_consts:
 
 /*****************************************************************************/
 
-.text
-
 /* Supplementary macro for setting function attributes */
 .macro asm_function fname
 #ifdef __APPLE__

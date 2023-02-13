@@ -19,6 +19,7 @@
  * Recommendation ITU-T T.81 (1992) | ISO/IEC 10918-1:1994.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

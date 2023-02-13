@@ -13,6 +13,7 @@
  * The routines in jdapimin.c will also be needed by a transcoder.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

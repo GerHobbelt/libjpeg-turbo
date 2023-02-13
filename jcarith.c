@@ -19,6 +19,7 @@
  * Recommendation ITU-T T.81 (1992) | ISO/IEC 10918-1:1994.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -370,6 +371,7 @@ METHODDEF(boolean)
 encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
   arith_entropy_ptr entropy = (arith_entropy_ptr)cinfo->entropy;
+  JBLOCKROW block;
   unsigned char *st;
   int blkn, ci, tbl;
   int v, v2, m;
@@ -388,13 +390,14 @@ encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
   /* Encode the MCU data blocks */
   for (blkn = 0; blkn < cinfo->blocks_in_MCU; blkn++) {
+    block = MCU_data[blkn];
     ci = cinfo->MCU_membership[blkn];
     tbl = cinfo->cur_comp_info[ci]->dc_tbl_no;
 
     /* Compute the DC value after the required point transform by Al.
      * This is simply an arithmetic right shift.
      */
-    m = IRIGHT_SHIFT((int) (MCU_data[blkn][0][0]), cinfo->Al);
+    m = IRIGHT_SHIFT((int)((*block)[0]), cinfo->Al);
 
     /* Sections F.1.4.1 & F.1.4.4.1: Encoding of DC coefficients */
 

@@ -26,38 +26,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// #included multiple times by turbojpeg.c with BITS_IN_JSAMPLE set up there...
+#if defined(BITS_IN_JSAMPLE)
+
 /* TurboJPEG API functions that must be compiled for multiple data
    precisions */
 
-#if BITS_IN_JSAMPLE == 8
-#define _JSAMPLE  JSAMPLE
-#define _JSAMPROW  JSAMPROW
-#define _buffer  buffer
-#define _jinit_read_ppm  jinit_read_ppm
-#define _jinit_write_ppm  jinit_write_ppm
-#define _jpeg_crop_scanline  jpeg_crop_scanline
-#define _jpeg_read_scanlines  jpeg_read_scanlines
-#define _jpeg_skip_scanlines  jpeg_skip_scanlines
-#define _jpeg_write_scanlines  jpeg_write_scanlines
-#elif BITS_IN_JSAMPLE == 12
-#define _JSAMPLE  J12SAMPLE
-#define _JSAMPROW  J12SAMPROW
-#define _buffer  buffer12
-#define _jinit_read_ppm  j12init_read_ppm
-#define _jinit_write_ppm  j12init_write_ppm
-#define _jpeg_crop_scanline  jpeg12_crop_scanline
-#define _jpeg_read_scanlines  jpeg12_read_scanlines
-#define _jpeg_skip_scanlines  jpeg12_skip_scanlines
-#define _jpeg_write_scanlines  jpeg12_write_scanlines
-#elif BITS_IN_JSAMPLE == 16
-#define _JSAMPLE  J16SAMPLE
-#define _JSAMPROW  J16SAMPROW
-#define _buffer  buffer16
-#define _jinit_read_ppm  j16init_read_ppm
-#define _jinit_write_ppm  j16init_write_ppm
-#define _jpeg_read_scanlines  jpeg16_read_scanlines
-#define _jpeg_write_scanlines  jpeg16_write_scanlines
+#undef JSAMPLECOMP_H
+#include "jsamplecomp.h"
+
+#ifndef DLLEXPORT
+#define DLLEXPORT
 #endif
+
 
 #define _GET_NAME(name, suffix)  name##suffix
 #define GET_NAME(name, suffix)  _GET_NAME(name, suffix)
@@ -519,12 +500,71 @@ bailout:
 }
 
 
-#undef _JSAMPLE
-#undef _JSAMPROW
-#undef _buffer
-#undef _jinit_read_ppm
-#undef _jinit_write_ppm
-#undef _jpeg_crop_scanline
-#undef _jpeg_read_scanlines
-#undef _jpeg_skip_scanlines
-#undef _jpeg_write_scanlines
+
+
+
+
+
+
+
+#undef _JSAMPLE  
+
+#undef _MAXJSAMPLE  
+#undef _CENTERJSAMPLE   
+
+#undef _JSAMPROW  
+#undef _JSAMPARRAY  
+#undef _JSAMPIMAGE  
+
+#undef _jpeg_write_scanlines  
+#undef _jpeg_read_scanlines  
+
+#undef _process_data  
+#undef _pre_process_data  
+#undef _compress_data  
+#undef _color_convert  
+#undef _downsample  
+
+#undef _process_data  
+#undef _decompress_data  
+#undef _post_process_data  
+#undef _upsample  
+#undef _color_convert  
+#undef _color_quantize  
+
+#undef _jinit_c_main_controller  
+#undef _jinit_c_prep_controller  
+#undef _jinit_color_converter  
+#undef _jinit_downsampler  
+#undef _jinit_c_diff_controller  
+#undef _jinit_lossless_compressor  
+
+#undef _jinit_d_main_controller  
+#undef _jinit_d_post_controller  
+#undef _jinit_upsampler  
+#undef _jinit_color_deconverter  
+#undef _jinit_1pass_quantizer  
+#undef _jinit_2pass_quantizer  
+#undef _jinit_merged_upsampler  
+#undef _jinit_d_diff_controller  
+#undef _jinit_lossless_decompressor  
+
+#undef _jcopy_sample_rows  
+
+#undef _buffer  
+
+
+#undef _jinit_read_gif  
+#undef _jinit_read_ppm  
+
+#undef _jinit_write_gif  
+#undef _jinit_write_ppm  
+
+#undef _read_color_map  
+
+
+
+
+
+#endif // defined(BITS_IN_JSAMPLE)
+

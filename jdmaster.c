@@ -19,9 +19,12 @@
  * pass.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
+#include "jmorecfg.h"
+#include "jsamplecomp.h"
 #include "jpegapicomp.h"
 #include "jdmaster.h"
 

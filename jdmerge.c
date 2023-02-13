@@ -37,11 +37,13 @@
  * general code in jdsample.c and jdcolor.c.)
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "jdmerge.h"
 #include "jsimd.h"
+#include "jsamplecomp.h"
 
 
 #define JPEG_INCLUDES_JDMERGE_C 1

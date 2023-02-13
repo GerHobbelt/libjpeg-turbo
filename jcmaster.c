@@ -17,6 +17,7 @@
  * to be done in each pass).
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -28,7 +29,6 @@
  * Support routines that do various essential calculations.
  */
 
-#if JPEG_LIB_VERSION >= 70
 /*
  * Compute JPEG image dimensions and related values.
  * NOTE: this is exported for possible use by application.
@@ -47,7 +47,7 @@ jpeg_calc_jpeg_dimensions(j_compress_ptr cinfo)
   cinfo->min_DCT_h_scaled_size = data_unit;
   cinfo->min_DCT_v_scaled_size = data_unit;
 }
-#endif
+
 
 
 LOCAL(void)
@@ -60,12 +60,8 @@ initial_setup(j_compress_ptr cinfo, boolean transcode_only)
   JDIMENSION jd_samplesperrow;
   int data_unit = cinfo->master->lossless ? 1 : DCTSIZE;
 
-#if JPEG_LIB_VERSION >= 70
-#if JPEG_LIB_VERSION >= 80
   if (!transcode_only)
-#endif
     jpeg_calc_jpeg_dimensions(cinfo);
-#endif
 
   /* Sanity check on image dimensions */
   if (cinfo->_jpeg_height <= 0 || cinfo->_jpeg_width <= 0 ||
@@ -118,11 +114,7 @@ initial_setup(j_compress_ptr cinfo, boolean transcode_only)
     /* Fill in the correct component_index value; don't rely on application */
     compptr->component_index = ci;
     /* For compression, we never do DCT scaling. */
-#if JPEG_LIB_VERSION >= 70
     compptr->DCT_h_scaled_size = compptr->DCT_v_scaled_size = data_unit;
-#else
-    compptr->DCT_scaled_size = data_unit;
-#endif
     /* Size in data units */
     compptr->width_in_blocks = (JDIMENSION)
       jdiv_round_up((long)cinfo->_jpeg_width * (long)compptr->h_samp_factor,

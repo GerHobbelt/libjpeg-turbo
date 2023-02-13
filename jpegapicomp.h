@@ -10,7 +10,6 @@
  * applications using the library shouldn't need to include this file.
  */
 
-#if JPEG_LIB_VERSION >= 70
 #define _DCT_scaled_size  DCT_h_scaled_size
 #define _DCT_h_scaled_size  DCT_h_scaled_size
 #define _DCT_v_scaled_size  DCT_v_scaled_size
@@ -20,7 +19,8 @@
 #define _jpeg_width  jpeg_width
 #define _jpeg_height  jpeg_height
 #define JERR_ARITH_NOTIMPL  JERR_NOT_COMPILED
-#else
+
+#if 0 // old
 #define _DCT_scaled_size  DCT_scaled_size
 #define _DCT_h_scaled_size  DCT_scaled_size
 #define _DCT_v_scaled_size  DCT_scaled_size

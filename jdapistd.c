@@ -18,18 +18,20 @@
  * whole decompression library into a transcoder.
  */
 
+#define JPEG_INTERNAL_OPTIONS
+#define JPEG_INTERNALS
 #include "jinclude.h"
+#include "jpeglib.h"
 #if BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED)
 #include "jdmainct.h"
 #include "jdcoefct.h"
-#else
-#define JPEG_INTERNALS
-#include "jpeglib.h"
 #endif
 #include "jdmaster.h"
 #include "jdmerge.h"
 #include "jdsample.h"
 #include "jmemsys.h"
+#include "jmorecfg.h"
+#include "jsamplecomp.h"
 
 #if BITS_IN_JSAMPLE == 8
 

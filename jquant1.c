@@ -13,6 +13,7 @@
  * color values.  Optional Floyd-Steinberg or ordered dithering is available.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

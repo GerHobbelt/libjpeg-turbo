@@ -14,9 +14,10 @@
 #ifndef CMYK_H
 #define CMYK_H
 
-#include <jinclude.h>
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
-#include <jpeglib.h>
+#include "jinclude.h"
+#include "jpeglib.h"
 #include "jsamplecomp.h"
 
 

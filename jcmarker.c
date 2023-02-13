@@ -14,6 +14,7 @@
  * This file contains routines to write JPEG datastream markers.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"

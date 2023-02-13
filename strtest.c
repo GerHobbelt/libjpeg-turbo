@@ -53,7 +53,12 @@ void invalid_parameter_handler(const wchar_t *expression,
 #endif
 
 
-int main(int argc, char **argv)
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_strtest_main(cnt, arr)
+#endif
+
+int main(int argc, const char **argv)
 {
   int err;
   char env[3];

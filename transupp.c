@@ -18,8 +18,9 @@
 /* Although this file really shouldn't have access to the library internals,
  * it's helpful to let it call jround_up() and jcopy_block_row().
  */
-#define JPEG_INTERNALS
 
+#define JPEG_INTERNAL_OPTIONS
+#define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
 #include "transupp.h"           /* My own external interface */

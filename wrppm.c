@@ -21,6 +21,8 @@
 
 #include "cmyk.h"
 #include "cdjpeg.h"             /* Common decls for cjpeg/djpeg applications */
+#include "jconfigint.h"
+#include "jsamplecomp.h"
 
 #if defined(PPM_SUPPORTED) && \
     (BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED))

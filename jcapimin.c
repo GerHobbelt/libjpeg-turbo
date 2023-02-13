@@ -20,6 +20,7 @@
  * compression and decompression, and jctrans.c for the transcoding case.
  */
 
+#define JPEG_INTERNAL_OPTIONS
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -72,9 +73,7 @@ jpeg_CreateCompress(j_compress_ptr cinfo, int version, size_t structsize)
 
   for (i = 0; i < NUM_QUANT_TBLS; i++) {
     cinfo->quant_tbl_ptrs[i] = NULL;
-#if JPEG_LIB_VERSION >= 70
     cinfo->q_scale_factor[i] = 100;
-#endif
   }
 
   for (i = 0; i < NUM_HUFF_TBLS; i++) {
@@ -82,12 +81,10 @@ jpeg_CreateCompress(j_compress_ptr cinfo, int version, size_t structsize)
     cinfo->ac_huff_tbl_ptrs[i] = NULL;
   }
 
-#if JPEG_LIB_VERSION >= 80
   /* Must do it here for emit_dqt in case jpeg_write_tables is used */
   cinfo->block_size = DCTSIZE;
   cinfo->natural_order = jpeg_natural_order;
   cinfo->lim_Se = DCTSIZE2 - 1;
-#endif
 
   cinfo->script_space = NULL;
 
