@@ -663,15 +663,14 @@ endif()
 if(ENABLE_STATIC)
   # Compile a separate version of these source files with 12-bit and 16-bit
   # data precision.
-  add_library(jpeg12-static OBJECT ${JPEG12_SOURCES})
-  set_property(TARGET jpeg12-static PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=12")
-  add_library(jpeg16-static OBJECT ${JPEG16_SOURCES})
-  set_property(TARGET jpeg16-static PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=16")
+  add_library(jpeg12-static STATIC ${JPEG12_SOURCES})
+  target_compile_definitions(jpeg12-static PUBLIC "BITS_IN_JSAMPLE=12")
+
+  add_library(jpeg16-static STATIC ${JPEG16_SOURCES})
+  target_compile_definitions(jpeg16-static PUBLIC "BITS_IN_JSAMPLE=16")
+
   add_library(jpeg-static STATIC ${JPEG_SOURCES} ${SIMD_TARGET_OBJECTS}
-    ${SIMD_OBJS} $<TARGET_OBJECTS:jpeg12-static>
-    $<TARGET_OBJECTS:jpeg16-static>)
+    ${SIMD_OBJS})
   if(NOT MSVC)
     set_target_properties(jpeg-static PROPERTIES OUTPUT_NAME jpeg)
   endif()
