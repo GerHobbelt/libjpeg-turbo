@@ -574,11 +574,7 @@ master_selection(j_decompress_ptr cinfo)
     if (cinfo->enable_1pass_quant) {
 #ifdef QUANT_1PASS_SUPPORTED
       if (cinfo->data_precision == 16)
-#ifdef D_LOSSLESS_SUPPORTED
-        j16init_1pass_quantizer(cinfo);
-#else
         ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
-#endif
 	  else if (cinfo->data_precision == 12) {
 #if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
 		  j12init_1pass_quantizer(cinfo);
@@ -598,11 +594,7 @@ master_selection(j_decompress_ptr cinfo)
     if (cinfo->enable_2pass_quant || cinfo->enable_external_quant) {
 #ifdef QUANT_2PASS_SUPPORTED
       if (cinfo->data_precision == 16)
-#ifdef D_LOSSLESS_SUPPORTED
-        j16init_2pass_quantizer(cinfo);
-#else
         ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
-#endif
 	  else if (cinfo->data_precision == 12) {
 #if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
 		  j12init_2pass_quantizer(cinfo);

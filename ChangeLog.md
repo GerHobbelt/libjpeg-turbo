@@ -10,11 +10,17 @@ images.
 
 2. Fixed various segfaults and buffer overruns (CVE-2023-2804) that occurred
 when attempting to decompress various specially-crafted malformed
-12-bit-per-component lossless JPEG images.  These issues were caused by
-out-of-range sample values that were not range-limited before being used as
-array indices.  The issues were specific to 12-bit data precision, since that
-is the only data precision for which the range of the sample data type exceeds
-the valid sample range.
+12-bit-per-component and 16-bit-per-component lossless JPEG images using color
+quantization or merged chroma upsampling/color conversion.  The underlying
+cause of these issues was that the color quantization and merged chroma
+upsampling/color conversion algorithms were not designed with lossless
+decompression in mind.  Since libjpeg-turbo explicitly does not support color
+conversion when compressing or decompressing lossless JPEG images, merged
+chroma upsampling/color conversion never should have been enabled for such
+images.  Color quantization is a legacy feature that serves little or no
+purpose with lossless JPEG images, so it is also now disabled when
+decompressing such images.  (As a result, djpeg can no longer decompress a
+lossless JPEG image into a GIF image.)
 
 3. Fixed an oversight in 1.4 beta1[8] that caused various segfaults and buffer
 overruns when attempting to decompress various specially-crafted malformed
@@ -26,8 +32,28 @@ downsampled width for components with 4x2 or 2x4 subsampling factors if
 decompression scaling was enabled.  This caused the components to be upsampled
 incompletely, which caused the color converter to read from uninitialized
 memory.  With 12-bit data precision, this caused a buffer overrun or underrun
-and subsequent segfault if the sample value read from unitialized memory was
+and subsequent segfault if the sample value read from uninitialized memory was
 outside of the valid sample range.
+
+5. Fixed a long-standing issue whereby the `tj3Transform()` function, when used
+with the `TJXOP_TRANSPOSE`, `TJXOP_TRANSVERSE`, `TJXOP_ROT90`, or
+`TJXOP_ROT270` transform operation and without automatic JPEG destination
+buffer (re)allocation or lossless cropping, computed the worst-case transformed
+JPEG image size based on the source image dimensions rather than the
+transformed image dimensions.  If a calling program allocated the JPEG
+destination buffer based on the transformed image dimensions, as the API
+documentation instructs, and attempted to transform a specially-crafted 4:2:2,
+4:4:0, 4:1:1, or 4:4:1 JPEG source image containing a large amount of metadata,
+the issue caused `tj3Transform()` to overflow the JPEG destination buffer
+rather than fail gracefully.  The issue could be worked around by setting
+`TJXOPT_COPYNONE`.  Note that, irrespective of this issue, `tj3Transform()`
+cannot reliably transform JPEG source images that contain a large amount of
+metadata unless automatic JPEG destination buffer (re)allocation is used or
+`TJXOPT_COPYNONE` is set.
+
+6. Fixed a regression introduced by 3.0 beta2[6] that prevented the djpeg
+`-map` option from working when decompressing 12-bit-per-component lossy JPEG
+images.
 
 
 2.1.91 (3.0 beta2)

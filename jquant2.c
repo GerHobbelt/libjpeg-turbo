@@ -27,8 +27,7 @@
 #include "jmorecfg.h"
 #include "jsamplecomp.h"
 
-#if defined(QUANT_2PASS_SUPPORTED) && \
-    (BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED))
+#if defined(QUANT_2PASS_SUPPORTED) && BITS_IN_JSAMPLE != 16
 
 
 /*
@@ -1241,7 +1240,7 @@ _jinit_2pass_quantizer(j_decompress_ptr cinfo)
 
   /* Make sure jdmaster didn't give me a case I can't handle */
   if (cinfo->out_color_components != 3 ||
-      cinfo->out_color_space == JCS_RGB565)
+      cinfo->out_color_space == JCS_RGB565 || cinfo->master->lossless)
     ERREXIT(cinfo, JERR_NOTIMPL);
 
   /* Allocate the histogram/inverse colormap storage */
@@ -1293,5 +1292,4 @@ _jinit_2pass_quantizer(j_decompress_ptr cinfo)
   }
 }
 
-#endif /* defined(QUANT_2PASS_SUPPORTED) &&
-          (BITS_IN_JSAMPLE != 16 || defined(D_LOSSLESS_SUPPORTED)) */
+#endif /* defined(QUANT_2PASS_SUPPORTED) && BITS_IN_JSAMPLE != 16 */
