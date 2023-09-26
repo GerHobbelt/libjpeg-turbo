@@ -332,7 +332,11 @@ parse_switches(j_decompress_ptr cinfo, int argc, const char** argv,
           exit(EXIT_FAILURE);
         }
         if (cinfo->data_precision == 12)
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
           read_color_map_12(cinfo, mapfile);
+#else
+          ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
+#endif
         else
           read_color_map(cinfo, mapfile);
         fclose(mapfile);
