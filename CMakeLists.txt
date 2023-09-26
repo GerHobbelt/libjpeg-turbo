@@ -573,14 +573,17 @@ if(CMAKE_EXECUTABLE_SUFFIX_TMP)
 endif()
 message(STATUS "CMAKE_EXECUTABLE_SUFFIX = ${CMAKE_EXECUTABLE_SUFFIX}")
 
-set(JPEG_SOURCES jcapimin.c jcapistd.c jccoefct.c jccolor.c jcdctmgr.c
-  jcdiffct.c jchuff.c jcicc.c jcinit.c jclhuff.c jclossls.c jcmainct.c
-  jcmarker.c jcmaster.c jcomapi.c jcparam.c jcphuff.c jcprepct.c jcsample.c
-  jctrans.c jdapimin.c jdapistd.c jdatadst.c jdatasrc.c jdcoefct.c jdcolor.c
-  jddctmgr.c jddiffct.c jdhuff.c jdicc.c jdinput.c jdlhuff.c jdlossls.c
-  jdmainct.c jdmarker.c jdmaster.c jdmerge.c jdphuff.c jdpostct.c jdsample.c
-  jdtrans.c jerror.c jfdctflt.c jfdctfst.c jfdctint.c jidctflt.c jidctfst.c
-  jidctint.c jidctred.c jquant1.c jquant2.c jutils.c jmemmgr.c jmemnobs.c)
+set(JPEG16_SOURCES jcapistd.c jccolor.c jcdiffct.c jclossls.c jcmainct.c
+  jcprepct.c jcsample.c jdapistd.c jdcolor.c jddiffct.c jdlossls.c jdmainct.c
+  jdpostct.c jdsample.c jquant1.c jquant2.c jutils.c)
+set(JPEG12_SOURCES ${JPEG16_SOURCES} jccoefct.c jcdctmgr.c jdcoefct.c
+  jddctmgr.c jdmerge.c jdpostct.c jfdctfst.c jfdctint.c jidctflt.c jidctfst.c
+  jidctint.c jidctred.c)
+set(JPEG_SOURCES ${JPEG12_SOURCES} jcapimin.c jchuff.c jcicc.c jcinit.c
+  jclhuff.c jcmarker.c jcmaster.c jcomapi.c jcparam.c jcphuff.c jctrans.c
+  jdapimin.c jdatadst.c jdatasrc.c jdhuff.c jdicc.c jdinput.c jdlhuff.c
+  jdmarker.c jdmaster.c jdphuff.c jdtrans.c jerror.c jfdctflt.c jmemmgr.c
+  jmemnobs.c)
 
 if(JPEGLIB_ENABLE_COMPRESS)
 	set(JPEG_SOURCES jcapimin.c jcapistd.c jccoefct.c jccolor.c jcdctmgr.c jchuff.c
@@ -607,19 +610,6 @@ if(MSVC)
     configure_file("win/jpeg62-ro.def" "win/jpeg62.def" COPYONLY)
   endif()
 endif()
-
-# Compile a separate version of these source files with 12-bit and 16-bit data
-# precision.
-add_library(jpeg12 OBJECT jcapistd.c jccoefct.c jccolor.c jcdctmgr.c jcdiffct.c
-  jclossls.c jcmainct.c jcprepct.c jcsample.c jdapistd.c jdcoefct.c jdcolor.c
-  jddctmgr.c jddiffct.c jdlossls.c jdmainct.c jdmerge.c jdpostct.c jdsample.c
-  jfdctfst.c jfdctint.c jidctflt.c jidctfst.c jidctint.c jidctred.c jquant1.c
-  jquant2.c jutils.c)
-set_property(TARGET jpeg12 PROPERTY COMPILE_FLAGS "-DBITS_IN_JSAMPLE=12")
-add_library(jpeg16 OBJECT jcapistd.c jccolor.c jcdiffct.c jclossls.c jcmainct.c
-  jcprepct.c jcsample.c jdapistd.c jdcolor.c jddiffct.c jdlossls.c jdmainct.c
-  jdpostct.c jdsample.c jquant1.c jquant2.c jutils.c)
-set_property(TARGET jpeg16 PROPERTY COMPILE_FLAGS "-DBITS_IN_JSAMPLE=16")
 
 if(WITH_SIMD)
   add_subdirectory(simd)
@@ -648,24 +638,35 @@ if(WITH_JAVA)
 endif()
 
 if(ENABLE_SHARED)
+  # Compile a separate version of these source files with 12-bit and 16-bit
+  # data precision.
+  add_library(jpeg12 OBJECT ${JPEG12_SOURCES})
+  set_property(TARGET jpeg12 PROPERTY COMPILE_FLAGS "-DBITS_IN_JSAMPLE=12")
+  set_target_properties(jpeg12 PROPERTIES POSITION_INDEPENDENT_CODE 1)
+  add_library(jpeg16 OBJECT ${JPEG16_SOURCES})
+  set_property(TARGET jpeg16 PROPERTY COMPILE_FLAGS "-DBITS_IN_JSAMPLE=16")
+  set_target_properties(jpeg16 PROPERTIES POSITION_INDEPENDENT_CODE 1)
   add_subdirectory(sharedlib)
 endif()
 
 if(ENABLE_STATIC)
+  # Compile a separate version of these source files with 12-bit and 16-bit
+  # data precision.
+  add_library(jpeg12-static OBJECT ${JPEG12_SOURCES})
+  set_property(TARGET jpeg12-static PROPERTY COMPILE_FLAGS
+    "-DBITS_IN_JSAMPLE=12")
+  add_library(jpeg16-static OBJECT ${JPEG16_SOURCES})
+  set_property(TARGET jpeg16-static PROPERTY COMPILE_FLAGS
+    "-DBITS_IN_JSAMPLE=16")
   add_library(jpeg-static STATIC ${JPEG_SOURCES} ${SIMD_TARGET_OBJECTS}
-    ${SIMD_OBJS} $<TARGET_OBJECTS:jpeg12> $<TARGET_OBJECTS:jpeg16>)
+    ${SIMD_OBJS} $<TARGET_OBJECTS:jpeg12-static>
+    $<TARGET_OBJECTS:jpeg16-static>)
   if(NOT MSVC)
     set_target_properties(jpeg-static PROPERTIES OUTPUT_NAME jpeg)
   endif()
 endif()
 
 if(WITH_TURBOJPEG)
-  add_library(turbojpeg12 OBJECT rdppm.c wrppm.c)
-  set_property(TARGET turbojpeg12 PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=12 -DPPM_SUPPORTED")
-  add_library(turbojpeg16 OBJECT rdppm.c wrppm.c)
-  set_property(TARGET turbojpeg16 PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=16 -DPPM_SUPPORTED")
   if(ENABLE_SHARED)
     set(TURBOJPEG_SOURCES ${JPEG_SOURCES} ${SIMD_TARGET_OBJECTS} ${SIMD_OBJS}
       turbojpeg.c transupp.c jdatadst-tj.c jdatasrc-tj.c rdbmp.c rdppm.c
@@ -682,6 +683,14 @@ if(WITH_TURBOJPEG)
       set(TURBOJPEG_SOURCES ${TURBOJPEG_SOURCES}
         ${CMAKE_BINARY_DIR}/win/turbojpeg.rc)
     endif()
+    add_library(turbojpeg12 OBJECT rdppm.c wrppm.c)
+    set_property(TARGET turbojpeg12 PROPERTY COMPILE_FLAGS
+      "-DBITS_IN_JSAMPLE=12 -DPPM_SUPPORTED")
+    set_target_properties(turbojpeg12 PROPERTIES POSITION_INDEPENDENT_CODE 1)
+    add_library(turbojpeg16 OBJECT rdppm.c wrppm.c)
+    set_property(TARGET turbojpeg16 PROPERTY COMPILE_FLAGS
+      "-DBITS_IN_JSAMPLE=16 -DPPM_SUPPORTED")
+    set_target_properties(turbojpeg16 PROPERTIES POSITION_INDEPENDENT_CODE 1)
     add_library(turbojpeg SHARED ${TURBOJPEG_SOURCES}
       $<TARGET_OBJECTS:turbojpeg12> $<TARGET_OBJECTS:turbojpeg16>)
     set_property(TARGET turbojpeg PROPERTY COMPILE_FLAGS
@@ -720,11 +729,17 @@ if(WITH_TURBOJPEG)
   endif()
 
   if(ENABLE_STATIC)
+    add_library(turbojpeg12-static OBJECT rdppm.c wrppm.c)
+    set_property(TARGET turbojpeg12-static PROPERTY COMPILE_FLAGS
+      "-DBITS_IN_JSAMPLE=12 -DPPM_SUPPORTED")
+    add_library(turbojpeg16-static OBJECT rdppm.c wrppm.c)
+    set_property(TARGET turbojpeg16-static PROPERTY COMPILE_FLAGS
+      "-DBITS_IN_JSAMPLE=16 -DPPM_SUPPORTED")
     add_library(turbojpeg-static STATIC ${JPEG_SOURCES} ${SIMD_TARGET_OBJECTS}
       ${SIMD_OBJS} turbojpeg.c transupp.c jdatadst-tj.c jdatasrc-tj.c rdbmp.c
-      rdppm.c wrbmp.c wrppm.c $<TARGET_OBJECTS:jpeg12>
-      $<TARGET_OBJECTS:jpeg16> $<TARGET_OBJECTS:turbojpeg12>
-      $<TARGET_OBJECTS:turbojpeg16>)
+      rdppm.c wrbmp.c wrppm.c $<TARGET_OBJECTS:jpeg12-static>
+      $<TARGET_OBJECTS:jpeg16-static> $<TARGET_OBJECTS:turbojpeg12-static>
+      $<TARGET_OBJECTS:turbojpeg16-static>)
     set_property(TARGET turbojpeg-static PROPERTY COMPILE_FLAGS
       "-DBMP_SUPPORTED -DPPM_SUPPORTED")
     if(NOT MSVC)

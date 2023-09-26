@@ -8,6 +8,26 @@ subsampling, which allows losslessly transposed or rotated 4:1:1 JPEG images to
 be losslessly cropped, partially decompressed, or decompressed to planar YUV
 images.
 
+2. Fixed various segfaults and buffer overruns that occurred when attempting to
+decompress various specially-crafted malformed 12-bit-per-component lossless
+JPEG images.  These issues were caused by out-of-range sample values that were
+not range-limited before being used as array indices.  The issues were specific
+to 12-bit data precision, since that is the only data precision for which the
+range of the sample data type exceeds the valid sample range.
+
+3. Fixed an oversight in 1.4 beta1[8] that caused various segfaults and buffer
+overruns when attempting to decompress various specially-crafted malformed
+12-bit-per-component JPEG images using djpeg with both color quantization and
+RGB565 color conversion enabled.
+
+4. Fixed an issue whereby `jpeg_crop_scanline()` sometimes miscalculated the
+downsampled width for components with 4x2 or 2x4 subsampling factors if
+decompression scaling was enabled.  This caused the components to be upsampled
+incompletely, which caused the color converter to read from uninitialized
+memory.  With 12-bit data precision, this caused a buffer overrun or underrun
+and subsequent segfault if the sample value read from unitialized memory was
+outside of the valid sample range.
+
 
 2.1.91 (3.0 beta2)
 ==================
