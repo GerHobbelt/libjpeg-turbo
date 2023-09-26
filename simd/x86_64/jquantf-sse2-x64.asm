@@ -40,7 +40,6 @@
 
 EXTN(jsimd_convsamp_float_sse2):
     push        rbp
-    mov         rax, rsp
     mov         rbp, rsp
     collect_args 3
     push        rbx
@@ -113,7 +112,6 @@ EXTN(jsimd_convsamp_float_sse2):
 
 EXTN(jsimd_quantize_float_sse2):
     push        rbp
-    mov         rax, rsp
     mov         rbp, rsp
     collect_args 3
 

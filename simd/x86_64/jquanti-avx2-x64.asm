@@ -41,7 +41,6 @@
 
 EXTN(jsimd_convsamp_avx2):
     push        rbp
-    mov         rax, rsp
     mov         rbp, rsp
     collect_args 3
 
@@ -119,7 +118,6 @@ EXTN(jsimd_convsamp_avx2):
 
 EXTN(jsimd_quantize_avx2):
     push        rbp
-    mov         rax, rsp
     mov         rbp, rsp
     collect_args 3
 
