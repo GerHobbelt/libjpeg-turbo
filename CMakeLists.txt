@@ -920,7 +920,7 @@ if(CPU_TYPE STREQUAL "x86_64" OR CPU_TYPE STREQUAL "i386")
     set(DEFAULT_FLOATTEST8 no-fp-contract)
   # else we can't really set an intelligent default for i386.  The appropriate
   # value could be no-fp-contract, fp-contract, 387, or msvc, depending on the
-  # compiler and compiler options.  We leave it to the user to set FLOATTEST
+  # compiler and compiler options.  We leave it to the user to set FLOATTEST8
   # manually.
   endif()
 else()
@@ -1029,7 +1029,7 @@ foreach(libtype ${TEST_LIBTYPES})
 
       if(sample_bits EQUAL 12)
         set(tjbench tjbench12)
-        set(testout testout12)
+        set(testout testout12${suffix})
 
         set(MD5_PPM_GRAY_TILE 2f799249148b1a9d0e61fa4408f6c397)
         set(MD5_PPM_420_8x8_TILE b25684e1af37be504ee3fd137757353f)
@@ -1049,7 +1049,7 @@ foreach(libtype ${TEST_LIBTYPES})
         set(MD5_PPM_444_TILE 2f571a032e4dbc8ef40f75219d336b0b)
       else()
         set(tjbench tjbench)
-        set(testout testout)
+        set(testout testout${suffix})
 
         set(MD5_PPM_GRAY_TILE 2c3b567086e6ca0c5e6d34ad8d6f6fe8)
         set(MD5_PPM_420_8x8_TILE efca1bdf0226df01777137778cf986ec)
@@ -1185,7 +1185,7 @@ foreach(libtype ${TEST_LIBTYPES})
       set(cjpeg cjpeg12)
       set(djpeg djpeg12)
       set(jpegtran jpegtran12)
-      set(testout testout12)
+      set(testout testout12${suffix})
 
       set(TESTORIG testorig12.jpg)
       set(MD5_JPEG_RGB_ISLOW 9d7369207c520d37f2c1cbfcb82b2964)
@@ -1247,7 +1247,7 @@ foreach(libtype ${TEST_LIBTYPES})
       set(cjpeg cjpeg)
       set(djpeg djpeg)
       set(jpegtran jpegtran)
-      set(testout testout)
+      set(testout testout${suffix})
 
       set(TESTORIG testorig.jpg)
       set(MD5_JPEG_RGB_ISLOW 1d44a406f61da743b5fd31c0a9abdca3)
@@ -1657,6 +1657,8 @@ foreach(libtype ${TEST_LIBTYPES})
     add_test(example-${sample_bits}bit-${libtype}-decompress
       ${CMAKE_CROSSCOMPILING_EMULATOR} example${suffix} decompress
         ${EXAMPLE_12BIT_ARG} ${testout}-example.jpg ${testout}-example.ppm)
+    set_tests_properties(example-${sample_bits}bit-${libtype}-decompress
+      PROPERTIES DEPENDS example-${sample_bits}bit-${libtype}-compress)
     add_test(example-${sample_bits}bit-${libtype}-decompress-cmp
       ${CMAKE_CROSSCOMPILING_EMULATOR} ${MD5CMP} ${MD5_PPM_EXAMPLE_DECOMPRESS}
         ${testout}-example.ppm)
