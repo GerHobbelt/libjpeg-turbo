@@ -28,7 +28,7 @@
  * works regardless of which command line style is used.
  */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
