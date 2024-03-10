@@ -12,12 +12,21 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/..)
 if(MSVC)
   # Build all configurations against shared C library
   if(WITH_CRT_DLL)
-    foreach(var CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-      CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
-      if(${var} MATCHES "/MT")
-        string(REGEX REPLACE "/MT" "/MD" ${var} "${${var}}")
+    if(CMAKE_VERSION VERSION_EQUAL "3.15" OR
+      CMAKE_VERSION VERSION_GREATER "3.15")
+      if(CMAKE_BUILD_TYPE_UC STREQUAL "DEBUG")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDebugDLL)
+      else()
+        set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreadedDLL)
       endif()
-    endforeach()
+    else()
+      foreach(var CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+        if(${var} MATCHES "/MT")
+          string(REGEX REPLACE "/MT" "/MD" ${var} "${${var}}")
+        endif()
+      endforeach()
+    endif()
   endif()
 endif()
 
@@ -76,40 +85,41 @@ set(CDJPEG_COMPILE_FLAGS
 
 # Compile a separate version of these source files with 12-bit and 16-bit data
 # precision.
-add_library(cjpeg12 OBJECT ../rdgif.c ../rdppm.c)
+add_library(cjpeg12 OBJECT ../src/rdgif.c ../src/rdppm.c)
 set_property(TARGET cjpeg12 PROPERTY COMPILE_FLAGS
   "-DBITS_IN_JSAMPLE=12 -DGIF_SUPPORTED -DPPM_SUPPORTED")
-add_library(cjpeg16 OBJECT ../rdgif.c ../rdppm.c)
+add_library(cjpeg16 OBJECT ../src/rdgif.c ../src/rdppm.c)
 set_property(TARGET cjpeg16 PROPERTY COMPILE_FLAGS
   "-DBITS_IN_JSAMPLE=16 -DGIF_SUPPORTED -DPPM_SUPPORTED")
-add_executable(cjpeg ../cjpeg.c ../cdjpeg.c ../rdbmp.c ../rdgif.c ../rdppm.c
-  ../rdswitch.c ../rdtarga.c $<TARGET_OBJECTS:cjpeg12>
-  $<TARGET_OBJECTS:cjpeg16>)
+add_executable(cjpeg ../src/cjpeg.c ../src/cdjpeg.c ../src/rdbmp.c
+  ../src/rdgif.c ../src/rdppm.c ../src/rdswitch.c ../src/rdtarga.c
+  $<TARGET_OBJECTS:cjpeg12> $<TARGET_OBJECTS:cjpeg16>)
 set_property(TARGET cjpeg PROPERTY COMPILE_FLAGS ${CDJPEG_COMPILE_FLAGS})
 target_link_libraries(cjpeg jpeg)
 
 # Compile a separate version of these source files with 12-bit and 16-bit data
 # precision.
-add_library(djpeg12 OBJECT ../rdcolmap.c ../wrgif.c ../wrppm.c)
+add_library(djpeg12 OBJECT ../src/rdcolmap.c ../src/wrgif.c ../src/wrppm.c)
 set_property(TARGET djpeg12 PROPERTY COMPILE_FLAGS
   "-DBITS_IN_JSAMPLE=12 -DGIF_SUPPORTED -DPPM_SUPPORTED")
-add_library(djpeg16 OBJECT ../wrppm.c)
+add_library(djpeg16 OBJECT ../src/wrppm.c)
 set_property(TARGET djpeg16 PROPERTY COMPILE_FLAGS
   "-DBITS_IN_JSAMPLE=16 -DPPM_SUPPORTED")
-add_executable(djpeg ../djpeg.c ../cdjpeg.c ../rdcolmap.c ../rdswitch.c
-  ../wrbmp.c ../wrgif.c ../wrppm.c ../wrtarga.c $<TARGET_OBJECTS:djpeg12>
-  $<TARGET_OBJECTS:djpeg16>)
+add_executable(djpeg ../src/djpeg.c ../src/cdjpeg.c ../src/rdcolmap.c
+  ../src/rdswitch.c ../src/wrbmp.c ../src/wrgif.c ../src/wrppm.c
+  ../src/wrtarga.c $<TARGET_OBJECTS:djpeg12> $<TARGET_OBJECTS:djpeg16>)
 set_property(TARGET djpeg PROPERTY COMPILE_FLAGS ${CDJPEG_COMPILE_FLAGS})
 target_link_libraries(djpeg jpeg)
 
-add_executable(jpegtran ../jpegtran.c ../cdjpeg.c ../rdswitch.c ../transupp.c)
+add_executable(jpegtran ../src/jpegtran.c ../src/cdjpeg.c ../src/rdswitch.c
+  ../src/transupp.c)
 target_link_libraries(jpegtran jpeg)
 set_property(TARGET jpegtran PROPERTY COMPILE_FLAGS "${USE_SETMODE}")
 
-add_executable(example ../example.c)
+add_executable(example ../src/example.c)
 target_link_libraries(example jpeg)
 
-add_executable(jcstest ../jcstest.c)
+add_executable(jcstest ../src/jcstest.c)
 target_link_libraries(jcstest jpeg)
 
 install(TARGETS jpeg EXPORT ${CMAKE_PROJECT_NAME}Targets
