@@ -21,17 +21,41 @@
  * flags (this defines __thumb__).
  */
 
-/* NOTE: Both GCC and Clang define __GNUC__ */
+#ifndef USE_CLZ_INTRINSIC
+ /* NOTE: Both GCC and Clang define __GNUC__ */
 #if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
     defined(_M_ARM) || defined(_M_ARM64)
 #if !defined(__thumb__) || defined(__thumb2__)
 #define USE_CLZ_INTRINSIC
 #endif
 #endif
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <intrin.h>
+#define USE_CLZ_INTRINSIC
+#endif
+#endif
 
 #ifdef USE_CLZ_INTRINSIC
 #if defined(_MSC_VER) && !defined(__clang__)
-#define JPEG_NBITS_NONZERO(x)  (32 - _CountLeadingZeros(x))
+
+// ripped from libbf & adapted to suit our needs:
+
+static inline int __builtin_clnzl(unsigned long mask)
+{
+	unsigned long where;
+	// Search from LSB to MSB for first set bit.
+	// Returns zero if no set bit is found.
+	if (_BitScanReverse(&where, mask))
+		return 32 - 31 + (int)where;
+	return 32 - 32; // Undefined Behavior.
+}
+
+static inline int __builtin_clnz(unsigned int x)
+{
+	return __builtin_clnzl(x);
+}
+
+#define JPEG_NBITS_NONZERO(x)  __builtin_clnz(x)
 #else
 #define JPEG_NBITS_NONZERO(x)  (32 - __builtin_clz(x))
 #endif
