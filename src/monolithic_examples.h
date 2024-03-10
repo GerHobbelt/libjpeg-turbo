@@ -17,6 +17,7 @@ extern "C" {
 	extern int jpegturbo_tjexample_main(int argc, const char** argv);
 	extern int jpegturbo_tjunittest_main(int argc, const char** argv);
 	extern int jpegturbo_wrjpgcom_main(int argc, const char** argv);
+	extern int tj_test_intrinsic_bitcount_main(void);
 
 #ifdef __cplusplus
 }

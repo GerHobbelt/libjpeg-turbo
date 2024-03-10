@@ -26,7 +26,11 @@
 
 #ifdef INCLUDE_JPEG_NBITS_TABLE
 
-const unsigned char jpeg_nbits_table[65536] = {
+#ifndef HIDDEN
+#define HIDDEN
+#endif
+
+HIDDEN const unsigned char jpeg_nbits_table[65536] = {
    0,  1,  2,  2,  3,  3,  3,  3,  4,  4,  4,  4,  4,  4,  4,  4,
    5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,
    6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,  6,

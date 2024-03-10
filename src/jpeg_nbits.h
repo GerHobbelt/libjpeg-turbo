@@ -21,6 +21,10 @@
  * flags (this defines __thumb__).
  */
 
+#ifndef TURBO_JPEG_NBITS_H
+#define TURBO_JPEG_NBITS_H
+
+
 #ifndef USE_CLZ_INTRINSIC
  /* NOTE: Both GCC and Clang define __GNUC__ */
 #if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
@@ -64,4 +68,7 @@ static inline int __builtin_clnz(unsigned int x)
 extern const unsigned char jpeg_nbits_table[65536];
 #define JPEG_NBITS(x)          (jpeg_nbits_table[x])
 #define JPEG_NBITS_NONZERO(x)  JPEG_NBITS(x)
+#endif
+
+
 #endif
