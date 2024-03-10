@@ -113,9 +113,6 @@ typedef struct _tjinstance {
   char errStr[JMSG_LENGTH_MAX];
   boolean isInstanceError;
   /* Parameters */
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-  int maxPixels;
-#endif
   boolean bottomUp;
   boolean noRealloc;
   int quality;
@@ -140,6 +137,8 @@ typedef struct _tjinstance {
   int densityUnits;
   tjscalingfactor scalingFactor;
   tjregion croppingRegion;
+  int maxMemory;
+  int maxPixels;
 } tjinstance;
 
 static tjhandle _tjInitCompress(tjinstance *this);
@@ -339,6 +338,7 @@ static void setCompDefaults(tjinstance *this, int pixelFormat)
   this->cinfo.X_density = (UINT16)this->xDensity;
   this->cinfo.Y_density = (UINT16)this->yDensity;
   this->cinfo.density_unit = (UINT8)this->densityUnits;
+  this->cinfo.mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
 
   if (this->lossless) {
 #ifdef C_LOSSLESS_SUPPORTED
@@ -594,11 +594,6 @@ DLLEXPORT int tj3Set(tjhandle handle, int param, int value)
   GET_TJINSTANCE(handle, -1);
 
   switch (param) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-  case TJPARAM_MAXPIXELS:
-    SET_PARAM(maxPixels, 0, -1);
-    break;
-#endif
   case TJPARAM_STOPONWARNING:
     SET_BOOL_PARAM(jerr.stopOnWarning);
     break;
@@ -708,6 +703,12 @@ DLLEXPORT int tj3Set(tjhandle handle, int param, int value)
       THROW("TJPARAM_DENSITYUNITS is read-only in decompression instances.");
     SET_PARAM(densityUnits, 0, 2);
     break;
+  case TJPARAM_MAXMEMORY:
+    SET_PARAM(maxMemory, 0, (int)(min(LONG_MAX / 1048576L, (long)INT_MAX)));
+    break;
+  case TJPARAM_MAXPIXELS:
+    SET_PARAM(maxPixels, 0, -1);
+    break;
   default:
     THROW("Invalid parameter");
   }
@@ -770,6 +771,10 @@ DLLEXPORT int tj3Get(tjhandle handle, int param)
     return this->yDensity;
   case TJPARAM_DENSITYUNITS:
     return this->densityUnits;
+  case TJPARAM_MAXMEMORY:
+    return this->maxMemory;
+  case TJPARAM_MAXPIXELS:
+    return this->maxPixels;
   }
 
   return -1;
@@ -1415,6 +1420,11 @@ DLLEXPORT int tj3EncodeYUV8(tjhandle handle, const unsigned char *srcBuf,
     int ph1 = tj3YUVPlaneHeight(1, height, this->subsamp);
 
     strides[1] = strides[2] = PAD(pw1, align);
+    if ((unsigned long long)strides[0] * (unsigned long long)ph0 >
+        (unsigned long long)INT_MAX ||
+        (unsigned long long)strides[1] * (unsigned long long)ph1 >
+        (unsigned long long)INT_MAX)
+      THROW("Image or row alignment is too large");
     dstPlanes[1] = dstPlanes[0] + strides[0] * ph0;
     dstPlanes[2] = dstPlanes[1] + strides[1] * ph1;
   }
@@ -1592,10 +1602,10 @@ DLLEXPORT int tj3CompressFromYUVPlanes8(tjhandle handle,
   jpeg_finish_compress(cinfo);
 
 bailout:
-  if (cinfo->global_state > CSTATE_START) {
-    if (alloc) (*cinfo->dest->term_destination) (cinfo);
+  if (cinfo->global_state > CSTATE_START && alloc)
+    (*cinfo->dest->term_destination) (cinfo);
+  if (cinfo->global_state > CSTATE_START || retval == -1)
     jpeg_abort_compress(cinfo);
-  }
   for (i = 0; i < MAX_COMPONENTS; i++) {
     free(tmpbuf[i]);
     free(inbuf[i]);
@@ -1669,6 +1679,11 @@ DLLEXPORT int tj3CompressFromYUV8(tjhandle handle,
     int ph1 = tjPlaneHeight(1, height, this->subsamp);
 
     strides[1] = strides[2] = PAD(pw1, align);
+    if ((unsigned long long)strides[0] * (unsigned long long)ph0 >
+        (unsigned long long)INT_MAX ||
+        (unsigned long long)strides[1] * (unsigned long long)ph1 >
+        (unsigned long long)INT_MAX)
+      THROW("Image or row alignment is too large");
     srcPlanes[1] = srcPlanes[0] + strides[0] * ph0;
     srcPlanes[2] = srcPlanes[1] + strides[1] * ph1;
   }
@@ -2041,6 +2056,8 @@ static void setDecodeDefaults(tjinstance *this, int pixelFormat)
       this->dinfo.quant_tbl_ptrs[i] =
         jpeg_alloc_quant_table((j_common_ptr)&this->dinfo);
   }
+
+  this->dinfo.mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
 }
 
 
@@ -2250,6 +2267,11 @@ DLLEXPORT int tj3DecodeYUV8(tjhandle handle, const unsigned char *srcBuf,
     int ph1 = tj3YUVPlaneHeight(1, height, this->subsamp);
 
     strides[1] = strides[2] = PAD(pw1, align);
+    if ((unsigned long long)strides[0] * (unsigned long long)ph0 >
+        (unsigned long long)INT_MAX ||
+        (unsigned long long)strides[1] * (unsigned long long)ph1 >
+        (unsigned long long)INT_MAX)
+      THROW("Image or row alignment is too large");
     srcPlanes[1] = srcPlanes[0] + strides[0] * ph0;
     srcPlanes[2] = srcPlanes[1] + strides[1] * ph1;
   }
@@ -2322,16 +2344,21 @@ DLLEXPORT int tj3DecompressToYUVPlanes8(tjhandle handle,
   } else
     dinfo->progress = NULL;
 
+  dinfo->mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
+
   if (setjmp(this->jerr.setjmp_buffer)) {
     /* If we get here, the JPEG code has signaled an error. */
     retval = -1;  goto bailout;
   }
 
-  if (dinfo->global_state <= DSTATE_START) {
+  if (dinfo->global_state <= DSTATE_INHEADER) {
     jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
     jpeg_read_header(dinfo, TRUE);
   }
   setDecompParameters(this);
+  if (this->maxPixels &&
+      (unsigned long long)this->jpegWidth * this->jpegHeight > this->maxPixels)
+    THROW("Image is too large");
   if (this->subsamp == TJSAMP_UNKNOWN)
     THROW("Could not determine subsampling level of JPEG image");
 
@@ -2388,6 +2415,8 @@ DLLEXPORT int tj3DecompressToYUVPlanes8(tjhandle handle,
   dinfo->do_fancy_upsampling = !this->fastUpsample;
   dinfo->dct_method = this->fastDCT ? JDCT_FASTEST : JDCT_ISLOW;
   dinfo->raw_data_out = TRUE;
+
+  dinfo->mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
 
   jpeg_start_decompress(dinfo);
   for (row = 0; row < (int)dinfo->output_height;
@@ -2516,7 +2545,7 @@ DLLEXPORT int tj3DecompressToYUV8(tjhandle handle,
     retval = -1;  goto bailout;
   }
 
-  if (dinfo->global_state <= DSTATE_START) {
+  if (dinfo->global_state <= DSTATE_INHEADER) {
     jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
     jpeg_read_header(dinfo, TRUE);
   }
@@ -2539,6 +2568,11 @@ DLLEXPORT int tj3DecompressToYUV8(tjhandle handle,
     int ph1 = tj3YUVPlaneHeight(1, height, this->subsamp);
 
     strides[1] = strides[2] = PAD(pw1, align);
+    if ((unsigned long long)strides[0] * (unsigned long long)ph0 >
+        (unsigned long long)INT_MAX ||
+        (unsigned long long)strides[1] * (unsigned long long)ph1 >
+        (unsigned long long)INT_MAX)
+      THROW("Image or row alignment is too large");
     dstPlanes[1] = dstPlanes[0] + strides[0] * ph0;
     dstPlanes[2] = dstPlanes[1] + strides[1] * ph1;
   }
@@ -2646,6 +2680,8 @@ DLLEXPORT int tj3Transform(tjhandle handle, const unsigned char *jpegBuf,
   } else
     dinfo->progress = NULL;
 
+  dinfo->mem->max_memory_to_use = (long)this->maxMemory * 1048576L;
+
   if ((xinfo =
        (jpeg_transform_info *)malloc(sizeof(jpeg_transform_info) * n)) == NULL)
     THROW("Memory allocation failure");
@@ -2656,10 +2692,12 @@ DLLEXPORT int tj3Transform(tjhandle handle, const unsigned char *jpegBuf,
     retval = -1;  goto bailout;
   }
 
-  if (dinfo->global_state <= DSTATE_START)
+  if (dinfo->global_state <= DSTATE_INHEADER)
     jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
 
   for (i = 0; i < n; i++) {
+    if (t[i].op < 0 || t[i].op >= TJ_NUMXOP)
+      THROW("Invalid transform operation");
     xinfo[i].transform = xformtypes[t[i].op];
     xinfo[i].perfect = (t[i].options & TJXOPT_PERFECT) ? 1 : 0;
     xinfo[i].trim = (t[i].options & TJXOPT_TRIM) ? 1 : 0;
@@ -2684,8 +2722,12 @@ DLLEXPORT int tj3Transform(tjhandle handle, const unsigned char *jpegBuf,
   }
 
   jcopy_markers_setup(dinfo, saveMarkers ? JCOPYOPT_ALL : JCOPYOPT_NONE);
-  if (dinfo->global_state <= DSTATE_START)
+  if (dinfo->global_state <= DSTATE_INHEADER)
     jpeg_read_header(dinfo, TRUE);
+  if (this->maxPixels &&
+      (unsigned long long)dinfo->image_width * dinfo->image_height >
+      this->maxPixels)
+    THROW("Image is too large");
   this->subsamp = getSubsamp(&this->dinfo);
 
   for (i = 0; i < n; i++) {
