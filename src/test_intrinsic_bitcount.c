@@ -61,5 +61,8 @@ int main(void)
 		}
 	}
 
+	if (!rv) {
+		fprintf(stderr, "intrinsic tested OK.\n");
+	}
 	return rv;
 }
