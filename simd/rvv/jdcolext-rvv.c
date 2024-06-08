@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef RGB_PIXELSIZE
+
 /* This file is included by jccolor-rvv.c */
 
 
@@ -177,3 +179,5 @@ void jsimd_ycc_rgb_convert_rvv(JDIMENSION out_width, JSAMPIMAGE input_buf,
         }
     }
 }
+
+#endif

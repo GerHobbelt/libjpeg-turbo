@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef RGB_PIXELSIZE
+
 /* This file is included by jcgray-rvv.c */
 
 /* TODO: Deal with 12-bit RGB colorspace. */
@@ -92,3 +94,5 @@ void jsimd_rgb_gray_convert_rvv(JDIMENSION img_width, JSAMPARRAY input_buf,
         }
     }
 }
+
+#endif

@@ -21,6 +21,8 @@
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifdef RGB_PIXELSIZE
+
 /* This file is included by jdmerge-rvv.c. */
 
 /* These routines combine simple (non-fancy, i.e. non-smooth) h2v1 or h2v2
@@ -261,3 +263,5 @@ void jsimd_h2v2_merged_upsample_rvv(JDIMENSION output_width,
     input_buf[0][in_row_group_ctr] = inptr;
     output_buf[0] = outptr;
 }
+
+#endif

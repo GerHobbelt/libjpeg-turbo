@@ -37,6 +37,10 @@
 #define ONE_HALF  (1 << (SCALEBITS - 1))
 
 
+#ifndef RGB_PIXELSIZE
+#error "RGB_PIXELSIZE must be defined"
+#endif
+
 #include "jdmrgext-rvv.c"
 #undef RGB_RED
 #undef RGB_GREEN

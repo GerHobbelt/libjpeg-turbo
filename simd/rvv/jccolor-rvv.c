@@ -38,6 +38,9 @@
 #define ONE_HALF  (1 << (SCALEBITS - 1))
 #define SCALED_CENTERJSAMPLE (CENTERJSAMPLE << SCALEBITS)
 
+#ifndef RGB_PIXELSIZE
+#error "RGB_PIXELSIZE must be defined"
+#endif
 
 #include "jccolext-rvv.c"
 #undef RGB_RED
