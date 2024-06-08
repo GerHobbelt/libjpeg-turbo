@@ -3,7 +3,7 @@
 ;
 ; Copyright 2009 Pierre Ossman <ossman@cendio.se> for Cendio AB
 ; Copyright (C) 2015, Intel Corporation.
-; Copyright (C) 2016, D. R. Commander.
+; Copyright (C) 2016, 2024, D. R. Commander.
 ;
 ; Based on the x86 SIMD extension for IJG JPEG library
 ; Copyright (C) 1999-2006, MIYASAKA Masaru.
@@ -72,7 +72,7 @@ EXTN(jsimd_h2v1_downsample_avx2):
 
     cld
     mov         esi, JSAMPARRAY [input_data(ebp)]  ; input_data
-    alignx      16, 7
+    ALIGNX      16, 7
 .expandloop:
     push        eax
     push        ecx
@@ -108,7 +108,7 @@ EXTN(jsimd_h2v1_downsample_avx2):
 
     mov         esi, JSAMPARRAY [input_data(ebp)]   ; input_data
     mov         edi, JSAMPARRAY [output_data(ebp)]  ; output_data
-    alignx      16, 7
+    ALIGNX      16, 7
 .rowloop:
     push        ecx
     push        edi
@@ -119,7 +119,7 @@ EXTN(jsimd_h2v1_downsample_avx2):
 
     cmp         ecx, byte SIZEOF_YMMWORD
     jae         short .columnloop
-    alignx      16, 7
+    ALIGNX      16, 7
 
 .columnloop_r24:
     ; ecx can possibly be 8, 16, 24
@@ -143,7 +143,7 @@ EXTN(jsimd_h2v1_downsample_avx2):
     vpxor       ymm1, ymm1, ymm1
     mov         ecx, SIZEOF_YMMWORD
     jmp         short .downsample
-    alignx      16, 7
+    ALIGNX      16, 7
 
 .columnloop:
     vmovdqu     ymm0, YMMWORD [esi+0*SIZEOF_YMMWORD]
@@ -245,7 +245,7 @@ EXTN(jsimd_h2v2_downsample_avx2):
 
     cld
     mov         esi, JSAMPARRAY [input_data(ebp)]  ; input_data
-    alignx      16, 7
+    ALIGNX      16, 7
 .expandloop:
     push        eax
     push        ecx
@@ -281,7 +281,7 @@ EXTN(jsimd_h2v2_downsample_avx2):
 
     mov         esi, JSAMPARRAY [input_data(ebp)]   ; input_data
     mov         edi, JSAMPARRAY [output_data(ebp)]  ; output_data
-    alignx      16, 7
+    ALIGNX      16, 7
 .rowloop:
     push        ecx
     push        edi
@@ -293,7 +293,7 @@ EXTN(jsimd_h2v2_downsample_avx2):
 
     cmp         ecx, byte SIZEOF_YMMWORD
     jae         short .columnloop
-    alignx      16, 7
+    ALIGNX      16, 7
 
 .columnloop_r24:
     cmp         ecx, 24
@@ -322,7 +322,7 @@ EXTN(jsimd_h2v2_downsample_avx2):
     vpxor       ymm3, ymm3, ymm3
     mov         ecx, SIZEOF_YMMWORD
     jmp         short .downsample
-    alignx      16, 7
+    ALIGNX      16, 7
 
 .columnloop:
     vmovdqu     ymm0, YMMWORD [edx+0*SIZEOF_YMMWORD]
