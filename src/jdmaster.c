@@ -425,7 +425,7 @@ prepare_range_limit_table(j_decompress_ptr cinfo)
 #endif
   int i;
 
-  if (cinfo->data_precision == 16) {
+  if (12 < cinfo->data_precision && cinfo->data_precision <= 16) {
 #ifdef D_LOSSLESS_SUPPORTED
     table16 = (J16SAMPLE *)
       (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
@@ -633,7 +633,7 @@ master_selection(j_decompress_ptr cinfo)
       ERREXIT(cinfo, JERR_NOT_COMPILED);
 #endif
     } else {
-      if (cinfo->data_precision == 16) {
+      if (12 < cinfo->data_precision && cinfo->data_precision <= 16) {
 #ifdef D_LOSSLESS_SUPPORTED
         j16init_color_deconverter(cinfo);
         j16init_upsampler(cinfo);
@@ -652,7 +652,7 @@ master_selection(j_decompress_ptr cinfo)
         jinit_upsampler(cinfo);
       }
     }
-    if (cinfo->data_precision == 16)
+    if (12 < cinfo->data_precision && cinfo->data_precision <= 16)
 #ifdef D_LOSSLESS_SUPPORTED
       j16init_d_post_controller(cinfo, cinfo->enable_2pass_quant);
 #else
@@ -674,7 +674,7 @@ master_selection(j_decompress_ptr cinfo)
     /* Prediction, sample undifferencing, point transform, and sample size
      * scaling
      */
-    if (cinfo->data_precision == 16)
+    if (12 < cinfo->data_precision && cinfo->data_precision <= 16)
       j16init_lossless_decompressor(cinfo);
     else if (cinfo->data_precision == 12)
       j12init_lossless_decompressor(cinfo);
@@ -690,7 +690,7 @@ master_selection(j_decompress_ptr cinfo)
     /* Initialize principal buffer controllers. */
     use_c_buffer = cinfo->inputctl->has_multiple_scans ||
                    cinfo->buffered_image;
-    if (cinfo->data_precision == 16)
+    if (12 < cinfo->data_precision && cinfo->data_precision <= 16)
       j16init_d_diff_controller(cinfo, use_c_buffer);
     else if (cinfo->data_precision == 12)
       j12init_d_diff_controller(cinfo, use_c_buffer);
@@ -745,7 +745,7 @@ master_selection(j_decompress_ptr cinfo)
   }
 
   if (!cinfo->raw_data_out) {
-    if (cinfo->data_precision == 16)
+    if (12 < cinfo->data_precision && cinfo->data_precision <= 16)
 #ifdef D_LOSSLESS_SUPPORTED
       j16init_d_main_controller(cinfo,
                                 FALSE /* never need full buffer here */);

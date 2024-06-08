@@ -450,7 +450,7 @@ alloc_sarray(j_common_ptr cinfo, int pool_id, JDIMENSION samplesperrow,
   int data_precision = cinfo->is_decompressor ?
                         ((j_decompress_ptr)cinfo)->data_precision :
                         ((j_compress_ptr)cinfo)->data_precision;
-  size_t sample_size = data_precision == 16 ?
+  size_t sample_size = (12 < data_precision && data_precision <= 16) ?
                        sizeof(J16SAMPLE) : (data_precision == 12 ?
                                             sizeof(J12SAMPLE) :
                                             sizeof(JSAMPLE));
@@ -478,7 +478,7 @@ alloc_sarray(j_common_ptr cinfo, int pool_id, JDIMENSION samplesperrow,
     rowsperchunk = numrows;
   mem->last_rowsperchunk = rowsperchunk;
 
-  if (data_precision == 16) {
+  if (12 < data_precision && data_precision <= 16) {
 #if defined(C_LOSSLESS_SUPPORTED) || defined(D_LOSSLESS_SUPPORTED)
     /* Get space for row pointers (small object) */
     result16 = (J16SAMPARRAY)alloc_small(cinfo, pool_id,
@@ -704,7 +704,7 @@ realize_virt_arrays(j_common_ptr cinfo)
   int data_precision = cinfo->is_decompressor ?
                         ((j_decompress_ptr)cinfo)->data_precision :
                         ((j_compress_ptr)cinfo)->data_precision;
-  size_t sample_size = data_precision == 16 ?
+  size_t sample_size = (12 < data_precision && data_precision <= 16) ?
                        sizeof(J16SAMPLE) : (data_precision == 12 ?
                                             sizeof(J12SAMPLE) :
                                             sizeof(JSAMPLE));
@@ -822,7 +822,7 @@ do_sarray_io(j_common_ptr cinfo, jvirt_sarray_ptr ptr, boolean writing)
   int data_precision = cinfo->is_decompressor ?
                         ((j_decompress_ptr)cinfo)->data_precision :
                         ((j_compress_ptr)cinfo)->data_precision;
-  size_t sample_size = data_precision == 16 ?
+  size_t sample_size = (12 < data_precision && data_precision <= 16) ?
                        sizeof(J16SAMPLE) : (data_precision == 12 ?
                                             sizeof(J12SAMPLE) :
                                             sizeof(JSAMPLE));
@@ -841,7 +841,7 @@ do_sarray_io(j_common_ptr cinfo, jvirt_sarray_ptr ptr, boolean writing)
     if (rows <= 0)              /* this chunk might be past end of file! */
       break;
     byte_count = rows * bytesperrow;
-    if (data_precision == 16) {
+    if (12 < data_precision && data_precision <= 16) {
 #if defined(C_LOSSLESS_SUPPORTED) || defined(D_LOSSLESS_SUPPORTED)
       J16SAMPARRAY mem_buffer16 = (J16SAMPARRAY)ptr->mem_buffer;
 
@@ -927,7 +927,7 @@ access_virt_sarray(j_common_ptr cinfo, jvirt_sarray_ptr ptr,
   int data_precision = cinfo->is_decompressor ?
                         ((j_decompress_ptr)cinfo)->data_precision :
                         ((j_compress_ptr)cinfo)->data_precision;
-  size_t sample_size = data_precision == 16 ?
+  size_t sample_size = (12 < data_precision && data_precision <= 16) ?
                        sizeof(J16SAMPLE) : (data_precision == 12 ?
                                             sizeof(J12SAMPLE) :
                                             sizeof(JSAMPLE));
