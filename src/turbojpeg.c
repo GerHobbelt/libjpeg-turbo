@@ -38,6 +38,9 @@
 
 #include <ctype.h>
 #include <limits.h>
+#if !defined(_MSC_VER) || _MSC_VER > 1600
+#include <stdint.h>
+#endif
 #include <jerror.h>
 #include <setjmp.h>
 #include <errno.h>
@@ -950,8 +953,10 @@ DLLEXPORT size_t tj3JPEGBufSize(int width, int height, int jpegSubsamp)
   mcuh = tjMCUHeight[jpegSubsamp];
   chromasf = jpegSubsamp == TJSAMP_GRAY ? 0 : 4 * 64 / (mcuw * mcuh);
   retval = PAD(width, mcuw) * PAD(height, mcuh) * (2ULL + chromasf) + 2048ULL;
+#if ULLONG_MAX > ULONG_MAX
   if (retval > (unsigned long long)((unsigned long)-1))
     THROWG("Image is too large", 0);
+#endif
 
 bailout:
   return (size_t)retval;
@@ -985,8 +990,10 @@ DLLEXPORT unsigned long TJBUFSIZE(int width, int height)
      larger than the uncompressed input (we wouldn't mention it if it hadn't
      happened before.) */
   retval = PAD(width, 16) * PAD(height, 16) * 6ULL + 2048ULL;
+#if ULLONG_MAX > ULONG_MAX
   if (retval > (unsigned long long)((unsigned long)-1))
     THROWG("Image is too large", (unsigned long)-1);
+#endif
 
 bailout:
   return (unsigned long)retval;
@@ -1012,8 +1019,10 @@ DLLEXPORT size_t tj3YUVBufSize(int width, int align, int height, int subsamp)
     if (pw == 0 || ph == 0) return 0;
     else retval += (unsigned long long)stride * ph;
   }
+#if ULLONG_MAX > ULONG_MAX
   if (retval > (unsigned long long)((unsigned long)-1))
     THROWG("Image is too large", 0);
+#endif
 
 bailout:
   return (size_t)retval;
@@ -1127,8 +1136,10 @@ DLLEXPORT size_t tj3YUVPlaneSize(int componentID, int width, int stride,
   else stride = abs(stride);
 
   retval = (unsigned long long)stride * (ph - 1) + pw;
+#if ULLONG_MAX > ULONG_MAX
   if (retval > (unsigned long long)((unsigned long)-1))
     THROWG("Image is too large", 0);
+#endif
 
 bailout:
   return (size_t)retval;
@@ -2358,7 +2369,8 @@ DLLEXPORT int tj3DecompressToYUVPlanes8(tjhandle handle,
   }
   setDecompParameters(this);
   if (this->maxPixels &&
-      (unsigned long long)this->jpegWidth * this->jpegHeight > this->maxPixels)
+      (unsigned long long)this->jpegWidth * this->jpegHeight >
+      (unsigned long long)this->maxPixels)
     THROW("Image is too large");
   if (this->subsamp == TJSAMP_UNKNOWN)
     THROW("Could not determine subsampling level of JPEG image");
@@ -2727,7 +2739,7 @@ DLLEXPORT int tj3Transform(tjhandle handle, const unsigned char *jpegBuf,
     jpeg_read_header(dinfo, TRUE);
   if (this->maxPixels &&
       (unsigned long long)dinfo->image_width * dinfo->image_height >
-      this->maxPixels)
+      (unsigned long long)this->maxPixels)
     THROW("Image is too large");
   this->subsamp = getSubsamp(&this->dinfo);
 

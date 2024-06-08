@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2011-2012, 2014-2015, 2017, 2019, 2021-2023
+ * Copyright (C)2011-2012, 2014-2015, 2017, 2019, 2021-2024
  *           D. R. Commander.  All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <limits.h>
+#if !defined(_MSC_VER) || _MSC_VER > 1600
+#include <stdint.h>
+#endif
 #include <turbojpeg.h>
 #include "monolithic_examples.h"
 
@@ -340,9 +344,11 @@ int main(int argc, const char** argv)
       outSubsamp = inSubsamp;
 
     pixelFormat = TJPF_BGRX;
+#if ULLONG_MAX > SIZE_MAX
     if ((unsigned long long)width * height * tjPixelSize[pixelFormat] >
         (unsigned long long)((size_t)-1))
       THROW("allocating uncompressed image buffer", "Image is too large");
+#endif
     if ((imgBuf =
          (unsigned char *)malloc(sizeof(unsigned char) * width * height *
                                  tjPixelSize[pixelFormat])) == NULL)

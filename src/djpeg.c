@@ -5,7 +5,7 @@
  * Copyright (C) 1991-1997, Thomas G. Lane.
  * Modified 2013-2019 by Guido Vollbeding.
  * libjpeg-turbo Modifications:
- * Copyright (C) 2010-2011, 2013-2017, 2019-2020, 2022-2023, D. R. Commander.
+ * Copyright (C) 2010-2011, 2013-2017, 2019-2020, 2022-2024, D. R. Commander.
  * Copyright (C) 2015, Google, Inc.
  * For conditions of distribution and use, see the accompanying README.ijg
  * file.
@@ -268,7 +268,8 @@ parse_switches(j_decompress_ptr cinfo, int argc, const char** argv,
       if (!printed_version) {
         fprintf(stderr, "%s version %s (build %s)\n",
                 PACKAGE_NAME, VERSION, BUILD);
-        fprintf(stderr, "%s\n\n", JCOPYRIGHT);
+        fprintf(stderr, JCOPYRIGHT1);
+        fprintf(stderr, JCOPYRIGHT2 "\n");
         fprintf(stderr, "Emulating The Independent JPEG Group's software, version %s\n\n",
                 JVERSION);
         printed_version = TRUE;

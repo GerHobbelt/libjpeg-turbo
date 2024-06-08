@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2009-2014, 2017-2019, 2022-2023 D. R. Commander.
+ * Copyright (C)2009-2014, 2017-2019, 2022-2024 D. R. Commander.
  *                                              All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
