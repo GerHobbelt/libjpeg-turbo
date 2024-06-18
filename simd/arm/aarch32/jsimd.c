@@ -27,9 +27,6 @@
 
 #include <ctype.h>
 
-static THREAD_LOCAL unsigned int simd_support = ~0;
-static THREAD_LOCAL unsigned int simd_huffman = 1;
-
 #if !defined(__ARM_NEON__) && (defined(__linux__) || defined(ANDROID) || defined(__ANDROID__))
 
 #define SOMEWHAT_SANE_PROC_CPUINFO_SIZE_LIMIT  (1024 * 1024)
@@ -64,12 +61,12 @@ check_feature(char *buffer, char *feature)
 }
 
 LOCAL(int)
-parse_proc_cpuinfo(int bufsize)
+parse_proc_cpuinfo(int bufsize, unsigned int *out_simd_support)
 {
   char *buffer = (char *)malloc(bufsize);
   FILE *fd;
 
-  simd_support = 0;
+  *out_simd_support = 0;
 
   if (!buffer)
     return 0;
@@ -84,7 +81,7 @@ parse_proc_cpuinfo(int bufsize)
         return 0;
       }
       if (check_feature(buffer, "neon"))
-        simd_support |= JSIMD_NEON;
+        *out_simd_support |= JSIMD_NEON;
     }
     fclose(fd);
   }
@@ -93,6 +90,9 @@ parse_proc_cpuinfo(int bufsize)
 }
 
 #endif
+
+static jsimd_atomic_uint simd_support = ~0;
+static jsimd_atomic_uint simd_huffman = 0;
 
 /*
  * Check what SIMD accelerations are supported.
@@ -110,10 +110,11 @@ init_simd(void)
   if (simd_support != ~0U)
     return;
 
-  simd_support = 0;
+  unsigned int new_simd_support = 0;
+  unsigned int new_simd_huffman = 1;
 
 #if defined(__ARM_NEON__)
-  simd_support |= JSIMD_NEON;
+  new_simd_support |= JSIMD_NEON;
 #elif defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
   /* We still have a chance to use Neon regardless of globally used
    * -mcpu/-mfpu options passed to gcc by performing runtime detection via
@@ -128,12 +129,15 @@ init_simd(void)
 #ifndef NO_GETENV
   /* Force different settings through environment variables */
   if (!GETENV_S(env, 2, "JSIMD_FORCENEON") && !strcmp(env, "1"))
-    simd_support = JSIMD_NEON;
+    new_simd_support = JSIMD_NEON;
   if (!GETENV_S(env, 2, "JSIMD_FORCENONE") && !strcmp(env, "1"))
-    simd_support = 0;
+    new_simd_support = 0;
   if (!GETENV_S(env, 2, "JSIMD_NOHUFFENC") && !strcmp(env, "1"))
-    simd_huffman = 0;
+    new_simd_huffman = 0;
 #endif
+
+  simd_huffman = new_simd_huffman;
+  simd_support = new_simd_support;
 }
 
 GLOBAL(int)

@@ -26,24 +26,22 @@
 
 #include <ctype.h>
 
-static THREAD_LOCAL unsigned int simd_support = ~0;
-
 #if !(defined(__mips_dsp) && (__mips_dsp_rev >= 2)) && defined(__linux__)
 
 LOCAL(void)
-parse_proc_cpuinfo(const char *search_string)
+parse_proc_cpuinfo(const char *search_string, unsigned int *out_simd_support)
 {
   const char *file_name = "/proc/cpuinfo";
   char cpuinfo_line[256];
   FILE *f = NULL;
 
-  simd_support = 0;
+  *out_simd_support = 0;
 
   if ((f = fopen(file_name, "r")) != NULL) {
     while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f) != NULL) {
       if (strstr(cpuinfo_line, search_string) != NULL) {
         fclose(f);
-        simd_support |= JSIMD_DSPR2;
+        *out_simd_support |= JSIMD_DSPR2;
         return;
       }
     }
@@ -57,6 +55,8 @@ parse_proc_cpuinfo(const char *search_string)
 /*
  * Check what SIMD accelerations are supported.
  */
+static jsimd_atomic_uint simd_support = ~0;
+
 LOCAL(void)
 init_simd(void)
 {
@@ -67,26 +67,28 @@ init_simd(void)
   if (simd_support != ~0U)
     return;
 
-  simd_support = 0;
+  unsigned int new_simd_support = 0;
 
 #if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
-  simd_support |= JSIMD_DSPR2;
+  new_simd_support |= JSIMD_DSPR2;
 #elif defined(__linux__)
   /* We still have a chance to use MIPS DSPR2 regardless of globally used
    * -mdspr2 options passed to gcc by performing runtime detection via
    * /proc/cpuinfo parsing on linux */
-  parse_proc_cpuinfo("MIPS 74K");
+  parse_proc_cpuinfo("MIPS 74K", &new_simd_support);
 #endif
 
 #ifndef NO_GETENV
   /* Force different settings through environment variables */
   env = getenv("JSIMD_FORCEDSPR2");
   if ((env != NULL) && (strcmp(env, "1") == 0))
-    simd_support = JSIMD_DSPR2;
+    new_simd_support = JSIMD_DSPR2;
   env = getenv("JSIMD_FORCENONE");
   if ((env != NULL) && (strcmp(env, "1") == 0))
-    simd_support = 0;
+    new_simd_support = 0;
 #endif
+
+  simd_support = new_simd_support;
 }
 
 static const int mips_idct_ifast_coefs[4] = {

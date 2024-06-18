@@ -31,11 +31,6 @@
 #define JSIMD_FASTST3  2
 #define JSIMD_FASTTBL  4
 
-static THREAD_LOCAL unsigned int simd_support = ~0;
-static THREAD_LOCAL unsigned int simd_huffman = 1;
-static THREAD_LOCAL unsigned int simd_features = JSIMD_FASTLD3 |
-                                                 JSIMD_FASTST3 | JSIMD_FASTTBL;
-
 #if defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
 
 #define SOMEWHAT_SANE_PROC_CPUINFO_SIZE_LIMIT  (1024 * 1024)
@@ -70,7 +65,8 @@ check_cpuinfo(char *buffer, const char *field, char *value)
 }
 
 LOCAL(int)
-parse_proc_cpuinfo(int bufsize)
+parse_proc_cpuinfo(int bufsize, unsigned int *out_simd_features,
+                   unsigned int *out_simd_huffman)
 {
   char *buffer = (char *)malloc(bufsize);
   FILE *fd;
@@ -92,12 +88,12 @@ parse_proc_cpuinfo(int bufsize)
         /* The Cortex-A53 has a slow tbl implementation.  We can gain a few
            percent speedup by disabling the use of that instruction.  The
            speedup on Cortex-A57 is more subtle but still measurable. */
-        simd_features &= ~JSIMD_FASTTBL;
+        *out_simd_features &= ~JSIMD_FASTTBL;
       else if (check_cpuinfo(buffer, "CPU part", "0x0a1"))
         /* The SIMD version of Huffman encoding is slower than the C version on
            Cavium ThunderX.  Also, ld3 and st3 are abyssmally slow on that
            CPU. */
-        simd_huffman = simd_features = 0;
+        *out_simd_huffman = *out_simd_features = 0;
     }
     fclose(fd);
   }
@@ -116,6 +112,9 @@ parse_proc_cpuinfo(int bufsize)
  * It is no longer optional as it was with Armv7.
  */
 
+static jsimd_atomic_uint simd_support = ~0;
+static jsimd_atomic_uint simd_huffman = 0;
+static jsimd_atomic_uint simd_features = 0;
 
 LOCAL(void)
 init_simd(void)
@@ -130,11 +129,14 @@ init_simd(void)
   if (simd_support != ~0U)
     return;
 
-  simd_support = 0;
+  unsigned int new_simd_support = 0;
+  unsigned int new_simd_huffman = 1;
+  unsigned int new_simd_features = JSIMD_FASTLD3 |
+									JSIMD_FASTST3 | JSIMD_FASTTBL;
 
-  simd_support |= JSIMD_NEON;
+  new_simd_support |= JSIMD_NEON;
 #if defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
-  while (!parse_proc_cpuinfo(bufsize)) {
+  while (!parse_proc_cpuinfo(bufsize, &new_simd_features, &new_simd_huffman)) {
     bufsize *= 2;
     if (bufsize > SOMEWHAT_SANE_PROC_CPUINFO_SIZE_LIMIT)
       break;
@@ -144,9 +146,9 @@ init_simd(void)
 #ifndef NO_GETENV
   /* Force different settings through environment variables */
   if (!GETENV_S(env, 2, "JSIMD_FORCENEON") && !strcmp(env, "1"))
-    simd_support = JSIMD_NEON;
+    new_simd_support = JSIMD_NEON;
   if (!GETENV_S(env, 2, "JSIMD_FORCENONE") && !strcmp(env, "1"))
-    simd_support = 0;
+    new_simd_support = 0;
   if (!GETENV_S(env, 2, "JSIMD_NOHUFFENC") && !strcmp(env, "1"))
     simd_huffman = 0;
   if (!GETENV_S(env, 2, "JSIMD_FASTLD3") && !strcmp(env, "1"))
@@ -158,6 +160,10 @@ init_simd(void)
   if (!GETENV_S(env, 2, "JSIMD_FASTST3") && !strcmp(env, "0"))
     simd_features &= ~JSIMD_FASTST3;
 #endif
+
+	simd_huffman = new_simd_huffman;
+	simd_features = new_simd_features;
+	simd_support = new_simd_support;
 }
 
 GLOBAL(int)
