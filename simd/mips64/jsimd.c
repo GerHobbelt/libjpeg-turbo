@@ -26,8 +26,6 @@
 
 #include <ctype.h>
 
-static THREAD_LOCAL unsigned int simd_support = ~0;
-
 #if defined(__linux__)
 
 #define SOMEWHAT_SANE_PROC_CPUINFO_SIZE_LIMIT  (1024 * 1024)
@@ -62,12 +60,12 @@ check_feature(char *buffer, char *feature)
 }
 
 LOCAL(int)
-parse_proc_cpuinfo(int bufsize)
+parse_proc_cpuinfo(int bufsize, unsigned int *out_simd_support)
 {
   char *buffer = (char *)malloc(bufsize);
   FILE *fd;
 
-  simd_support = 0;
+  *out_simd_support = 0;
 
   if (!buffer)
     return 0;
@@ -82,7 +80,7 @@ parse_proc_cpuinfo(int bufsize)
         return 0;
       }
       if (check_feature(buffer, "loongson-mmi"))
-        simd_support |= JSIMD_MMI;
+        *out_simd_support |= JSIMD_MMI;
     }
     fclose(fd);
   }
@@ -91,6 +89,8 @@ parse_proc_cpuinfo(int bufsize)
 }
 
 #endif
+
+static jsimd_atomic_uint simd_support = ~0;
 
 /*
  * Check what SIMD accelerations are supported.
@@ -108,7 +108,7 @@ init_simd(void)
   if (simd_support != ~0U)
     return;
 
-  simd_support = 0;
+  unsigned int new_simd_support = 0;
 
 #if defined(__linux__)
   while (!parse_proc_cpuinfo(bufsize)) {
@@ -119,18 +119,20 @@ init_simd(void)
 #elif defined(__mips_loongson_vector_rev)
   /* Only enable MMI by default on non-Linux platforms when the compiler flags
    * support it. */
-  simd_support |= JSIMD_MMI;
+  new_simd_support |= JSIMD_MMI;
 #endif
 
 #ifndef NO_GETENV
   /* Force different settings through environment variables */
   env = getenv("JSIMD_FORCEMMI");
   if ((env != NULL) && (strcmp(env, "1") == 0))
-    simd_support = JSIMD_MMI;
+    new_simd_support = JSIMD_MMI;
   env = getenv("JSIMD_FORCENONE");
   if ((env != NULL) && (strcmp(env, "1") == 0))
-    simd_support = 0;
+    new_simd_support = 0;
 #endif
+
+  simd_support = new_simd_support;
 }
 
 GLOBAL(int)

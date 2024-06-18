@@ -41,8 +41,6 @@
 #include <sys/auxv.h>
 #endif
 
-static THREAD_LOCAL unsigned int simd_support = ~0;
-
 #if !defined(__ALTIVEC__) && (defined(__linux__) || defined(ANDROID) || defined(__ANDROID__))
 
 #define SOMEWHAT_SANE_PROC_CPUINFO_SIZE_LIMIT  (1024 * 1024)
@@ -77,12 +75,12 @@ check_feature(char *buffer, char *feature)
 }
 
 LOCAL(int)
-parse_proc_cpuinfo(int bufsize)
+parse_proc_cpuinfo(int bufsize, unsigned int *out_simd_support)
 {
   char *buffer = (char *)malloc(bufsize);
   FILE *fd;
 
-  simd_support = 0;
+  *out_simd_support = 0;
 
   if (!buffer)
     return 0;
@@ -97,7 +95,7 @@ parse_proc_cpuinfo(int bufsize)
         return 0;
       }
       if (check_feature(buffer, "altivec"))
-        simd_support |= JSIMD_ALTIVEC;
+        *out_simd_support |= JSIMD_ALTIVEC;
     }
     fclose(fd);
   }
@@ -106,6 +104,8 @@ parse_proc_cpuinfo(int bufsize)
 }
 
 #endif
+
+static jsimd_atomic_uint simd_support = ~0;
 
 /*
  * Check what SIMD accelerations are supported.
@@ -135,10 +135,10 @@ init_simd(void)
   if (simd_support != ~0U)
     return;
 
-  simd_support = 0;
+  unsigned int new_simd_support = 0;
 
 #if defined(__ALTIVEC__)
-  simd_support |= JSIMD_ALTIVEC;
+  new_simd_support |= JSIMD_ALTIVEC;
 #elif defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
   while (!parse_proc_cpuinfo(bufsize)) {
     bufsize *= 2;
@@ -148,25 +148,27 @@ init_simd(void)
 #elif defined(__amigaos4__)
   IExec->GetCPUInfoTags(GCIT_VectorUnit, &altivec, TAG_DONE);
   if (altivec == VECTORTYPE_ALTIVEC)
-    simd_support |= JSIMD_ALTIVEC;
+    new_simd_support |= JSIMD_ALTIVEC;
 #elif defined(__APPLE__) || defined(__OpenBSD__)
   if (sysctl(mib, 2, &altivec, &len, NULL, 0) == 0 && altivec != 0)
-    simd_support |= JSIMD_ALTIVEC;
+    new_simd_support |= JSIMD_ALTIVEC;
 #elif defined(__FreeBSD__)
   elf_aux_info(AT_HWCAP, &cpufeatures, sizeof(cpufeatures));
   if (cpufeatures & PPC_FEATURE_HAS_ALTIVEC)
-    simd_support |= JSIMD_ALTIVEC;
+    new_simd_support |= JSIMD_ALTIVEC;
 #endif
 
 #ifndef NO_GETENV
   /* Force different settings through environment variables */
   env = getenv("JSIMD_FORCEALTIVEC");
   if ((env != NULL) && (strcmp(env, "1") == 0))
-    simd_support = JSIMD_ALTIVEC;
+    new_simd_support = JSIMD_ALTIVEC;
   env = getenv("JSIMD_FORCENONE");
   if ((env != NULL) && (strcmp(env, "1") == 0))
-    simd_support = 0;
+    new_simd_support = 0;
 #endif
+
+  simd_support = new_simd_support;
 }
 
 GLOBAL(int)

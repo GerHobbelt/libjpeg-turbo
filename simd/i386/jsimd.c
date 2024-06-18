@@ -31,8 +31,8 @@
 #define IS_ALIGNED_SSE(ptr)  (IS_ALIGNED(ptr, 4)) /* 16 byte alignment */
 #define IS_ALIGNED_AVX(ptr)  (IS_ALIGNED(ptr, 5)) /* 32 byte alignment */
 
-static THREAD_LOCAL unsigned int simd_support = (unsigned int)(~0);
-static THREAD_LOCAL unsigned int simd_huffman = 1;
+static jsimd_atomic_uint simd_support = (unsigned int)(~0);
+static jsimd_atomic_uint simd_huffman = 0;
 
 /*
  * Check what SIMD accelerations are supported.
@@ -47,25 +47,29 @@ init_simd(void)
   if (simd_support != ~0U)
     return;
 
-  simd_support = jpeg_simd_cpu_support();
+  unsigned int new_simd_support = jpeg_simd_cpu_support();
+  unsigned int new_simd_huffman = 1;
 
 #ifndef NO_GETENV
   /* Force different settings through environment variables */
   if (!GETENV_S(env, 2, "JSIMD_FORCEMMX") && !strcmp(env, "1"))
-    simd_support &= JSIMD_MMX;
+    new_simd_support &= JSIMD_MMX;
   if (!GETENV_S(env, 2, "JSIMD_FORCE3DNOW") && !strcmp(env, "1"))
-    simd_support &= JSIMD_3DNOW | JSIMD_MMX;
+    new_simd_support &= JSIMD_3DNOW | JSIMD_MMX;
   if (!GETENV_S(env, 2, "JSIMD_FORCESSE") && !strcmp(env, "1"))
-    simd_support &= JSIMD_SSE | JSIMD_MMX;
+    new_simd_support &= JSIMD_SSE | JSIMD_MMX;
   if (!GETENV_S(env, 2, "JSIMD_FORCESSE2") && !strcmp(env, "1"))
-    simd_support &= JSIMD_SSE2;
+    new_simd_support &= JSIMD_SSE2;
   if (!GETENV_S(env, 2, "JSIMD_FORCEAVX2") && !strcmp(env, "1"))
-    simd_support &= JSIMD_AVX2;
+    new_simd_support &= JSIMD_AVX2;
   if (!GETENV_S(env, 2, "JSIMD_FORCENONE") && !strcmp(env, "1"))
-    simd_support = 0;
+    new_simd_support = 0;
   if (!GETENV_S(env, 2, "JSIMD_NOHUFFENC") && !strcmp(env, "1"))
-    simd_huffman = 0;
+    new_simd_huffman = 0;
 #endif
+
+  simd_huffman = new_simd_huffman;
+  simd_support = new_simd_support;
 }
 
 GLOBAL(int)

@@ -17,6 +17,12 @@
 
 /* Bitmask for supported acceleration methods */
 
+#if defined(_MSC_VER)	
+typedef volatile unsigned int jsimd_atomic_uint;
+#else
+typedef _Atomic(unsigned int) jsimd_atomic_uint;
+#endif
+
 #define JSIMD_NONE     0x00
 #define JSIMD_MMX      0x01
 #define JSIMD_3DNOW    0x02
