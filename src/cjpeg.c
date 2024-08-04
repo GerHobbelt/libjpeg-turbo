@@ -112,10 +112,12 @@ select_file_type(j_compress_ptr cinfo, FILE *infile)
   case 'P':
     if (cinfo->data_precision <= 8)
       return jinit_read_ppm(cinfo);
-    else if (cinfo->data_precision <= 12)
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo->data_precision <= 12)
       return j12init_read_ppm(cinfo);
-    else {
-#ifdef C_LOSSLESS_SUPPORTED
+#endif
+		else {
+#if defined(C_LOSSLESS_SUPPORTED) && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
       return j16init_read_ppm(cinfo);
 #else
       ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
@@ -219,11 +221,13 @@ usage(void)
 #endif
   fprintf(stderr, "Switches for advanced users:\n");
   fprintf(stderr, "  -precision N   Create JPEG file with N-bit data precision\n");
-#ifdef C_LOSSLESS_SUPPORTED
-  fprintf(stderr, "                 (N=2..16; default is 8; if N is not 8 or 12, then -lossless\n");
+#if defined(C_LOSSLESS_SUPPORTED) && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+	fprintf(stderr, "                 (N=2..16; default is 8; if N is not 8 or 12, then -lossless\n");
   fprintf(stderr, "                 must also be specified)\n");
+#elif defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+	fprintf(stderr, "                 (N is 8 or 12; default is 8)\n");
 #else
-  fprintf(stderr, "                 (N is 8 or 12; default is 8)\n");
+	fprintf(stderr, "                 (only N = 8 is supported)\n");
 #endif
 #ifdef C_LOSSLESS_SUPPORTED
   fprintf(stderr, "  -lossless psv[,Pt]  Create lossless JPEG file\n");
@@ -440,10 +444,12 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
         usage();
       if (sscanf(argv[argn], "%d", &val) != 1)
         usage();
-#ifdef C_LOSSLESS_SUPPORTED
-      if (val < 2 || val > 16)
+#if defined(C_LOSSLESS_SUPPORTED) && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+			if (val < 2 || val > 16)
+#elif defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+			if (val != 8 && val != 12)
 #else
-      if (val != 8 && val != 12)
+			if (val != 8)
 #endif
         usage();
       cinfo->data_precision = val;
@@ -802,14 +808,18 @@ main(int argc, const char** argv)
       num_scanlines = (*src_mgr->get_pixel_rows) (&cinfo, src_mgr);
       (void)jpeg_write_scanlines(&cinfo, src_mgr->buffer, num_scanlines);
     }
-  } else if (cinfo.data_precision <= 12) {
+  }
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+	else if (cinfo.data_precision <= 12) {
     while (cinfo.next_scanline < cinfo.image_height) {
       num_scanlines = (*src_mgr->get_pixel_rows) (&cinfo, src_mgr);
       (void)jpeg12_write_scanlines(&cinfo, src_mgr->buffer12, num_scanlines);
     }
-  } else {
-#ifdef C_LOSSLESS_SUPPORTED
-    while (cinfo.next_scanline < cinfo.image_height) {
+  }
+#endif
+	else {
+#if defined(C_LOSSLESS_SUPPORTED) && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		while (cinfo.next_scanline < cinfo.image_height) {
       num_scanlines = (*src_mgr->get_pixel_rows) (&cinfo, src_mgr);
       (void)jpeg16_write_scanlines(&cinfo, src_mgr->buffer16, num_scanlines);
     }

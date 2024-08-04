@@ -333,9 +333,11 @@ parse_switches(j_decompress_ptr cinfo, int argc, const char** argv,
           fprintf(stderr, "%s: can't open %s\n", progname, argv[argn]);
           exit(EXIT_FAILURE);
         }
-        if (cinfo->data_precision == 12)
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+				if (cinfo->data_precision == 12)
           read_color_map_12(cinfo, mapfile);
         else
+#endif
           read_color_map(cinfo, mapfile);
         fclose(mapfile);
         cinfo->quantize_colors = TRUE;
@@ -677,9 +679,11 @@ main(int argc, const char** argv)
   case FMT_GIF:
     if (cinfo.data_precision == 8)
       dest_mgr = jinit_write_gif(&cinfo, TRUE);
-    else if (cinfo.data_precision == 12)
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo.data_precision == 12)
       dest_mgr = j12init_write_gif(&cinfo, TRUE);
-    else
+#endif
+		else
       ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
     break;
   case FMT_GIF0:
@@ -690,11 +694,13 @@ main(int argc, const char** argv)
   case FMT_PPM:
     if (cinfo.data_precision <= 8)
       dest_mgr = jinit_write_ppm(&cinfo);
-    else if (cinfo.data_precision <= 12)
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo.data_precision <= 12)
       dest_mgr = j12init_write_ppm(&cinfo);
-    else
-#ifdef D_LOSSLESS_SUPPORTED
-      dest_mgr = j16init_write_ppm(&cinfo);
+#endif
+		else
+#if defined(D_LOSSLESS_SUPPORTED) && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+			dest_mgr = j16init_write_ppm(&cinfo);
 #else
       ERREXIT1(&cinfo, JERR_BAD_PRECISION, cinfo.data_precision);
 #endif
@@ -754,7 +760,9 @@ main(int argc, const char** argv)
                                             dest_mgr->buffer_height);
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
       }
-    } else if (cinfo.data_precision == 12) {
+    }
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo.data_precision == 12) {
       /* Process data */
       while (cinfo.output_scanline < skip_start) {
         num_scanlines = jpeg12_read_scanlines(&cinfo, dest_mgr->buffer12,
@@ -772,7 +780,9 @@ main(int argc, const char** argv)
                                               dest_mgr->buffer_height);
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
       }
-    } else
+    }
+#endif
+		else
       ERREXIT(&cinfo, JERR_NOTIMPL);
 
   /* Decompress a subregion */
@@ -791,9 +801,11 @@ main(int argc, const char** argv)
 
     if (cinfo.data_precision == 8)
       jpeg_crop_scanline(&cinfo, &crop_x, &crop_width);
-    else if (cinfo.data_precision == 12)
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo.data_precision == 12)
       jpeg12_crop_scanline(&cinfo, &crop_x, &crop_width);
-    else
+#endif
+		else
       ERREXIT(&cinfo, JERR_NOTIMPL);
     if (dest_mgr->calc_buffer_dimensions)
       (*dest_mgr->calc_buffer_dimensions) (&cinfo, dest_mgr);
@@ -828,7 +840,9 @@ main(int argc, const char** argv)
                 progname, tmp, cinfo.output_height - crop_y - crop_height);
         return EXIT_FAILURE;
       }
-    } else if (cinfo.data_precision == 12) {
+    }
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo.data_precision == 12) {
       /* Process data */
       if ((tmp = jpeg12_skip_scanlines(&cinfo, crop_y)) != crop_y) {
         fprintf(stderr, "%s: jpeg12_skip_scanlines() returned %u rather than %u\n",
@@ -848,7 +862,9 @@ main(int argc, const char** argv)
                 progname, tmp, cinfo.output_height - crop_y - crop_height);
         return EXIT_FAILURE;
       }
-    } else
+    }
+#endif
+		else
       ERREXIT(&cinfo, JERR_NOTIMPL);
 
   /* Normal full-image decompress */
@@ -863,16 +879,20 @@ main(int argc, const char** argv)
                                             dest_mgr->buffer_height);
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
       }
-    } else if (cinfo.data_precision <= 12) {
+    }
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+		else if (cinfo.data_precision <= 12) {
       /* Process data */
       while (cinfo.output_scanline < cinfo.output_height) {
         num_scanlines = jpeg12_read_scanlines(&cinfo, dest_mgr->buffer12,
                                               dest_mgr->buffer_height);
         (*dest_mgr->put_pixel_rows) (&cinfo, dest_mgr, num_scanlines);
       }
-    } else {
-#ifdef D_LOSSLESS_SUPPORTED
-      /* Process data */
+    }
+#endif
+		else {
+#if defined(D_LOSSLESS_SUPPORTED) && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) 
+			/* Process data */
       while (cinfo.output_scanline < cinfo.output_height) {
         num_scanlines = jpeg16_read_scanlines(&cinfo, dest_mgr->buffer16,
                                               dest_mgr->buffer_height);
