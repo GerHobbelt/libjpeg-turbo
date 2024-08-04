@@ -488,15 +488,15 @@ _jinit_upsampler(j_decompress_ptr cinfo)
     } else if (h_in_group * 2 == h_out_group && v_in_group == v_out_group) {
       /* Special cases for 2h1v upsampling */
       if (do_fancy && compptr->downsampled_width > 2) {
-#ifdef WITH_SIMD
-        if (jsimd_can_h2v1_fancy_upsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_h2v1_fancy_upsample())
           upsample->methods[ci] = jsimd_h2v1_fancy_upsample;
         else
 #endif
           upsample->methods[ci] = h2v1_fancy_upsample;
       } else {
-#ifdef WITH_SIMD
-        if (jsimd_can_h2v1_upsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_h2v1_upsample())
           upsample->methods[ci] = jsimd_h2v1_upsample;
         else
 #endif
@@ -517,16 +517,16 @@ _jinit_upsampler(j_decompress_ptr cinfo)
                v_in_group * 2 == v_out_group) {
       /* Special cases for 2h2v upsampling */
       if (do_fancy && compptr->downsampled_width > 2) {
-#ifdef WITH_SIMD
-        if (jsimd_can_h2v2_fancy_upsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_h2v2_fancy_upsample())
           upsample->methods[ci] = jsimd_h2v2_fancy_upsample;
         else
 #endif
           upsample->methods[ci] = h2v2_fancy_upsample;
         upsample->pub.need_context_rows = TRUE;
       } else {
-#ifdef WITH_SIMD
-        if (jsimd_can_h2v2_upsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_h2v2_upsample())
           upsample->methods[ci] = jsimd_h2v2_upsample;
         else
 #endif

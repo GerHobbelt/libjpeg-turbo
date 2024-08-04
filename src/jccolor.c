@@ -631,7 +631,7 @@ _jinit_color_converter(j_compress_ptr cinfo)
     if (cinfo->in_color_space == JCS_GRAYSCALE)
       cconvert->pub._color_convert = grayscale_convert;
     else if (IsExtRGB(cinfo->in_color_space)) {
-#ifdef WITH_SIMD
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
       if (jsimd_can_rgb_gray())
         cconvert->pub._color_convert = jsimd_rgb_gray_convert;
       else
@@ -674,7 +674,7 @@ _jinit_color_converter(j_compress_ptr cinfo)
     if (cinfo->num_components != 3)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (IsExtRGB(cinfo->in_color_space)) {
-#ifdef WITH_SIMD
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
       if (jsimd_can_rgb_ycc())
         cconvert->pub._color_convert = jsimd_rgb_ycc_convert;
       else

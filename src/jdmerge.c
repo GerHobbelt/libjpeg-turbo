@@ -559,8 +559,8 @@ _jinit_merged_upsampler(j_decompress_ptr cinfo)
 
   if (cinfo->max_v_samp_factor == 2) {
     upsample->pub._upsample = merged_2v_upsample;
-#ifdef WITH_SIMD
-    if (jsimd_can_h2v2_merged_upsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+		if (jsimd_can_h2v2_merged_upsample())
       upsample->upmethod = jsimd_h2v2_merged_upsample;
     else
 #endif
@@ -578,8 +578,8 @@ _jinit_merged_upsampler(j_decompress_ptr cinfo)
                 (size_t)(upsample->out_row_width * sizeof(_JSAMPLE)));
   } else {
     upsample->pub._upsample = merged_1v_upsample;
-#ifdef WITH_SIMD
-    if (jsimd_can_h2v1_merged_upsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+		if (jsimd_can_h2v1_merged_upsample())
       upsample->upmethod = jsimd_h2v1_merged_upsample;
     else
 #endif

@@ -31,6 +31,15 @@
 
 #ifdef BMP_SUPPORTED
 
+ /*
+	* To support 12-bit JPEG data, we'd have to scale output down to 8 bits.
+	* This is not yet implemented.
+	*/
+
+#if BITS_IN_JSAMPLE != 8
+#error "Sorry, this code only copes with 8-bit JSAMPLEs." /* deliberate syntax err */
+#endif
+
 
 /* Macros to deal with unsigned chars as efficiently as compiler allows */
 

@@ -513,8 +513,8 @@ _jinit_downsampler(j_compress_ptr cinfo)
     } else if (compptr->h_samp_factor * 2 == cinfo->max_h_samp_factor &&
                compptr->v_samp_factor == cinfo->max_v_samp_factor) {
       smoothok = FALSE;
-#ifdef WITH_SIMD
-      if (jsimd_can_h2v1_downsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+			if (jsimd_can_h2v1_downsample())
         downsample->methods[ci] = jsimd_h2v1_downsample;
       else
 #endif
@@ -533,8 +533,8 @@ _jinit_downsampler(j_compress_ptr cinfo)
       } else
 #endif
       {
-#ifdef WITH_SIMD
-        if (jsimd_can_h2v2_downsample())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_h2v2_downsample())
           downsample->methods[ci] = jsimd_h2v2_downsample;
         else
 #endif

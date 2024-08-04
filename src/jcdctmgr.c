@@ -22,6 +22,7 @@
 #include "jpeglib.h"
 #include "jdct.h"               /* Private declarations for DCT subsystem */
 #include "jsimddct.h"
+#include "jsamplecomp.h"
 
 
 /* Private subobject for this module */
@@ -210,8 +211,8 @@ compute_reciprocal(UINT16 divisor, DCTELEM *dtbl)
 
   dtbl[DCTSIZE2 * 0] = (DCTELEM)fq;     /* reciprocal */
   dtbl[DCTSIZE2 * 1] = (DCTELEM)c;      /* correction + roundfactor */
-#ifdef WITH_SIMD
-  dtbl[DCTSIZE2 * 2] = (DCTELEM)(1 << (sizeof(DCTELEM) * 8 * 2 - r)); /* scale */
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+	dtbl[DCTSIZE2 * 2] = (DCTELEM)(1 << (sizeof(DCTELEM) * 8 * 2 - r)); /* scale */
 #else
   dtbl[DCTSIZE2 * 2] = 1;
 #endif
@@ -648,8 +649,8 @@ _jinit_forward_dct(j_compress_ptr cinfo)
 #ifdef DCT_ISLOW_SUPPORTED
   case JDCT_ISLOW:
     fdct->pub._forward_DCT = forward_DCT;
-#ifdef WITH_SIMD
-    if (jsimd_can_fdct_islow())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+		if (jsimd_can_fdct_islow())
       fdct->dct = jsimd_fdct_islow;
     else
 #endif
@@ -659,8 +660,8 @@ _jinit_forward_dct(j_compress_ptr cinfo)
 #ifdef DCT_IFAST_SUPPORTED
   case JDCT_IFAST:
     fdct->pub._forward_DCT = forward_DCT;
-#ifdef WITH_SIMD
-    if (jsimd_can_fdct_ifast())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+		if (jsimd_can_fdct_ifast())
       fdct->dct = jsimd_fdct_ifast;
     else
 #endif
@@ -670,8 +671,8 @@ _jinit_forward_dct(j_compress_ptr cinfo)
 #ifdef DCT_FLOAT_SUPPORTED
   case JDCT_FLOAT:
     fdct->pub._forward_DCT = forward_DCT_float;
-#ifdef WITH_SIMD
-    if (jsimd_can_fdct_float())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+		if (jsimd_can_fdct_float())
       fdct->float_dct = jsimd_fdct_float;
     else
 #endif
@@ -692,13 +693,13 @@ _jinit_forward_dct(j_compress_ptr cinfo)
   case JDCT_IFAST:
 #endif
 #if defined(DCT_ISLOW_SUPPORTED) || defined(DCT_IFAST_SUPPORTED)
-#ifdef WITH_SIMD
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
     if (jsimd_can_convsamp())
       fdct->convsamp = jsimd_convsamp;
     else
 #endif
       fdct->convsamp = convsamp;
-#ifdef WITH_SIMD
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
     if (jsimd_can_quantize())
       fdct->quantize = jsimd_quantize;
     else
@@ -708,13 +709,13 @@ _jinit_forward_dct(j_compress_ptr cinfo)
 #endif
 #ifdef DCT_FLOAT_SUPPORTED
   case JDCT_FLOAT:
-#ifdef WITH_SIMD
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
     if (jsimd_can_convsamp_float())
       fdct->float_convsamp = jsimd_convsamp_float;
     else
 #endif
       fdct->float_convsamp = convsamp_float;
-#ifdef WITH_SIMD
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
     if (jsimd_can_quantize_float())
       fdct->float_quantize = jsimd_quantize_float;
     else

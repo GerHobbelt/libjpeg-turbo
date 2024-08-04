@@ -116,8 +116,8 @@ start_pass(j_decompress_ptr cinfo)
       method = JDCT_ISLOW;      /* jidctred uses islow-style table */
       break;
     case 2:
-#ifdef WITH_SIMD
-      if (jsimd_can_idct_2x2())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+			if (jsimd_can_idct_2x2())
         method_ptr = jsimd_idct_2x2;
       else
 #endif
@@ -129,8 +129,8 @@ start_pass(j_decompress_ptr cinfo)
       method = JDCT_ISLOW;      /* jidctint uses islow-style table */
       break;
     case 4:
-#ifdef WITH_SIMD
-      if (jsimd_can_idct_4x4())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+			if (jsimd_can_idct_4x4())
         method_ptr = jsimd_idct_4x4;
       else
 #endif
@@ -159,8 +159,8 @@ start_pass(j_decompress_ptr cinfo)
       switch (cinfo->dct_method) {
 #ifdef DCT_ISLOW_SUPPORTED
       case JDCT_ISLOW:
-#ifdef WITH_SIMD
-        if (jsimd_can_idct_islow())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_idct_islow())
           method_ptr = jsimd_idct_islow;
         else
 #endif
@@ -170,8 +170,8 @@ start_pass(j_decompress_ptr cinfo)
 #endif
 #ifdef DCT_IFAST_SUPPORTED
       case JDCT_IFAST:
-#ifdef WITH_SIMD
-        if (jsimd_can_idct_ifast())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_idct_ifast())
           method_ptr = jsimd_idct_ifast;
         else
 #endif
@@ -181,8 +181,8 @@ start_pass(j_decompress_ptr cinfo)
 #endif
 #ifdef DCT_FLOAT_SUPPORTED
       case JDCT_FLOAT:
-#ifdef WITH_SIMD
-        if (jsimd_can_idct_float())
+#if defined(WITH_SIMD) && (BITS_IN_JSAMPLE == 8)
+				if (jsimd_can_idct_float())
           method_ptr = jsimd_idct_float;
         else
 #endif
