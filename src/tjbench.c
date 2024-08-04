@@ -1051,7 +1051,6 @@ int main(int argc, const char** argv)
         printf("Using fastest DCT/IDCT algorithm\n\n");
         fastDCT = 1;
       } else if (!strcasecmp(argv[i], "-optimize")) {
-        printf("Using optimized baseline entropy coding\n\n");
         optimize = 1;
         xformOpt |= TJXOPT_OPTIMIZE;
       } else if (!strcasecmp(argv[i], "-progressive")) {
@@ -1200,6 +1199,9 @@ int main(int argc, const char** argv)
       else return usage(argv[0]);
     }
   }
+
+  if (optimize && !progressive && !arithmetic && !lossless && precision != 12)
+    printf("Using optimized baseline entropy coding\n\n");
 
   if (precision == 16 && !lossless) {
     printf("ERROR: -lossless must be specified along with -precision 16\n");

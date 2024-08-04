@@ -296,7 +296,7 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
   int argn;
   const char *arg;
 #ifdef C_LOSSLESS_SUPPORTED
-  int psv, pt = 0;
+  int psv = 0, pt = 0;
 #endif
   boolean force_baseline;
   boolean simple_progressive;
@@ -409,7 +409,8 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
                                         string */
       if (*ptr)
         sscanf(ptr, "%d", &pt);
-      jpeg_enable_lossless(cinfo, psv, pt);
+
+      /* We must postpone execution until data_precision is known. */
 #else
       fprintf(stderr, "%s: sorry, lossless output was not compiled\n",
               progname);
@@ -593,6 +594,11 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
 #ifdef C_PROGRESSIVE_SUPPORTED
     if (simple_progressive)     /* process -progressive; -scans can override */
       jpeg_simple_progression(cinfo);
+#endif
+
+#ifdef C_LOSSLESS_SUPPORTED
+    if (psv != 0)               /* process -lossless */
+      jpeg_enable_lossless(cinfo, psv, pt);
 #endif
 
 #ifdef C_MULTISCAN_FILES_SUPPORTED
