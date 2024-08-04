@@ -131,13 +131,8 @@ transdecode_master_selection(j_decompress_ptr cinfo)
   }
 
   /* Always get a full-image coefficient buffer. */
-  if (cinfo->data_precision == 12) {
-#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
-	  j12init_d_coef_controller(cinfo, TRUE);
-#else
-	  ERREXIT(cinfo, JERR_NOT_COMPILED);
-#endif
-  } 
+  if (cinfo->data_precision == 12)
+    j12init_d_coef_controller(cinfo, TRUE);
   else
     jinit_d_coef_controller(cinfo, TRUE);
 

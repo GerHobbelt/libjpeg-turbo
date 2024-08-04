@@ -83,10 +83,10 @@ static IMAGE_FORMATS requested_fmt;
  */
 
 
-static const char *progname;    /* program name for error messages */
-static const char *icc_filename;      /* for -icc switch */
+static const char *progname;           /* program name for error messages */
+static const char *icc_filename;       /* for -icc switch */
 static JDIMENSION max_scans;           /* for -maxscans switch */
-static const char *outfilename;       /* for -outfile switch */
+static const char *outfilename;        /* for -outfile switch */
 static boolean memsrc;                 /* for -memsrc switch */
 static boolean report;                 /* for -report switch */
 static boolean skip, crop;

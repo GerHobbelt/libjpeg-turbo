@@ -704,14 +704,9 @@ master_selection(j_decompress_ptr cinfo)
     /* Initialize principal buffer controllers. */
     use_c_buffer = cinfo->inputctl->has_multiple_scans ||
                    cinfo->buffered_image;
-    if (cinfo->data_precision == 12) {
-#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
+    if (cinfo->data_precision == 12)
       j12init_d_coef_controller(cinfo, use_c_buffer);
-#else
-      ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
-#endif
-	}
-	else
+    else
       jinit_d_coef_controller(cinfo, use_c_buffer);
   }
 

@@ -280,7 +280,7 @@ _jinit_d_post_controller(j_decompress_ptr cinfo, boolean need_full_buffer)
   } else
 #endif
   {
-  if (cinfo->data_precision > BITS_IN_JSAMPLE)
+    if (cinfo->data_precision != BITS_IN_JSAMPLE)
       ERREXIT1(cinfo, JERR_BAD_PRECISION, cinfo->data_precision);
   }
 

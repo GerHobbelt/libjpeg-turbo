@@ -118,14 +118,10 @@ jinit_compress_master(j_compress_ptr cinfo)
     }
 
     /* Need a full-image coefficient buffer in any multi-pass mode. */
-    if (cinfo->data_precision == 12) {
-#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12) && BITS_IN_JSAMPLE == 12
-		j12init_c_coef_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
+    if (cinfo->data_precision == 12)
+      j12init_c_coef_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
                                                  cinfo->optimize_coding));
-#else
-		ERREXIT(cinfo, JERR_NOT_COMPILED);
-#endif
-	} else
+    else
       jinit_c_coef_controller(cinfo, (boolean)(cinfo->num_scans > 1 ||
                                                cinfo->optimize_coding));
   }

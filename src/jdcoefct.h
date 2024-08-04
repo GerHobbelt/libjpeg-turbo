@@ -63,7 +63,6 @@ typedef struct {
 #endif
 } my_coef_controller;
 
-
 typedef my_coef_controller *my_coef_ptr;
 
 

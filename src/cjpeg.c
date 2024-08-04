@@ -145,9 +145,9 @@ select_file_type(j_compress_ptr cinfo, FILE *infile)
  */
 
 
-static const char *progname;    /* program name for error messages */
-static const char *icc_filename;      /* for -icc switch */
-static const char *outfilename;       /* for -outfile switch */
+static const char *progname;           /* program name for error messages */
+static const char *icc_filename;       /* for -icc switch */
+static const char *outfilename;        /* for -outfile switch */
 static boolean memdst;                 /* for -memdst switch */
 static boolean report;                 /* for -report switch */
 static boolean strict;                 /* for -strict switch */

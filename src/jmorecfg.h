@@ -239,13 +239,13 @@ typedef int boolean;
 
 #define DCT_ISLOW_SUPPORTED     /* accurate integer method */
 #define DCT_IFAST_SUPPORTED     /* less accurate int method [legacy feature] */
-#undef DCT_FLOAT_SUPPORTED     /* floating-point method [legacy feature] */
+#define DCT_FLOAT_SUPPORTED     /* floating-point method [legacy feature] */
 
 /* Encoder capability options: */
 
 #define C_MULTISCAN_FILES_SUPPORTED /* Multiple-scan JPEG files? */
 #define C_PROGRESSIVE_SUPPORTED     /* Progressive JPEG? (Requires MULTISCAN)*/
-#undef C_LOSSLESS_SUPPORTED        /* Lossless JPEG? */
+#define C_LOSSLESS_SUPPORTED        /* Lossless JPEG? */
 #define ENTROPY_OPT_SUPPORTED       /* Optimization of entropy coding parms? */
 /* Note: if you selected 12-bit data precision, it is dangerous to turn off
  * ENTROPY_OPT_SUPPORTED.  The standard Huffman tables are only good for 8-bit
@@ -262,7 +262,7 @@ typedef int boolean;
 
 #define D_MULTISCAN_FILES_SUPPORTED /* Multiple-scan JPEG files? */
 #define D_PROGRESSIVE_SUPPORTED     /* Progressive JPEG? (Requires MULTISCAN)*/
-#undef D_LOSSLESS_SUPPORTED        /* Lossless JPEG? */
+#define D_LOSSLESS_SUPPORTED        /* Lossless JPEG? */
 #define SAVE_MARKERS_SUPPORTED      /* jpeg_save_markers() needed? */
 #define BLOCK_SMOOTHING_SUPPORTED   /* Block smoothing? (Progressive only) */
 #define IDCT_SCALING_SUPPORTED      /* Output rescaling via IDCT? */
