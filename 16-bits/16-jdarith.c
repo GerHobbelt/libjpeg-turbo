@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jdarith.c"
+#include "../src/jdarith.c"
 

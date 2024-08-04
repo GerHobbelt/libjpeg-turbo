@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 12
-#include "../jcdctmgr.c"
+#include "../src/jcdctmgr.c"
 

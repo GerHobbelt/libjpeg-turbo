@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jfdctfst.c"
+#include "../src/jfdctfst.c"
 

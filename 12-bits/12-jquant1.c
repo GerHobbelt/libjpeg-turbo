@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 12
-#include "../jquant1.c"
+#include "../src/jquant1.c"
 

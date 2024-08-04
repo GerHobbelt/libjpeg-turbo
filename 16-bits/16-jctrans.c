@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jctrans.c"
+#include "../src/jctrans.c"
 

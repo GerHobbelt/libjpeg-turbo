@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 12
-#include "../turbojpeg-mp.c"
+#include "../src/turbojpeg-mp.c"
 

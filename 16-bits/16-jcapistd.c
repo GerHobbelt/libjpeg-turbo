@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jcapistd.c"
+#include "../src/jcapistd.c"
 

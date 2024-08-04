@@ -3,9 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jidctint.c"
+#include "../src/jidctint.c"
 
-
-#if BITS_IN_JSAMPLE != 16
-#error X
-#endif

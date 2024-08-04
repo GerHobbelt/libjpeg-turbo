@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jdatadst-tj.c"
+#include "../src/jdatadst-tj.c"
 

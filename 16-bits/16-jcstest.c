@@ -3,5 +3,5 @@
 //
 
 #define BITS_IN_JSAMPLE 16
-#include "../jcstest.c"
+#include "../src/jcstest.c"
 
