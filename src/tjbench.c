@@ -238,9 +238,9 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
 
   /* Set the destination buffer to gray so we know whether the decompressor
      attempted to write to it */
-  if (precision == 8)
+  if (precision <= 8)
     memset((unsigned char *)dstBuf, 127, (size_t)pitch * scaledh);
-  else if (precision == 12) {
+  else if (precision <= 12) {
     for (i = 0; i < pitch * scaledh; i++)
       ((short *)dstBuf)[i] = (short)2047;
   } else {
@@ -286,11 +286,11 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
             THROW_TJ();
           if (iter >= 0) elapsedDecode += getTime() - startDecode;
         } else {
-          if (precision == 8) {
+          if (precision <= 8) {
             if (tj3Decompress8(handle, jpegBufs[tile], jpegSizes[tile],
                                dstPtr2, pitch, pf) == -1)
               THROW_TJ();
-          } else if (precision == 12) {
+          } else if (precision <= 12) {
             if (tj3Decompress12(handle, jpegBufs[tile], jpegSizes[tile],
                                 (short *)dstPtr2, pitch, pf) == -1)
               THROW_TJ();
@@ -349,11 +349,11 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
     SNPRINTF(tempStr, 1024, "%s_%s%s_%s.%s", fileName,
              lossless ? "LOSSLS" : subName[subsamp], qualStr, sizeStr, ext);
 
-  if (precision == 8) {
+  if (precision <= 8) {
     if (tj3SaveImage8(handle, tempStr, (unsigned char *)dstBuf, scaledw, 0,
                       scaledh, pf) == -1)
       THROW_TJ();
-  } else if (precision == 12) {
+  } else if (precision <= 12) {
     if (tj3SaveImage12(handle, tempStr, (short *)dstBuf, scaledw, 0, scaledh,
                        pf) == -1)
       THROW_TJ();
@@ -432,7 +432,7 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
     if (quiet == 1)
       printf("%-4s(%s)  %-2d/%-6s %-3d   ", pfStr, bottomUp ? "BU" : "TD",
              precision, lossless ? "LOSSLS" : subNameLong[subsamp], jpegQual);
-    if (precision == 8) {
+    if (precision <= 8) {
       for (i = 0; i < h; i++)
         memcpy(&((unsigned char *)tmpBuf)[pitch * i],
                &((unsigned char *)srcBuf)[w * ps * i], w * ps);
@@ -505,11 +505,11 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
                                     &jpegBufs[tile], &jpegSizes[tile]) == -1)
               THROW_TJ();
           } else {
-            if (precision == 8) {
+            if (precision <= 8) {
               if (tj3Compress8(handle, srcPtr2, width, pitch, height, pf,
                                &jpegBufs[tile], &jpegSizes[tile]) == -1)
                 THROW_TJ();
-            } else if (precision == 12) {
+            } else if (precision <= 12) {
               if (tj3Compress12(handle, (short *)srcPtr2, width, pitch, height,
                                 pf, &jpegBufs[tile], &jpegSizes[tile]) == -1)
                 THROW_TJ();
@@ -688,7 +688,7 @@ static int decompTest(const char *fileName)
     THROW_TJ();
 
   lossless = tj3Get(handle, TJPARAM_LOSSLESS);
-  sampleSize = (precision == 8 ? sizeof(unsigned char) : sizeof(short));
+  sampleSize = (precision <= 8 ? sizeof(unsigned char) : sizeof(short));
   cs = tj3Get(handle, TJPARAM_COLORSPACE);
   if (w < 1 || h < 1)
     THROW("reading JPEG header", "Invalid image dimensions");
@@ -904,7 +904,7 @@ static int usage(const char *progName)
   int i;
 
   printf("USAGE: %s\n", progName);
-  printf("       <Inputimage (BMP|PPM)> <Quality or PSV> [options]\n\n");
+  printf("       <Inputimage (BMP|PPM|PGM)> <Quality or PSV> [options]\n\n");
   printf("       %s\n", progName);
   printf("       <Inputimage (JPG)> [options]\n");
 
@@ -912,7 +912,7 @@ static int usage(const char *progName)
   printf("---------------\n");
   printf("-alloc = Dynamically allocate JPEG buffers\n");
   printf("-benchtime T = Run each benchmark for at least T seconds [default = 5.0]\n");
-  printf("-bmp = Use Windows Bitmap format for output images [default = PPM]\n");
+  printf("-bmp = Use Windows Bitmap format for output images [default = PPM or PGM]\n");
   printf("     ** 8-bit data precision only **\n");
   printf("-bottomup = Use bottom-up row order for packed-pixel source/destination buffers\n");
   printf("-componly = Stop after running compression tests.  Do not test decompression.\n");
@@ -925,13 +925,13 @@ static int usage(const char *progName)
   printf("-maxpixels = Input image size limit (in pixels) [default = no limit]\n");
   printf("-nowrite = Do not write reference or output images (improves consistency of\n");
   printf("     benchmark results)\n");
-  printf("-rgb, -bgr, -rgbx, -bgrx, -xbgr, -xrgb =\n");
+  printf("-rgb, -bgr, -rgbx, -bgrx, -xbgr, -xrgb, -gray =\n");
   printf("     Use the specified pixel format for packed-pixel source/destination buffers\n");
   printf("     [default = BGR]\n");
   printf("-cmyk = Indirectly test YCCK JPEG compression/decompression\n");
   printf("     (use the CMYK pixel format for packed-pixel source/destination buffers)\n");
-  printf("-precision N = Use N-bit data precision when compressing [N is 8, 12, or 16;\n");
-  printf("     default = 8; if N is 16, then -lossless must also be specified]\n");
+  printf("-precision N = Use N-bit data precision when compressing [N=2..16; default = 8;\n");
+  printf("     if N is not 8 or 12, then -lossless must also be specified]\n");
   printf("     (-precision 12 implies -optimize unless -arithmetic is also specified)\n");
   printf("-quiet = Output results in tabular rather than verbose format\n");
   printf("-restart N = When compressing, add a restart marker every N MCU rows (lossy) or\n");
@@ -1041,7 +1041,7 @@ int main(int argc, const char** argv)
       } else if (!strcasecmp(argv[i], "-precision") && i < argc - 1) {
         int tempi = atoi(argv[++i]);
 
-        if (tempi != 8 && tempi != 12 && tempi != 16)
+        if (tempi < 2 || tempi > 16)
           return usage(argv[0]);
         precision = tempi;
       } else if (!strcasecmp(argv[i], "-fastupsample")) {
@@ -1076,6 +1076,8 @@ int main(int argc, const char** argv)
         pf = TJPF_XBGR;
       else if (!strcasecmp(argv[i], "-xrgb"))
         pf = TJPF_XRGB;
+      else if (!strcasecmp(argv[i], "-gray"))
+        pf = TJPF_GRAY;
       else if (!strcasecmp(argv[i], "-cmyk"))
         pf = TJPF_CMYK;
       else if (!strcasecmp(argv[i], "-bottomup"))
@@ -1203,8 +1205,14 @@ int main(int argc, const char** argv)
   if (optimize && !progressive && !arithmetic && !lossless && precision != 12)
     printf("Using optimized baseline entropy coding\n\n");
 
-  if (precision == 16 && !lossless) {
-    printf("ERROR: -lossless must be specified along with -precision 16\n");
+  if (pf == TJPF_GRAY) {
+    if (!strcmp(ext, "ppm")) ext = "pgm";
+    subsamp = TJSAMP_GRAY;
+  }
+
+  if ((precision != 8 && precision != 12) && !lossless) {
+    printf("ERROR: -lossless must be specified along with -precision %d\n",
+           precision);
     retval = -1;  goto bailout;
   }
   if (precision != 8 && doYUV) {
@@ -1215,7 +1223,7 @@ int main(int argc, const char** argv)
     printf("ERROR: -lossless and -yuv are incompatible\n");
     retval = -1;  goto bailout;
   }
-  sampleSize = (precision == 8 ? sizeof(unsigned char) : sizeof(short));
+  sampleSize = (precision <= 8 ? sizeof(unsigned char) : sizeof(short));
 
   if ((sf.num != 1 || sf.denom != 1) && doTile) {
     printf("Disabling tiled compression/decompression tests, because those tests do not\n");
@@ -1252,13 +1260,15 @@ int main(int argc, const char** argv)
       THROW_TJ();
     if (tj3Set(handle, TJPARAM_BOTTOMUP, bottomUp) == -1)
       THROW_TJ();
+    if (tj3Set(handle, TJPARAM_PRECISION, precision) == -1)
+      THROW_TJ();
     if (tj3Set(handle, TJPARAM_MAXPIXELS, maxPixels) == -1)
       THROW_TJ();
 
-    if (precision == 8) {
+    if (precision <= 8) {
       if ((srcBuf = tj3LoadImage8(handle, argv[1], &w, 1, &h, &pf)) == NULL)
         THROW_TJ();
-    } else if (precision == 12) {
+    } else if (precision <= 12) {
       if ((srcBuf = tj3LoadImage12(handle, argv[1], &w, 1, &h, &pf)) == NULL)
         THROW_TJ();
     } else {
