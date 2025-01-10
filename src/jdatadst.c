@@ -46,7 +46,7 @@ typedef struct {
   struct jpeg_destination_mgr pub; /* public fields */
 
   unsigned char **outbuffer;    /* target buffer */
-  unsigned long *outsize;
+  size_t *outsize;
   unsigned char *newbuffer;     /* newly allocated buffer */
   JOCTET *buffer;               /* start of buffer */
   size_t bufsize;
@@ -237,7 +237,7 @@ jpeg_stdio_dest(j_compress_ptr cinfo, FILE *outfile)
 
 GLOBAL(void)
 jpeg_mem_dest(j_compress_ptr cinfo, unsigned char **outbuffer,
-              unsigned long *outsize)
+              size_t *outsize)
 {
   my_mem_dest_ptr dest;
 

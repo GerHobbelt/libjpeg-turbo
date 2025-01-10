@@ -1001,10 +1001,10 @@ EXTERN(void) jpeg_stdio_src(j_decompress_ptr cinfo, FILE *infile);
 /* Data source and destination managers: memory buffers. */
 #ifdef JPEGLIB_ENABLE_COMPRESS
 EXTERN(void) jpeg_mem_dest(j_compress_ptr cinfo, unsigned char **outbuffer,
-                           unsigned long *outsize);
+													 size_t *outsize);
 #endif
 EXTERN(void) jpeg_mem_src(j_decompress_ptr cinfo,
-                          const unsigned char *inbuffer, unsigned long insize);
+                          const unsigned char *inbuffer, size_t insize);
 
 #ifdef JPEGLIB_ENABLE_COMPRESS
 /* Default parameter setup for compression */
