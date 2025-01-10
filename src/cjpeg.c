@@ -644,7 +644,7 @@ main(int argc, const char** argv)
   long icc_len = 0;
   FILE *output_file = NULL;
   unsigned char *outbuffer = NULL;
-  unsigned long outsize = 0;
+  size_t outsize = 0;
   JDIMENSION num_scanlines;
 
   progname = argv[0];
@@ -844,7 +844,7 @@ main(int argc, const char** argv)
 
   if (memdst) {
 #ifndef CJPEG_FUZZER
-    fprintf(stderr, "Compressed size:  %lu bytes\n", outsize);
+    fprintf(stderr, "Compressed size:  %zu bytes\n", outsize);
 #endif
     free(outbuffer);
   }
