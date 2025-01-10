@@ -499,8 +499,8 @@ public final class TJ {
    *
    * <p><b>Value</b>
    * <ul>
-   * <li> One of {@link TJ#SAMP_444 TJ.SAMP_*} <i>[no default; must be
-   * explicitly specified for lossy compression, encoding, and decoding]</i>
+   * <li> One of {@link #SAMP_444 TJ.SAMP_*} <i>[no default; must be explicitly
+   * specified for lossy compression, encoding, and decoding]</i>
    * </ul>
    */
   public static final int PARAM_SUBSAMP = 4;
@@ -540,7 +540,7 @@ public final class TJ {
    *
    * <p><b>Value</b>
    * <ul>
-   * <li> One of {@link TJ#CS_RGB TJ.CS_*} <i>[default for lossy compression:
+   * <li> One of {@link #CS_RGB TJ.CS_*} <i>[default for lossy compression:
    * automatically selected based on the subsampling level and pixel
    * format]</i>
    * </ul>
@@ -889,43 +889,6 @@ public final class TJ {
    * </ul>
    */
   public static final int PARAM_MAXPIXELS = 24;
-
-
-  /**
-   * @deprecated Use {@link #PARAM_BOTTOMUP} instead.
-   */
-  @Deprecated
-  public static final int FLAG_BOTTOMUP      = 2;
-  /**
-   * @deprecated Use {@link #PARAM_FASTUPSAMPLE} instead.
-   */
-  @Deprecated
-  public static final int FLAG_FASTUPSAMPLE  = 256;
-  /**
-   * @deprecated Use {@link #PARAM_FASTDCT} instead.
-   */
-  @Deprecated
-  public static final int FLAG_FASTDCT       = 2048;
-  /**
-   * @deprecated Use {@link #PARAM_FASTDCT} instead.
-   */
-  @Deprecated
-  public static final int FLAG_ACCURATEDCT   = 4096;
-  /**
-   * @deprecated Use {@link #PARAM_STOPONWARNING} instead.
-   */
-  @Deprecated
-  public static final int FLAG_STOPONWARNING = 8192;
-  /**
-   * @deprecated Use {@link #PARAM_PROGRESSIVE} instead.
-   */
-  @Deprecated
-  public static final int FLAG_PROGRESSIVE   = 16384;
-  /**
-   * @deprecated Use {@link #PARAM_SCANLIMIT} instead.
-   */
-  @Deprecated
-  public static final int FLAG_LIMITSCANS    = 32768;
 
 
   /**

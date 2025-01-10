@@ -454,7 +454,7 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
         usage();
       cinfo->data_precision = val;
 
-    } else if (keymatch(arg, "progressive", 3)) {
+    } else if (keymatch(arg, "progressive", 1)) {
       /* Select simple progressive mode. */
 #ifdef C_PROGRESSIVE_SUPPORTED
       simple_progressive = TRUE;
@@ -524,7 +524,7 @@ parse_switches(j_compress_ptr cinfo, int argc, const char** argv,
        * default sampling factors.
        */
 
-    } else if (keymatch(arg, "scans", 4)) {
+    } else if (keymatch(arg, "scans", 2)) {
       /* Set scan script. */
 #ifdef C_MULTISCAN_FILES_SUPPORTED
       if (++argn >= argc)       /* advance to next argument */
