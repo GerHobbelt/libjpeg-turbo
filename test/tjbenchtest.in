@@ -20,7 +20,7 @@ runme()
 }
 
 EXT=bmp
-IMAGES="vgl_5674_0098.${EXT} vgl_6434_0018a.${EXT} vgl_6548_0026a.${EXT} big_tree8.${EXT}"
+IMAGES="vgl_5674_0098.${EXT} vgl_6434_0018a.${EXT} vgl_6548_0026a.${EXT} shira_bird8.${EXT}"
 IMGDIR=@CMAKE_SOURCE_DIR@/testimages
 OUTDIR=`mktemp -d /tmp/__tjbenchtest_output.XXXXXX`
 EXEDIR=@CMAKE_BINARY_DIR@
@@ -64,12 +64,12 @@ while [ $# -gt 0 ]; do
 # each downsampled dimension is an odd number or is evenly divisible by the MCU
 # width/height.  This disagreement basically amounts to a round-off error, but
 # there is no easy way around it, so for now, we just test the only image that
-# works.  (NOTE: big_tree8 does not suffer from the above issue, but it suffers
-# from an unrelated problem whereby the combination of tj3DecompressToYUV*()
-# and tj3DecodeYUV*() do not produce bitwise-identical results to
-# tj3Decompress*() if decompression scaling is enabled.  This latter phenomenon
-# is not yet fully understood but is also believed to be some sort of round-off
-# error.)
+# works.  (NOTE: shira_bird8 does not suffer from the above issue, but it
+# suffers from an unrelated problem whereby the combination of
+# tj3DecompressToYUV*() and tj3DecodeYUV*() do not produce bitwise-identical
+# results to tj3Decompress*() if decompression scaling is enabled.  This latter
+# phenomenon is not yet fully understood but is also believed to be some sort
+# of round-off error.)
 		IMAGES="vgl_6548_0026a.${EXT}"
 		;;
 	-alloc)
@@ -110,7 +110,7 @@ while [ $# -gt 0 ]; do
 		PRECISION=$1
 		if [ $PRECISION != 8 ]; then
 			EXT=ppm
-			IMAGES="big_building16.${EXT}"
+			IMAGES="monkey16.${EXT}"
 			BMPARG=
 		fi
 		;;
@@ -125,11 +125,11 @@ if [ $PRECISION = 8 -a "$YUVARG" = "" ]; then
 		IMAGES="vgl_6548_0026a.${EXT}"
 	elif [ "$ENTROPYARG" = "-arithmetic" -o \
 		"$ENTROPYARG" = "-progressive-arithmetic" ]; then
-		IMAGES="big_tree8.${EXT}"
+		IMAGES="shira_bird8.${EXT}"
 	fi
 fi
 
-exec >$EXEDIR/tjbenchtest$JAVAARG$YUVARG$ALLOCARG$ENTROPYARG$LOSSLSARG-$PRECISION.log
+exec >$EXEDIR/test/tjbenchtest$JAVAARG$YUVARG$ALLOCARG$ENTROPYARG$LOSSLSARG-$PRECISION.log
 
 ALLOCARG=${ALLOCARG//-alloc/-al}
 ENTROPYARG=${ENTROPYARG//-optimize/-o}
@@ -139,25 +139,29 @@ ENTROPYARG=${ENTROPYARG//-arithmetic/-a}
 LOSSLSARG=${LOSSLSARG//-lossless/-l}
 
 XFORMNAME=(hflip vflip transpose transverse rot90 rot180 rot270)
-XFORMARGS=("-f h" "-f v" -t -transv "-ro 90" "-ro 180" "-ro 270")
+XFORMARGS=("-f h -r 2" "-f v" "-t -r 1b" -transv "-ro 90 -r 1" "-ro 180" "-ro 270")
 
 # Standard tests
 for image in $IMAGES; do
 
 	cp $IMGDIR/$image $OUTDIR
 	basename=`basename $image .${EXT}`
+	r1barg=
+	if [ "$LOSSLSARG" != "-l" ]; then
+		r1barg="-r 1b"
+	fi
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -gr -outf $OUTDIR/${basename}_GRAY_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
-	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x4 -outf $OUTDIR/${basename}_441_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
-	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 4x1 -outf $OUTDIR/${basename}_411_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
+	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x4 -r 2 -outf $OUTDIR/${basename}_441_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
+	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 4x1 -r 1 -outf $OUTDIR/${basename}_411_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 2x2 -outf $OUTDIR/${basename}_420_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
-	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x2 -outf $OUTDIR/${basename}_440_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
+	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x2 $r1barg -outf $OUTDIR/${basename}_440_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 2x1 -outf $OUTDIR/${basename}_422_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc fa $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x1 -outf $OUTDIR/${basename}_444_fast_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -gr -outf $OUTDIR/${basename}_GRAY_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
-	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x4 -outf $OUTDIR/${basename}_441_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
-	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 4x1 -outf $OUTDIR/${basename}_411_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
+	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x4 -r 2 -outf $OUTDIR/${basename}_441_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
+	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 4x1 -r 1 -outf $OUTDIR/${basename}_411_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 2x2 -outf $OUTDIR/${basename}_420_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
-	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x2 -outf $OUTDIR/${basename}_440_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
+	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x2 $r1barg -outf $OUTDIR/${basename}_440_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 2x1 -outf $OUTDIR/${basename}_422_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	runme $EXEDIR/cjpeg -q 95 -pre $PRECISION -dc i $ENTROPYARG $LOSSLSARG $LOSSLSPSV -sa 1x1 -outf $OUTDIR/${basename}_444_accurate_cjpeg.jpg $IMGDIR/${basename}.${EXT}
 	for samp in $ALLSUBSAMP; do
@@ -177,9 +181,9 @@ for image in $IMAGES; do
 		fi
 		runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
 		if [ "$LOSSLSARG" != "-l" ]; then
-			runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -su 440 -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
-			runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -su 411 -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
-			runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -su 441 -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
+			runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -su 440 -r 1b -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
+			runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -su 411 -r 1 -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
+			runme $TJBENCH $OUTDIR/$image $TJQUAL -pre $PRECISION -su 441 -r 2 -rgb -q -be 0.01 -w 0 ${dctarg} $YUVARG $ALLOCARG $ENTROPYARG $LOSSLSARG
 		fi
 		for samp in $ALLSUBSAMP; do
 			if [ "$LOSSLSARG" = "-l" ]; then

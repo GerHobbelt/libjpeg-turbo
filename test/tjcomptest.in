@@ -43,7 +43,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-exec >$EXEDIR/tjcomptest$JAVAARG.log
+exec >$EXEDIR/test/tjcomptest$JAVAARG.log
 
 echo "EXEDIR: $EXEDIR"
 echo "IMGDIR: $IMGDIR"
@@ -58,8 +58,8 @@ for precision in 8 12; do
 		RGBIMG=$IMGDIR/testorig.ppm
 		GRAYIMG=$IMGDIR/testorig.pgm
 	else
-		RGBIMG=$IMGDIR/big_building16.ppm
-		GRAYIMG=$IMGDIR/big_building16.pgm
+		RGBIMG=$IMGDIR/monkey16.ppm
+		GRAYIMG=$IMGDIR/monkey16.pgm
 	fi
 	for restartarg in "" "-r 1" "-r 1b"; do
 		for ariarg in "" "-a"; do
@@ -88,7 +88,7 @@ for precision in 8 12; do
 									$dctarg $optarg $progarg $qualarg $blarg \
 									-sa ${SAMPOPT[$sampi]} \
 									-outf $OUTDIR/${basename}-cjpeg.jpg $RGBIMG
-								$EXEDIR/src/md5/md5sum $OUTDIR/${basename}-tjcomp.jpg \
+								$EXEDIR/test/md5sum $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg | sed "s@$OUTDIR@\$OUTDIR@g"
 								cmp $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg
@@ -102,7 +102,7 @@ for precision in 8 12; do
 									$dctarg $optarg $progarg $qualarg $blarg \
 									-sa ${SAMPOPT[$sampi]} \
 									-gr -outf $OUTDIR/${basename}-cjpeg.jpg $RGBIMG
-								$EXEDIR/src/md5/md5sum $OUTDIR/${basename}-tjcomp.jpg \
+								$EXEDIR/test/md5sum $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg | sed "s@$OUTDIR@\$OUTDIR@g"
 								cmp $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg
@@ -116,7 +116,7 @@ for precision in 8 12; do
 									$dctarg $optarg $progarg $qualarg $blarg \
 									-sa ${SAMPOPT[$sampi]} \
 									-rgb -outf $OUTDIR/${basename}-cjpeg.jpg $RGBIMG
-								$EXEDIR/src/md5/md5sum $OUTDIR/${basename}-tjcomp.jpg \
+								$EXEDIR/test/md5sum $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg | sed "s@$OUTDIR@\$OUTDIR@g"
 								cmp $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg
@@ -131,7 +131,7 @@ for precision in 8 12; do
 									$dctarg $optarg $progarg $qualarg $blarg \
 									-sa ${SAMPOPT[$sampi]} \
 									-outf $OUTDIR/${basename}-cjpeg.jpg $GRAYIMG
-								$EXEDIR/src/md5/md5sum $OUTDIR/${basename}-tjcomp.jpg \
+								$EXEDIR/test/md5sum $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg | sed "s@$OUTDIR@\$OUTDIR@g"
 								cmp $OUTDIR/${basename}-tjcomp.jpg \
 									$OUTDIR/${basename}-cjpeg.jpg
@@ -151,8 +151,8 @@ for precision in {2..16}; do
 		RGBIMG=$IMGDIR/testorig.ppm
 		GRAYIMG=$IMGDIR/testorig.pgm
 	else
-		RGBIMG=$IMGDIR/big_building16.ppm
-		GRAYIMG=$IMGDIR/big_building16.pgm
+		RGBIMG=$IMGDIR/monkey16.ppm
+		GRAYIMG=$IMGDIR/monkey16.pgm
 	fi
 	for psv in {1..7}; do
 		for pt in {0..15}; do
@@ -165,7 +165,7 @@ for precision in {2..16}; do
 					$RGBIMG $OUTDIR/${basename}-tjcomp.jpg
 				runme $EXEDIR/cjpeg -pre $precision -l $psv,$pt $restartarg \
 					-outf $OUTDIR/${basename}-cjpeg.jpg $RGBIMG
-				$EXEDIR/src/md5/md5sum $OUTDIR/${basename}-tjcomp.jpg \
+				$EXEDIR/test/md5sum $OUTDIR/${basename}-tjcomp.jpg \
 					$OUTDIR/${basename}-cjpeg.jpg | sed "s@$OUTDIR@\$OUTDIR@g"
 				cmp $OUTDIR/${basename}-tjcomp.jpg $OUTDIR/${basename}-cjpeg.jpg
 				rm $OUTDIR/${basename}-tjcomp.jpg $OUTDIR/${basename}-cjpeg.jpg
@@ -176,7 +176,7 @@ for precision in {2..16}; do
 					$GRAYIMG $OUTDIR/${basename}-tjcomp.jpg
 				runme $EXEDIR/cjpeg -pre $precision -l $psv,$pt $restartarg \
 					-outf $OUTDIR/${basename}-cjpeg.jpg $GRAYIMG
-				$EXEDIR/src/md5/md5sum $OUTDIR/${basename}-tjcomp.jpg \
+				$EXEDIR/test/md5sum $OUTDIR/${basename}-tjcomp.jpg \
 					$OUTDIR/${basename}-cjpeg.jpg | sed "s@$OUTDIR@\$OUTDIR@g"
 				cmp $OUTDIR/${basename}-tjcomp.jpg $OUTDIR/${basename}-cjpeg.jpg
 				rm $OUTDIR/${basename}-tjcomp.jpg $OUTDIR/${basename}-cjpeg.jpg
