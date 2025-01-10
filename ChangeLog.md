@@ -34,8 +34,8 @@ API documentation for more details.
 5. All deprecated constants and methods in the TurboJPEG Java API have been
 removed.
 
-6. TJBench command-line arguments have been made more consistent with those of
-cjpeg, djpeg, and jpegtran.  More specifically:
+6. TJBench command-line arguments are now more consistent with those of cjpeg,
+djpeg, and jpegtran.  More specifically:
 
      - `-fastdct` has been replaced with `-dct fast`.
      - `-fastupsample` has been replaced with `-nosmooth`.
@@ -46,6 +46,8 @@ limit to be specified.
      - `-rot90`, `-rot180`, and `-rot270` have been replaced with
 `-rotate 90`, `-rotate 180`, and `-rotate 270`.
      - `-stoponwarning` has been replaced with `-strict`.
+     - British spellings for `gray` (`grey`) and `optimize` (`optimise`) are
+now allowed.
 
     The old command-line arguments are deprecated and will be removed in a
 future release.  TJBench command-line arguments can now be abbreviated as well.
@@ -58,6 +60,10 @@ djpeg, and jpegtran.)
 `TJDecompressor.saveImage()`) have been added to the Java API.  These methods
 work similarly to the `tj3LoadImage*()` and `tj3SaveImage*()` functions in the
 C API.
+
+8. TJExample has been replaced with three programs (TJComp, TJDecomp, and
+TJTran) that demonstrate how to approximate the functionality of cjpeg, djpeg,
+and jpegtran using the TurboJPEG C and Java APIs.
 
 
 3.0.4
