@@ -675,6 +675,8 @@ JNIEXPORT jbyteArray JNICALL Java_org_libjpegturbo_turbojpeg_TJDecompressor_getI
 
   if (tj3GetICCProfile(handle, &iccBuf, &iccSize) == -1)
     THROW_TJ();
+  if (iccSize > (size_t)INT_MAX)
+    THROW_ARG("ICC profile is too large");
 
   BAILIF0(icc = (*env)->NewByteArray(env, (jsize)iccSize));
   BAILIF0NOEC(jICCBuf = (*env)->GetPrimitiveArrayCritical(env, icc, 0));
@@ -696,6 +698,8 @@ JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJDecompressor_getICCSize
   GET_HANDLE();
 
   tj3GetICCProfile(handle, NULL, &iccSize);
+  if (iccSize > (size_t)INT_MAX)
+    THROW_ARG("ICC profile is too large");
 
 bailout:
   return (jint)iccSize;
@@ -1201,6 +1205,42 @@ static int JNICustomFilter(short *coeffs, tjregion arrayRegion,
 
 bailout:
   return -1;
+}
+
+/* TurboJPEG 3.1.x: TJTransformed.bufSize() */
+JNIEXPORT jint JNICALL Java_org_libjpegturbo_turbojpeg_TJTransformer_bufSize
+  (JNIEnv *env, jobject obj, jobject tobj)
+{
+  tjhandle handle = 0;
+  tjtransform transform;
+  size_t retval = 0;
+
+  GET_HANDLE();
+
+  memset(&transform, 0, sizeof(tjtransform));
+
+  BAILIF0(_cls = (*env)->GetObjectClass(env, tobj));
+  BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "op", "I"));
+  transform.op = (*env)->GetIntField(env, tobj, _fid);
+  BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "options", "I"));
+  transform.options = (*env)->GetIntField(env, tobj, _fid);
+  BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "x", "I"));
+  transform.r.x = (*env)->GetIntField(env, tobj, _fid);
+  BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "y", "I"));
+  transform.r.y = (*env)->GetIntField(env, tobj, _fid);
+  BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "width", "I"));
+  transform.r.w = (*env)->GetIntField(env, tobj, _fid);
+  BAILIF0(_fid = (*env)->GetFieldID(env, _cls, "height", "I"));
+  transform.r.h = (*env)->GetIntField(env, tobj, _fid);
+
+  retval = tj3TransformBufSize(handle, &transform);
+
+  if (retval == 0) THROW_ARG(tj3GetErrorStr(NULL));
+  if (retval > (size_t)INT_MAX)
+    THROW_ARG("Image is too large");
+
+bailout:
+  return (jint)retval;
 }
 
 /* TurboJPEG 1.2.x: TJTransformer.transform() */
