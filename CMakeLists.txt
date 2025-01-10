@@ -320,12 +320,12 @@ report_option(WITH_3DNOW "AMD 3DNow support")
 # 1: + In-memory source/destination managers (libjpeg-turbo 1.3.x)
 # 2: + Partial image decompression functions (libjpeg-turbo 1.5.x)
 # 3: + ICC functions (libjpeg-turbo 2.0.x)
-# 4: + 12-bit-per-sample and lossless functions (libjpeg-turbo 2.2.x)
+# 4: + 12-bit-per-sample and lossless functions (libjpeg-turbo 3.0.x)
 #
 # libjpeg v8 API/ABI emulation:
 # 1: + Partial image decompression functions (libjpeg-turbo 1.5.x)
 # 2: + ICC functions (libjpeg-turbo 2.0.x)
-# 3: + 12-bit-per-sample and lossless functions (libjpeg-turbo 2.2.x)
+# 3: + 12-bit-per-sample and lossless functions (libjpeg-turbo 3.0.x)
 set(SO_AGE 3)
 if(NOT WITH_JPEG8)
   set(SO_AGE 4)
@@ -1899,27 +1899,27 @@ endforeach()
 add_custom_target(testclean COMMAND ${CMAKE_COMMAND} -P
   ${CMAKE_CURRENT_SOURCE_DIR}/cmakescripts/testclean.cmake)
 
-configure_file(croptest.in croptest @ONLY)
+configure_file(test/croptest.in test/croptest @ONLY)
 add_custom_target(croptest
   COMMAND echo croptest
-  COMMAND ${BASH} ${CMAKE_CURRENT_BINARY_DIR}/croptest)
+  COMMAND ${BASH} ${CMAKE_CURRENT_BINARY_DIR}/test/croptest)
 
 if(WITH_TURBOJPEG)
-  configure_file(tjbenchtest.in tjbenchtest @ONLY)
-  configure_file(tjexampletest.in tjexampletest @ONLY)
+  configure_file(test/tjbenchtest.in test/tjbenchtest @ONLY)
+  configure_file(test/tjexampletest.in test/tjexampletest @ONLY)
   if(WIN32)
     set(BASH bash)
   endif()
   add_custom_target(tjtest COMMAND ${CMAKE_COMMAND} -DWITH_JAVA=${WITH_JAVA}
     -DPRECISION=8 -P ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
     DEPENDS ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
-      ${CMAKE_CURRENT_BINARY_DIR}/tjbenchtest
-      ${CMAKE_CURRENT_BINARY_DIR}/tjexampletest)
+      ${CMAKE_CURRENT_BINARY_DIR}/test/tjbenchtest
+      ${CMAKE_CURRENT_BINARY_DIR}/test/tjexampletest)
   add_custom_target(tjtest12 COMMAND ${CMAKE_COMMAND} -DWITH_JAVA=${WITH_JAVA}
     -DPRECISION=12 -P ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
     DEPENDS ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
-      ${CMAKE_CURRENT_BINARY_DIR}/tjbenchtest
-      ${CMAKE_CURRENT_BINARY_DIR}/tjexampletest)
+      ${CMAKE_CURRENT_BINARY_DIR}/test/tjbenchtest
+      ${CMAKE_CURRENT_BINARY_DIR}/test/tjexampletest)
   add_custom_target(tjtest16 COMMAND ${CMAKE_COMMAND} -DWITH_JAVA=${WITH_JAVA}
     -DPRECISION=2 -P ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
     COMMAND ${CMAKE_COMMAND} -DWITH_JAVA=${WITH_JAVA}
@@ -1947,8 +1947,8 @@ if(WITH_TURBOJPEG)
     COMMAND ${CMAKE_COMMAND} -DWITH_JAVA=${WITH_JAVA}
     -DPRECISION=16 -P ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
     DEPENDS ${CMAKE_SOURCE_DIR}/cmakescripts/tjbenchtest.cmake
-      ${CMAKE_CURRENT_BINARY_DIR}/tjbenchtest
-      ${CMAKE_CURRENT_BINARY_DIR}/tjexampletest)
+      ${CMAKE_CURRENT_BINARY_DIR}/test/tjbenchtest
+      ${CMAKE_CURRENT_BINARY_DIR}/test/tjexampletest)
 endif()
 
 
