@@ -1188,6 +1188,8 @@ DLLEXPORT int tjCompress2(tjhandle handle, const unsigned char *srcBuf,
   processFlags(handle, flags, COMPRESS);
 
   size = (size_t)(*jpegSize);
+  if (this->noRealloc)
+    size = tj3JPEGBufSize(width, height, this->subsamp);
   retval = tj3Compress8(handle, srcBuf, width, pitch, height, pixelFormat,
                         jpegBuf, &size);
   *jpegSize = (unsigned long)size;
@@ -1264,9 +1266,7 @@ DLLEXPORT int tj3CompressFromYUVPlanes8(tjhandle handle,
   cinfo->image_height = height;
   cinfo->data_precision = 8;
 
-  if (this->noRealloc) {
-    alloc = FALSE;  *jpegSize = tj3JPEGBufSize(width, height, this->subsamp);
-  }
+  if (this->noRealloc) alloc = FALSE;
   jpeg_mem_dest_tj(cinfo, jpegBuf, jpegSize, alloc);
   setCompDefaults(this, TJPF_RGB);
   cinfo->raw_data_in = TRUE;
@@ -1379,6 +1379,8 @@ DLLEXPORT int tjCompressFromYUVPlanes(tjhandle handle,
   processFlags(handle, flags, COMPRESS);
 
   size = (size_t)(*jpegSize);
+  if (this->noRealloc)
+    size = tj3JPEGBufSize(width, height, this->subsamp);
   retval = tj3CompressFromYUVPlanes8(handle, srcPlanes, width, strides, height,
                                      jpegBuf, &size);
   *jpegSize = (unsigned long)size;
@@ -1456,6 +1458,8 @@ DLLEXPORT int tjCompressFromYUV(tjhandle handle, const unsigned char *srcBuf,
   processFlags(handle, flags, COMPRESS);
 
   size = (size_t)(*jpegSize);
+  if (this->noRealloc)
+    size = tj3JPEGBufSize(width, height, this->subsamp);
   retval = tj3CompressFromYUV8(handle, srcBuf, width, align, height, jpegBuf,
                                &size);
   *jpegSize = (unsigned long)size;
@@ -1953,7 +1957,7 @@ DLLEXPORT int tj3SetCroppingRegion(tjhandle handle, tjregion croppingRegion)
     croppingRegion.w = scaledWidth - croppingRegion.x;
   if (croppingRegion.h == 0)
     croppingRegion.h = scaledHeight - croppingRegion.y;
-  if (croppingRegion.w < 0 || croppingRegion.h < 0 ||
+  if (croppingRegion.w <= 0 || croppingRegion.h <= 0 ||
       croppingRegion.x + croppingRegion.w > scaledWidth ||
       croppingRegion.y + croppingRegion.h > scaledHeight)
     THROW("The cropping region exceeds the scaled image dimensions");
@@ -2718,6 +2722,8 @@ DLLEXPORT int tj3Transform(tjhandle handle, const unsigned char *jpegBuf,
     else xinfo[i].slow_hflip = 0;
 
     if (xinfo[i].crop) {
+      if (t[i].r.x < 0 || t[i].r.y < 0 || t[i].r.w < 0 || t[i].r.h < 0)
+        THROW("Invalid cropping region");
       xinfo[i].crop_xoffset = t[i].r.x;  xinfo[i].crop_xoffset_set = JCROP_POS;
       xinfo[i].crop_yoffset = t[i].r.y;  xinfo[i].crop_yoffset_set = JCROP_POS;
       if (t[i].r.w != 0) {
@@ -2744,47 +2750,32 @@ DLLEXPORT int tj3Transform(tjhandle handle, const unsigned char *jpegBuf,
   for (i = 0; i < n; i++) {
     int dstSubsamp = (t[i].options & TJXOPT_GRAY) ? TJSAMP_GRAY : srcSubsamp;
 
+    if (t[i].op == TJXOP_TRANSPOSE || t[i].op == TJXOP_TRANSVERSE ||
+        t[i].op == TJXOP_ROT90 || t[i].op == TJXOP_ROT270) {
+      if (dstSubsamp == TJSAMP_422) dstSubsamp = TJSAMP_440;
+      else if (dstSubsamp == TJSAMP_440) dstSubsamp = TJSAMP_422;
+      else if (dstSubsamp == TJSAMP_411) dstSubsamp = TJSAMP_441;
+      else if (dstSubsamp == TJSAMP_441) dstSubsamp = TJSAMP_411;
+    }
+
     if (!jtransform_request_workspace(dinfo, &xinfo[i]))
       THROW("Transform is not perfect");
 
     if (xinfo[i].crop) {
       if (dstSubsamp == TJSAMP_UNKNOWN)
         THROW("Could not determine subsampling level of JPEG image");
-      if (t[i].op == TJXOP_TRANSPOSE || t[i].op == TJXOP_TRANSVERSE ||
-          t[i].op == TJXOP_ROT90 || t[i].op == TJXOP_ROT270) {
-        if ((t[i].r.x % tjMCUHeight[dstSubsamp]) != 0 ||
-            (t[i].r.y % tjMCUWidth[dstSubsamp]) != 0)
-          THROWI("To crop this JPEG image, x must be a multiple of %d\n"
-                 "and y must be a multiple of %d.", tjMCUHeight[dstSubsamp],
-                 tjMCUWidth[dstSubsamp]);
-      } else {
-        if ((t[i].r.x % tjMCUWidth[dstSubsamp]) != 0 ||
-            (t[i].r.y % tjMCUHeight[dstSubsamp]) != 0)
-          THROWI("To crop this JPEG image, x must be a multiple of %d\n"
-                 "and y must be a multiple of %d.", tjMCUWidth[dstSubsamp],
-                 tjMCUHeight[dstSubsamp]);
-      }
+      if ((t[i].r.x % tjMCUWidth[dstSubsamp]) != 0 ||
+          (t[i].r.y % tjMCUHeight[dstSubsamp]) != 0)
+        THROWI("To crop this JPEG image, x must be a multiple of %d\n"
+               "and y must be a multiple of %d.", tjMCUWidth[dstSubsamp],
+               tjMCUHeight[dstSubsamp]);
     }
   }
 
   srccoefs = jpeg_read_coefficients(dinfo);
 
   for (i = 0; i < n; i++) {
-    int w, h;
-    int dstSubsamp = (t[i].options & TJXOPT_GRAY) ? TJSAMP_GRAY : srcSubsamp;
-
-    if (!xinfo[i].crop) {
-      w = dinfo->image_width;  h = dinfo->image_height;
-      if (t[i].op == TJXOP_TRANSPOSE || t[i].op == TJXOP_TRANSVERSE ||
-          t[i].op == TJXOP_ROT90 || t[i].op == TJXOP_ROT270) {
-        w = dinfo->image_height;  h = dinfo->image_width;
-      }
-    } else {
-      w = xinfo[i].crop_width;  h = xinfo[i].crop_height;
-    }
-    if (this->noRealloc) {
-      alloc = FALSE;  dstSizes[i] = tj3JPEGBufSize(w, h, dstSubsamp);
-    }
+    if (this->noRealloc) alloc = FALSE;
     if (!(t[i].options & TJXOPT_NOOUTPUT))
       jpeg_mem_dest_tj(cinfo, &dstBufs[i], &dstSizes[i], alloc);
     jpeg_copy_critical_parameters(dinfo, cinfo);
@@ -2860,28 +2851,78 @@ DLLEXPORT int tjTransform(tjhandle handle, const unsigned char *jpegBuf,
                           tjtransform *t, int flags)
 {
   static const char FUNCTION_NAME[] = "tjTransform";
-  int i, retval = 0;
+  int i, retval = 0, srcSubsamp;
   size_t *sizes = NULL;
 
-  GET_TJINSTANCE(handle, -1);
+  GET_DINSTANCE(handle);
   if ((this->init & DECOMPRESS) == 0)
     THROW("Instance has not been initialized for decompression");
 
   if (n < 1 || dstSizes == NULL)
     THROW("Invalid argument");
 
+  if (setjmp(this->jerr.setjmp_buffer)) {
+    /* If we get here, the JPEG code has signaled an error. */
+    retval = -1;  goto bailout;
+  }
+
   processFlags(handle, flags, COMPRESS);
+
+  if (this->noRealloc) {
+    jpeg_mem_src_tj(dinfo, jpegBuf, jpegSize);
+    jpeg_read_header(dinfo, TRUE);
+    srcSubsamp = getSubsamp(dinfo);
+  }
 
   if ((sizes = (size_t *)malloc(n * sizeof(size_t))) == NULL)
     THROW("Memory allocation failure");
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     sizes[i] = (size_t)dstSizes[i];
+    if (this->noRealloc) {
+      int dstWidth = dinfo->image_width, dstHeight = dinfo->image_height;
+      int dstSubsamp = (t[i].options & TJXOPT_GRAY) ? TJSAMP_GRAY : srcSubsamp;
+
+      if (t[i].op == TJXOP_TRANSPOSE || t[i].op == TJXOP_TRANSVERSE ||
+          t[i].op == TJXOP_ROT90 || t[i].op == TJXOP_ROT270) {
+        dstWidth = dinfo->image_height;  dstHeight = dinfo->image_width;
+        if (dstSubsamp == TJSAMP_422) dstSubsamp = TJSAMP_440;
+        else if (dstSubsamp == TJSAMP_440) dstSubsamp = TJSAMP_422;
+        else if (dstSubsamp == TJSAMP_411) dstSubsamp = TJSAMP_441;
+        else if (dstSubsamp == TJSAMP_441) dstSubsamp = TJSAMP_411;
+      }
+
+      if (t[i].options & TJXOPT_CROP) {
+        int croppedWidth, croppedHeight;
+
+        if (t[i].r.x < 0 || t[i].r.y < 0 || t[i].r.w < 0 || t[i].r.h < 0)
+          THROW("Invalid cropping region");
+        if (dstSubsamp == TJSAMP_UNKNOWN)
+          THROW("Could not determine subsampling level of JPEG image");
+        if ((t[i].r.x % tjMCUWidth[dstSubsamp]) != 0 ||
+            (t[i].r.y % tjMCUHeight[dstSubsamp]) != 0)
+          THROWI("To crop this JPEG image, x must be a multiple of %d\n"
+                 "and y must be a multiple of %d.", tjMCUWidth[dstSubsamp],
+                 tjMCUHeight[dstSubsamp]);
+        if (t[i].r.x >= dstWidth || t[i].r.y >= dstHeight)
+          THROW("The cropping region exceeds the destination image dimensions");
+        croppedWidth = t[i].r.w == 0 ? dstWidth - t[i].r.x : t[i].r.w;
+        croppedHeight = t[i].r.h == 0 ? dstHeight - t[i].r.y : t[i].r.h;
+        if (t[i].r.x + croppedWidth > dstWidth ||
+            t[i].r.y + croppedHeight > dstHeight)
+          THROW("The cropping region exceeds the destination image dimensions");
+        dstWidth = croppedWidth;  dstHeight = croppedHeight;
+      }
+      sizes[i] = tj3JPEGBufSize(dstWidth, dstHeight, dstSubsamp);
+    }
+  }
   retval = tj3Transform(handle, jpegBuf, (size_t)jpegSize, n, dstBufs, sizes,
                         t);
   for (i = 0; i < n; i++)
     dstSizes[i] = (unsigned long)sizes[i];
 
 bailout:
+  if (dinfo->global_state > DSTATE_START) jpeg_abort_decompress(dinfo);
+  if (this->jerr.warning) retval = -1;
   free(sizes);
   return retval;
 }

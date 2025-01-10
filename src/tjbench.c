@@ -385,7 +385,8 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
   double start, elapsed, elapsedEncode;
   int row, col, i, tilew = w, tileh = h, retval = 0;
   int iter;
-  size_t totalJpegSize = 0, *jpegSizes = NULL, yuvSize = 0;
+  size_t totalJpegSize = 0, *jpegBufSizes = NULL, *jpegSizes = NULL,
+    yuvSize = 0;
   int ps = tjPixelSize[pf];
   int ntilesw = 1, ntilesh = 1, pitch = w * ps;
   const char *pfStr = pixFormatStr[pf];
@@ -421,6 +422,9 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
     memset(jpegSizes, 0, sizeof(size_t) * ntilesw * ntilesh);
 
     if (noRealloc) {
+      if ((jpegBufSizes = (size_t *)malloc(sizeof(size_t) * ntilesw *
+                                           ntilesh)) == NULL)
+        THROW_UNIX("allocating JPEG buffer size array");
       for (i = 0; i < ntilesw * ntilesh; i++) {
         size_t jpegBufSize = tj3JPEGBufSize(tilew, tileh, subsamp);
 
@@ -428,6 +432,7 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
           THROW_TJG();
         if ((jpegBufs[i] = tj3Alloc(jpegBufSize)) == NULL)
           THROW_UNIX("allocating JPEG tiles");
+        jpegBufSizes[i] = jpegBufSize;
       }
     }
 
@@ -497,6 +502,7 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
           int width = min(tilew, w - col * tilew);
           int height = min(tileh, h - row * tileh);
 
+          if (noRealloc) jpegSizes[tile] = jpegBufSizes[tile];
           if (doYUV) {
             double startEncode = getTime();
 
@@ -602,6 +608,7 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
       jpegBufs[i] = NULL;
     }
     free(jpegBufs);  jpegBufs = NULL;
+    free(jpegBufSizes);  jpegBufSizes = NULL;
     free(jpegSizes);  jpegSizes = NULL;
     if (doYUV) {
       free(yuvBuf);  yuvBuf = NULL;
@@ -618,6 +625,7 @@ bailout:
   }
   free(jpegBufs);
   free(yuvBuf);
+  free(jpegBufSizes);
   free(jpegSizes);
   free(tmpBuf);
   return retval;
@@ -629,7 +637,7 @@ static int decompTest(const char *fileName)
   FILE *file = NULL;
   tjhandle handle = NULL;
   unsigned char **jpegBufs = NULL, *srcBuf = NULL;
-  size_t *jpegSizes = NULL, srcSize, totalJpegSize;
+  size_t *jpegBufSizes = NULL, *jpegSizes = NULL, srcSize, totalJpegSize;
   tjtransform *t = NULL;
   double start, elapsed;
   int ps = tjPixelSize[pf], tile, row, col, i, iter, retval = 0, decompsrc = 0;
@@ -745,21 +753,20 @@ static int decompTest(const char *fileName)
       THROW_UNIX("allocating JPEG size array");
     memset(jpegSizes, 0, sizeof(size_t) * ntilesw * ntilesh);
 
+    tsubsamp = (xformOpt & TJXOPT_GRAY) ? TJSAMP_GRAY : subsamp;
+    if (xformOp == TJXOP_TRANSPOSE || xformOp == TJXOP_TRANSVERSE ||
+        xformOp == TJXOP_ROT90 || xformOp == TJXOP_ROT270) {
+      if (tsubsamp == TJSAMP_422) tsubsamp = TJSAMP_440;
+      else if (tsubsamp == TJSAMP_440) tsubsamp = TJSAMP_422;
+      else if (tsubsamp == TJSAMP_411) tsubsamp = TJSAMP_441;
+      else if (tsubsamp == TJSAMP_441) tsubsamp = TJSAMP_411;
+    }
+
     if (noRealloc &&
         (doTile || xformOp != TJXOP_NONE || xformOpt != 0 || customFilter)) {
-      for (i = 0; i < ntilesw * ntilesh; i++) {
-        size_t jpegBufSize;
-
-        if (xformOp == TJXOP_TRANSPOSE || xformOp == TJXOP_TRANSVERSE ||
-            xformOp == TJXOP_ROT90 || xformOp == TJXOP_ROT270)
-          jpegBufSize = tj3JPEGBufSize(tileh, tilew, subsamp);
-        else
-          jpegBufSize = tj3JPEGBufSize(tilew, tileh, subsamp);
-        if (jpegBufSize == 0)
-          THROW_TJG();
-        if ((jpegBufs[i] = tj3Alloc(jpegBufSize)) == NULL)
-          THROW_UNIX("allocating JPEG tiles");
-      }
+      if ((jpegBufSizes = (size_t *)malloc(sizeof(size_t) * ntilesw *
+                                           ntilesh)) == NULL)
+        THROW_UNIX("allocating JPEG buffer size array");
     }
 
     tw = w;  th = h;  ttilew = tilew;  ttileh = tileh;
@@ -774,7 +781,6 @@ static int decompTest(const char *fileName)
       printf("%-5d  %-5d   ", CROPPED_WIDTH(tilew), CROPPED_HEIGHT(tileh));
     }
 
-    tsubsamp = subsamp;
     if (doTile || xformOp != TJXOP_NONE || xformOpt != 0 || customFilter) {
       if ((t = (tjtransform *)malloc(sizeof(tjtransform) * ntilesw *
                                      ntilesh)) == NULL)
@@ -789,25 +795,14 @@ static int decompTest(const char *fileName)
           subsamp == TJSAMP_UNKNOWN)
         THROW("transforming",
               "Could not determine subsampling level of JPEG image");
-      if (xformOpt & TJXOPT_GRAY) tsubsamp = TJSAMP_GRAY;
-      if (xformOp == TJXOP_HFLIP || xformOp == TJXOP_ROT180)
+      if (xformOp == TJXOP_HFLIP || xformOp == TJXOP_TRANSVERSE ||
+          xformOp == TJXOP_ROT90 || xformOp == TJXOP_ROT180)
         tw = tw - (tw % tjMCUWidth[tsubsamp]);
-      if (xformOp == TJXOP_VFLIP || xformOp == TJXOP_ROT180)
+      if (xformOp == TJXOP_VFLIP || xformOp == TJXOP_TRANSVERSE ||
+          xformOp == TJXOP_ROT180 || xformOp == TJXOP_ROT270)
         th = th - (th % tjMCUHeight[tsubsamp]);
-      if (xformOp == TJXOP_TRANSVERSE || xformOp == TJXOP_ROT90)
-        tw = tw - (tw % tjMCUHeight[tsubsamp]);
-      if (xformOp == TJXOP_TRANSVERSE || xformOp == TJXOP_ROT270)
-        th = th - (th % tjMCUWidth[tsubsamp]);
       tntilesw = (tw + ttilew - 1) / ttilew;
       tntilesh = (th + ttileh - 1) / ttileh;
-
-      if (xformOp == TJXOP_TRANSPOSE || xformOp == TJXOP_TRANSVERSE ||
-          xformOp == TJXOP_ROT90 || xformOp == TJXOP_ROT270) {
-        if (tsubsamp == TJSAMP_422) tsubsamp = TJSAMP_440;
-        else if (tsubsamp == TJSAMP_440) tsubsamp = TJSAMP_422;
-        else if (tsubsamp == TJSAMP_411) tsubsamp = TJSAMP_441;
-        else if (tsubsamp == TJSAMP_441) tsubsamp = TJSAMP_411;
-      }
 
       for (row = 0, tile = 0; row < tntilesh; row++) {
         for (col = 0; col < tntilesw; col++, tile++) {
@@ -818,8 +813,14 @@ static int decompTest(const char *fileName)
           t[tile].op = xformOp;
           t[tile].options = xformOpt | TJXOPT_TRIM;
           t[tile].customFilter = customFilter;
-          if (t[tile].options & TJXOPT_NOOUTPUT && jpegBufs[tile]) {
-            tj3Free(jpegBufs[tile]);  jpegBufs[tile] = NULL;
+          if (!(t[tile].options & TJXOPT_NOOUTPUT) && noRealloc) {
+            size_t jpegBufSize =
+              tj3JPEGBufSize(t[tile].r.w, t[tile].r.h, tsubsamp);
+            if (jpegBufSize == 0)
+              THROW_TJG();
+            if ((jpegBufs[tile] = tj3Alloc(jpegBufSize)) == NULL)
+              THROW_UNIX("allocating JPEG tiles");
+            jpegBufSizes[tile] = jpegBufSize;
           }
         }
       }
@@ -828,6 +829,11 @@ static int decompTest(const char *fileName)
       elapsed = 0.;
       while (1) {
         start = getTime();
+        if (noRealloc && (doTile || xformOp != TJXOP_NONE || xformOpt != 0 ||
+                          customFilter)) {
+          for (tile = 0; tile < tntilesw * tntilesh; tile++)
+            jpegSizes[tile] = jpegBufSizes[tile];
+        }
         if (tj3Transform(handle, srcBuf, srcSize, tntilesw * tntilesh,
                          jpegBufs, jpegSizes, t) == -1)
           THROW_TJ();
@@ -886,6 +892,7 @@ static int decompTest(const char *fileName)
       jpegBufs[i] = NULL;
     }
     free(jpegBufs);  jpegBufs = NULL;
+    free(jpegBufSizes);  jpegBufSizes = NULL;
     free(jpegSizes);  jpegSizes = NULL;
 
     if (tilew == w && tileh == h) break;
@@ -898,6 +905,7 @@ bailout:
       tj3Free(jpegBufs[i]);
   }
   free(jpegBufs);
+  free(jpegBufSizes);
   free(jpegSizes);
   free(srcBuf);
   free(t);
@@ -940,10 +948,10 @@ static int usage(const char *progName)
   printf("-nowrite\n");
   printf("    Do not write reference or output images (improves consistency of benchmark\n");
   printf("    results)\n");
-  printf("-rgb, -bgr, -rgbx, -bgrx, -xbgr, -xrgb, -gray\n");
+  printf("-pixelformat {rgb|bgr|rgbx|bgrx|xbgr|xrgb|gray}\n");
   printf("    Use the specified pixel format for packed-pixel source/destination buffers\n");
   printf("    [default = BGR]\n");
-  printf("-cmyk\n");
+  printf("-pixelformat cmyk\n");
   printf("    Indirectly test YCCK JPEG compression/decompression (use the CMYK pixel\n");
   printf("    format for packed-pixel source/destination buffers)\n");
   printf("-precision N\n");
@@ -972,9 +980,11 @@ static int usage(const char *progName)
   printf("-arithmetic\n");
   printf("    Use arithmetic entropy coding in JPEG images generated by compression and\n");
   printf("    transform operations (can be combined with -progressive)\n");
-  printf("-copynone\n");
-  printf("    Do not copy any extra markers (including Exif and ICC profile data) when\n");
-  printf("    transforming the input image\n");
+  printf("-copy all\n");
+  printf("    Copy all extra markers (including comments, JFIF thumbnails, Exif data, and\n");
+  printf("    ICC profile data) when transforming the input image [default]\n");
+  printf("-copy none\n");
+  printf("    Do not copy any extra markers when transforming the input image\n");
   printf("-crop WxH+X+Y\n");
   printf("    Decompress only the specified region of the JPEG image, where W and H are\n");
   printf("    the width and height of the region (0 = maximum possible width or height)\n");
@@ -1093,7 +1103,7 @@ int main(int argc, const char** argv)
         pf = TJPF_CMYK;
       else if (MATCH_ARG(argv[i], "-componly", 4))
         compOnly = 1;
-      else if (MATCH_ARG(argv[i], "-copynone", 4))
+      else if (MATCH_ARG(argv[i], "-copynone", 6))
         xformOpt |= TJXOPT_COPYNONE;
       else if (MATCH_ARG(argv[i], "-crop", 3) && i < argc - 1) {
         int temp1 = -1, temp2 = -1, temp3 = -1, temp4 = -1;
@@ -1107,7 +1117,13 @@ int main(int argc, const char** argv)
         } else usage(argv[0]);
       } else if (MATCH_ARG(argv[i], "-custom", 3))
         customFilter = dummyDCTFilter;
-      else if (MATCH_ARG(argv[i], "-dct", 2) && i < argc - 1) {
+      else if (MATCH_ARG(argv[i], "-copy", 2)) {
+        i++;
+        if (MATCH_ARG(argv[i], "none", 1))
+          xformOpt |= TJXOPT_COPYNONE;
+        else if (!MATCH_ARG(argv[i], "all", 1))
+          usage(argv[0]);
+      } else if (MATCH_ARG(argv[i], "-dct", 2) && i < argc - 1) {
         i++;
         if (MATCH_ARG(argv[i], "fast", 1)) {
           printf("Using less accurate DCT/IDCT algorithm\n\n");
@@ -1128,11 +1144,8 @@ int main(int argc, const char** argv)
           xformOp = TJXOP_VFLIP;
         else
           usage(argv[0]);
-      } else if (!strcasecmp(argv[i], "-gray") ||
-                 !strcasecmp(argv[i], "-grey"))
-        pf = TJPF_GRAY;
-      else if (MATCH_ARG(argv[i], "-grayscale", 2) ||
-               MATCH_ARG(argv[i], "-greyscale", 2))
+      } else if (MATCH_ARG(argv[i], "-grayscale", 2) ||
+                 MATCH_ARG(argv[i], "-greyscale", 2))
         xformOpt |= TJXOPT_GRAY;
       else if (MATCH_ARG(argv[i], "-hflip", 2))
         xformOp = TJXOP_HFLIP;
@@ -1166,6 +1179,27 @@ int main(int argc, const char** argv)
                MATCH_ARG(argv[i], "-optimise", 2)) {
         optimize = 1;
         xformOpt |= TJXOPT_OPTIMIZE;
+      } else if (MATCH_ARG(argv[i], "-pixelformat", 3) && i < argc - 1) {
+        i++;
+        if (!strcasecmp(argv[i], "bgr"))
+          pf = TJPF_BGR;
+        else if (!strcasecmp(argv[i], "bgrx"))
+          pf = TJPF_BGRX;
+        else if (MATCH_ARG(argv[i], "cmyk", 1))
+          pf = TJPF_CMYK;
+        else if (MATCH_ARG(argv[i], "gray", 1) ||
+                 MATCH_ARG(argv[i], "grey", 1))
+          pf = TJPF_GRAY;
+        else if (!strcasecmp(argv[i], "rgb"))
+          pf = TJPF_RGB;
+        else if (!strcasecmp(argv[i], "rgbx"))
+          pf = TJPF_RGBX;
+        else if (!strcasecmp(argv[i], "xbgr"))
+          pf = TJPF_XBGR;
+        else if (!strcasecmp(argv[i], "xrgb"))
+          pf = TJPF_XRGB;
+        else
+          usage(argv[0]);
       } else if (MATCH_ARG(argv[i], "-precision", 4) && i < argc - 1) {
         int tempi = atoi(argv[++i]);
 
