@@ -48,7 +48,7 @@
 
 /******************************** Compressor *********************************/
 
-/* TurboJPEG 3+ */
+/* TurboJPEG 3.0+ */
 DLLEXPORT int GET_NAME(tj3Compress, BITS_IN_JSAMPLE)
   (tjhandle handle, const _JSAMPLE *srcBuf, int width, int pitch, int height,
    int pixelFormat, unsigned char **jpegBuf, size_t *jpegSize)
@@ -99,6 +99,8 @@ DLLEXPORT int GET_NAME(tj3Compress, BITS_IN_JSAMPLE)
   jpeg_mem_dest_tj(cinfo, jpegBuf, jpegSize, alloc);
 
   jpeg_start_compress(cinfo, TRUE);
+  if (this->iccBuf != NULL && this->iccSize != 0)
+    jpeg_write_icc_profile(cinfo, this->iccBuf, (unsigned int)this->iccSize);
   for (i = 0; i < height; i++) {
     if (this->bottomUp)
       row_pointer[i] = (_JSAMPROW)&srcBuf[(height - i - 1) * (size_t)pitch];
@@ -123,7 +125,7 @@ bailout:
 
 /******************************* Decompressor ********************************/
 
-/* TurboJPEG 3+ */
+/* TurboJPEG 3.0+ */
 DLLEXPORT int GET_NAME(tj3Decompress, BITS_IN_JSAMPLE)
   (tjhandle handle, const unsigned char *jpegBuf, size_t jpegSize,
    _JSAMPLE *dstBuf, int pitch, int pixelFormat)
@@ -268,7 +270,7 @@ bailout:
 
 /*************************** Packed-Pixel Image I/O **************************/
 
-/* TurboJPEG 3+ */
+/* TurboJPEG 3.0+ */
 DLLEXPORT _JSAMPLE *GET_NAME(tj3LoadImage, BITS_IN_JSAMPLE)
   (tjhandle handle, const char *filename, int *width, int align, int *height,
    int *pixelFormat)
@@ -417,7 +419,7 @@ bailout:
 }
 
 
-/* TurboJPEG 3+ */
+/* TurboJPEG 3.0+ */
 DLLEXPORT int GET_NAME(tj3SaveImage, BITS_IN_JSAMPLE)
   (tjhandle handle, const char *filename, const _JSAMPLE *buffer, int width,
    int pitch, int height, int pixelFormat)
