@@ -44,7 +44,7 @@
  * - Scan scripts
  */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
@@ -57,6 +57,9 @@
 #include <stdint.h>
 #endif
 #include <turbojpeg.h>
+
+
+#include "monolithic_examples.h"
 
 
 #ifdef _WIN32
@@ -88,7 +91,7 @@ static const char *subsampName[TJ_NUMSAMP] = {
 };
 
 
-static void usage(char *programName)
+static int usage(const char *programName)
 {
   printf("\nUSAGE: %s [options] <Input image> <JPEG image>\n\n", programName);
 
@@ -142,11 +145,21 @@ static void usage(char *programName)
   printf("    Create a JPEG image that uses the specified chrominance subsampling level\n");
   printf("    [default = %s]\n\n", subsampName[DEFAULT_SUBSAMP]);
 
-  exit(1);
+  return EXIT_FAILURE;
 }
 
 
-int main(int argc, char **argv)
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_tjcomp_main(cnt, arr)
+#endif
+
+/*
+ * The main program.
+ */
+
+int
+main(int argc, const char** argv)
 {
   int i, retval = 0;
   int arithmetic = -1, colorspace = -1, fastDCT = -1, losslessPSV = -1,
@@ -154,7 +167,7 @@ int main(int argc, char **argv)
     precision = 8, progressive = -1, quality = DEFAULT_QUALITY,
     restartIntervalBlocks = -1, restartIntervalRows = -1,
     subsamp = DEFAULT_SUBSAMP;
-  char *iccFilename = NULL;
+	const char *iccFilename = NULL;
   tjhandle tjInstance = NULL;
   void *srcBuf = NULL;
   int width, height;
@@ -171,7 +184,7 @@ int main(int argc, char **argv)
       if (MATCH_ARG(argv[i], "fast", 1))
         fastDCT = 1;
       else if (!MATCH_ARG(argv[i], "int", 1))
-        usage(argv[0]);
+        return usage(argv[0]);
     } else if (MATCH_ARG(argv[i], "-grayscale", 2) ||
                MATCH_ARG(argv[i], "-greyscale", 2))
       colorspace = TJCS_GRAY;
@@ -180,11 +193,12 @@ int main(int argc, char **argv)
     else if (MATCH_ARG(argv[i], "-lossless", 2) && i < argc - 1) {
       if (sscanf(argv[++i], "%d,%d", &losslessPSV, &losslessPt) < 1 ||
           losslessPSV < 1 || losslessPSV > 7)
-        usage(argv[0]);
+				return usage(argv[0]);
     } else if (MATCH_ARG(argv[i], "-maxmemory", 2) && i < argc - 1) {
       int tempi = atoi(argv[++i]);
 
-      if (tempi < 0) usage(argv[0]);
+      if (tempi < 0)
+				return usage(argv[0]);
       maxMemory = tempi;
     } else if (MATCH_ARG(argv[i], "-optimize", 2) ||
                MATCH_ARG(argv[i], "-optimise", 2))
@@ -193,7 +207,7 @@ int main(int argc, char **argv)
       int tempi = atoi(argv[++i]);
 
       if (tempi < 2 || tempi > 16)
-        usage(argv[0]);
+				return usage(argv[0]);
       precision = tempi;
     } else if (MATCH_ARG(argv[i], "-progressive", 2))
       progressive = 1;
@@ -201,7 +215,7 @@ int main(int argc, char **argv)
       int tempi = atoi(argv[++i]);
 
       if (tempi < 1 || tempi > 100)
-        usage(argv[0]);
+				return usage(argv[0]);
       quality = tempi;
     } else if (MATCH_ARG(argv[i], "-rgb", 3))
       colorspace = TJCS_RGB;
@@ -211,7 +225,7 @@ int main(int argc, char **argv)
       if ((nscan = sscanf(argv[++i], "%d%c", &tempi, &tempc)) < 1 ||
           tempi < 0 || tempi > 65535 ||
           (nscan == 2 && tempc != 'B' && tempc != 'b'))
-        usage(argv[0]);
+				return usage(argv[0]);
 
       if (tempc == 'B' || tempc == 'b')
         restartIntervalBlocks = tempi;
@@ -232,14 +246,14 @@ int main(int argc, char **argv)
       else if (MATCH_ARG(argv[i], "441", 3))
         subsamp = TJSAMP_441;
       else
-        usage(argv[0]);
+				return usage(argv[0]);
     } else break;
   }
 
   if (i != argc - 2)
-    usage(argv[0]);
+		return usage(argv[0]);
   if (losslessPSV == -1 && precision != 8 && precision != 12)
-    usage(argv[0]);
+		return usage(argv[0]);
 
   if ((tjInstance = tj3Init(TJINIT_COMPRESS)) == NULL)
     THROW_TJ("creating TurboJPEG instance");

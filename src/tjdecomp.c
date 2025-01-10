@@ -41,7 +41,7 @@
  * - Debug output
  */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
@@ -54,6 +54,9 @@
 #include <stdint.h>
 #endif
 #include <turbojpeg.h>
+
+
+#include "monolithic_examples.h"
 
 
 #ifdef _WIN32
@@ -91,7 +94,7 @@ static tjscalingfactor *scalingFactors = NULL;
 static int numScalingFactors = 0;
 
 
-static void usage(char *programName)
+static int usage(const char *programName)
 {
   int i;
 
@@ -150,11 +153,21 @@ static void usage(char *programName)
   }
   printf(")\n\n");
 
-  exit(1);
+  return EXIT_FAILURE;
 }
 
 
-int main(int argc, char **argv)
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_tjdecomp_main(cnt, arr)
+#endif
+
+/*
+ * The main program.
+ */
+
+int
+main(int argc, const char** argv)
 {
   int i, retval = 0;
   int colorspace, fastDCT = -1, fastUpsample = -1, maxMemory = -1,
@@ -162,7 +175,7 @@ int main(int argc, char **argv)
     subsamp;
   tjregion croppingRegion = TJUNCROPPED;
   tjscalingfactor scalingFactor = TJUNSCALED;
-  char *iccFilename = NULL;
+  const char *iccFilename = NULL;
   tjhandle tjInstance = NULL;
   FILE *jpegFile = NULL, *iccFile = NULL;
   long size = 0;
@@ -184,13 +197,13 @@ int main(int argc, char **argv)
                  &croppingRegion.y) != 5 || croppingRegion.w < 1 ||
           (tempc != 'x' && tempc != 'X') || croppingRegion.h < 1 ||
           croppingRegion.x < 0 || croppingRegion.y < 0)
-        usage(argv[0]);
+        return usage(argv[0]);
     } else if (MATCH_ARG(argv[i], "-dct", 2) && i < argc - 1) {
       i++;
       if (MATCH_ARG(argv[i], "fast", 1))
         fastDCT = 1;
       else if (!MATCH_ARG(argv[i], "int", 1))
-        usage(argv[0]);
+				return usage(argv[0]);
     } else if (MATCH_ARG(argv[i], "-grayscale", 2) ||
                MATCH_ARG(argv[i], "-greyscale", 2))
       pixelFormat = TJPF_GRAY;
@@ -199,12 +212,14 @@ int main(int argc, char **argv)
     else if (MATCH_ARG(argv[i], "-maxscans", 5) && i < argc - 1) {
       int tempi = atoi(argv[++i]);
 
-      if (tempi < 0) usage(argv[0]);
+      if (tempi < 0)
+				return usage(argv[0]);
       maxScans = tempi;
     } else if (MATCH_ARG(argv[i], "-maxmemory", 2) && i < argc - 1) {
       int tempi = atoi(argv[++i]);
 
-      if (tempi < 0) usage(argv[0]);
+      if (tempi < 0)
+				return usage(argv[0]);
       maxMemory = tempi;
     } else if (MATCH_ARG(argv[i], "-nosmooth", 2))
       fastUpsample = 1;
@@ -216,9 +231,9 @@ int main(int argc, char **argv)
       int match = 0, temp_num = 0, temp_denom = 0, j;
 
       if (sscanf(argv[++i], "%d/%d", &temp_num, &temp_denom) < 2)
-        usage(argv[0]);
+				return usage(argv[0]);
       if (temp_num < 1 || temp_denom < 1)
-        usage(argv[0]);
+				return usage(argv[0]);
       for (j = 0; j < numScalingFactors; j++) {
         if ((double)temp_num / (double)temp_denom ==
             (double)scalingFactors[j].num / (double)scalingFactors[j].denom) {
@@ -228,12 +243,12 @@ int main(int argc, char **argv)
         }
       }
       if (match != 1)
-        usage(argv[0]);
+				return usage(argv[0]);
     } else break;
   }
 
   if (i != argc - 2)
-    usage(argv[0]);
+		return usage(argv[0]);
 
   if ((tjInstance = tj3Init(TJINIT_DECOMPRESS)) == NULL)
     THROW_TJ("creating TurboJPEG instance");

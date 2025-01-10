@@ -30,7 +30,9 @@
 #include <io.h>                 /* to declare setmode() */
 #endif
 
+
 #include "monolithic_examples.h"
+
 
 #ifdef DONT_USE_B_MODE          /* define mode parameters for fopen() */
 #define READ_BINARY     "r"

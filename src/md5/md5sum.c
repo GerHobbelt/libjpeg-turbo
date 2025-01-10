@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_DEPRECATE)
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
 
@@ -35,7 +35,21 @@
 #include <errno.h>
 #include "./md5.h"
 
-int main(int argc, char *argv[])
+
+#include "monolithic_examples.h"
+
+
+
+#if defined(BUILD_MONOLITHIC)
+#define main(cnt, arr)      jpegturbo_md5sum_main(cnt, arr)
+#endif
+
+ /*
+	* The main program.
+	*/
+
+int
+main(int argc, const char** argv)
 {
   char *md5sum = NULL, buf[65];
   int i;
