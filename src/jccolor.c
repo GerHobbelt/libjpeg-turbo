@@ -623,9 +623,11 @@ _jinit_color_converter(j_compress_ptr cinfo)
    */
   switch (cinfo->jpeg_color_space) {
   case JCS_GRAYSCALE:
+#ifdef C_LOSSLESS_SUPPORTED
     if (cinfo->master->lossless &&
         cinfo->in_color_space != cinfo->jpeg_color_space)
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
     if (cinfo->num_components != 1)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (cinfo->in_color_space == JCS_GRAYSCALE)
@@ -647,8 +649,10 @@ _jinit_color_converter(j_compress_ptr cinfo)
     break;
 
   case JCS_RGB:
+#ifdef C_LOSSLESS_SUPPORTED
     if (cinfo->master->lossless && !IsExtRGB(cinfo->in_color_space))
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
     if (cinfo->num_components != 3)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (rgb_red[cinfo->in_color_space] == 0 &&
@@ -668,9 +672,11 @@ _jinit_color_converter(j_compress_ptr cinfo)
     break;
 
   case JCS_YCbCr:
+#ifdef C_LOSSLESS_SUPPORTED
     if (cinfo->master->lossless &&
         cinfo->in_color_space != cinfo->jpeg_color_space)
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
     if (cinfo->num_components != 3)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (IsExtRGB(cinfo->in_color_space)) {
@@ -695,9 +701,11 @@ _jinit_color_converter(j_compress_ptr cinfo)
     break;
 
   case JCS_CMYK:
+#ifdef C_LOSSLESS_SUPPORTED
     if (cinfo->master->lossless &&
         cinfo->in_color_space != cinfo->jpeg_color_space)
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
     if (cinfo->num_components != 4)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (cinfo->in_color_space == JCS_CMYK) {
@@ -712,9 +720,11 @@ _jinit_color_converter(j_compress_ptr cinfo)
     break;
 
   case JCS_YCCK:
+#ifdef C_LOSSLESS_SUPPORTED
     if (cinfo->master->lossless &&
         cinfo->in_color_space != cinfo->jpeg_color_space)
       ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
+#endif
     if (cinfo->num_components != 4)
       ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
     if (cinfo->in_color_space == JCS_CMYK) {
