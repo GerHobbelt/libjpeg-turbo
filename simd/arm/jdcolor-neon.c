@@ -30,6 +30,7 @@
 #include "../../jconfigint.h"
 #include "../jsimd.h"
 #include "align.h"
+#include "neon-compat.h"
 
 #include <arm_neon.h>
 
