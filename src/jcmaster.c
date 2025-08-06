@@ -611,8 +611,8 @@ prepare_for_pass(j_compress_ptr cinfo)
      */
     master->pass_type = output_pass;
     master->pass_number++;
+	FALLTHROUGH                 /*FALLTHROUGH*/
 #endif
-    FALLTHROUGH                 /*FALLTHROUGH*/
   case output_pass:
     /* Do a data-output pass. */
     /* We need not repeat per-scan setup if prior optimization pass did it. */
