@@ -1203,6 +1203,7 @@ bailout:
 #pragma message("######################### 8bits")
 #include "turbojpeg-mp.c"
 #undef BITS_IN_JSAMPLE
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
 #define BITS_IN_JSAMPLE  12
 #pragma message("######################### 12bits")
 #include "turbojpeg-mp.c"
@@ -1211,6 +1212,7 @@ bailout:
 #pragma message("######################### 16bits")
 #include "turbojpeg-mp.c"
 #undef BITS_IN_JSAMPLE
+#endif
 
 /* TurboJPEG 1.2+ */
 DLLEXPORT int tjCompress2(tjhandle handle, const unsigned char *srcBuf,

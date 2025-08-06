@@ -348,6 +348,7 @@ main(int argc, const char** argv)
     if (tj3Decompress8(tjInstance, jpegBuf, jpegSize, dstBuf, 0,
                        pixelFormat) < 0)
       THROW_TJ("decompressing JPEG image");
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if (tj3Decompress12(tjInstance, jpegBuf, jpegSize, dstBuf, 0,
                         pixelFormat) < 0)
@@ -356,6 +357,7 @@ main(int argc, const char** argv)
     if (tj3Decompress16(tjInstance, jpegBuf, jpegSize, dstBuf, 0,
                         pixelFormat) < 0)
       THROW_TJ("decompressing JPEG image");
+#endif
   }
   tj3Free(jpegBuf);  jpegBuf = NULL;
 
@@ -363,6 +365,7 @@ main(int argc, const char** argv)
     if (tj3SaveImage8(tjInstance, argv[i], dstBuf, width, 0, height,
                       pixelFormat) < 0)
       THROW_TJ("saving output image");
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if (tj3SaveImage12(tjInstance, argv[i], dstBuf, width, 0, height,
                        pixelFormat) < 0)
@@ -371,6 +374,7 @@ main(int argc, const char** argv)
     if (tj3SaveImage16(tjInstance, argv[i], dstBuf, width, 0, height,
                        pixelFormat) < 0)
       THROW_TJ("saving output image");
+#endif
   }
 
 bailout:

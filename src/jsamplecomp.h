@@ -119,7 +119,7 @@
 
 
 
-#if BITS_IN_JSAMPLE == 16
+#if BITS_IN_JSAMPLE == 16 && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
 
 /* Sample data types and macros (jmorecfg.h) */
 #define _JSAMPLE  J16SAMPLE
@@ -203,7 +203,7 @@
 #define _jinit_write_ppm  j16init_write_ppm
 #endif
 
-#elif BITS_IN_JSAMPLE == 12
+#elif BITS_IN_JSAMPLE == 12 && defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
 
 /* Sample data types and macros (jmorecfg.h) */
 #define _JSAMPLE  J12SAMPLE
@@ -430,6 +430,10 @@
 #define _jinit_write_ppm  jinit_write_ppm
 
 #define _read_color_map  read_color_map
+
+#elif BITS_IN_JSAMPLE == 16 || BITS_IN_JSAMPLE == 12
+
+#error "BITS_IN_JSAMPLE == 12 or 16 is not supported in this build (#undef HAVE_JPEGTURBO_DUAL_MODE_8_12)"
 
 #else /* BITS_IN_JSAMPLE */
 

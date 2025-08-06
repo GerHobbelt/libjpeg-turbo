@@ -296,6 +296,7 @@ main(int argc, const char** argv)
     if ((srcBuf = tj3LoadImage8(tjInstance, argv[i], &width, 1, &height,
                                 &pixelFormat)) == NULL)
       THROW_TJ("loading input image");
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if ((srcBuf = tj3LoadImage12(tjInstance, argv[i], &width, 1, &height,
                                  &pixelFormat)) == NULL)
@@ -304,6 +305,7 @@ main(int argc, const char** argv)
     if ((srcBuf = tj3LoadImage16(tjInstance, argv[i], &width, 1, &height,
                                  &pixelFormat)) == NULL)
       THROW_TJ("loading input image");
+#endif
   }
 
   if (pixelFormat == TJPF_GRAY && colorspace < 0)
@@ -335,6 +337,7 @@ main(int argc, const char** argv)
     if (tj3Compress8(tjInstance, srcBuf, width, 0, height, pixelFormat,
                      &jpegBuf, &jpegSize) < 0)
       THROW_TJ("compressing image");
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if (tj3Compress12(tjInstance, srcBuf, width, 0, height, pixelFormat,
                       &jpegBuf, &jpegSize) < 0)
@@ -343,6 +346,7 @@ main(int argc, const char** argv)
     if (tj3Compress16(tjInstance, srcBuf, width, 0, height, pixelFormat,
                       &jpegBuf, &jpegSize) < 0)
       THROW_TJ("compressing image");
+#endif
   }
 
   if ((jpegFile = fopen(argv[++i], "wb")) == NULL)

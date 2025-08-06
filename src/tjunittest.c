@@ -450,13 +450,15 @@ static void compTest(tjhandle handle, unsigned char **dstBuf, size_t *dstSize,
     if (precision <= 8) {
       TRY_TJ(handle, tj3Compress8(handle, (unsigned char *)srcBuf, w, 0, h, pf,
                                   dstBuf, dstSize));
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
     } else if (precision <= 12) {
       TRY_TJ(handle, tj3Compress12(handle, (short *)srcBuf, w, 0, h, pf,
                                    dstBuf, dstSize));
     } else {
       TRY_TJ(handle, tj3Compress16(handle, (unsigned short *)srcBuf, w, 0, h,
                                    pf, dstBuf, dstSize));
-    }
+#endif
+	}
   }
 
   if (lossless)
@@ -541,13 +543,15 @@ static void _decompTest(tjhandle handle, unsigned char *jpegBuf,
     if (precision <= 8) {
       TRY_TJ(handle, tj3Decompress8(handle, jpegBuf, jpegSize,
                                     (unsigned char *)dstBuf, 0, pf));
-    } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+	} else if (precision <= 12) {
       TRY_TJ(handle, tj3Decompress12(handle, jpegBuf, jpegSize,
                                      (short *)dstBuf, 0, pf));
     } else {
       TRY_TJ(handle, tj3Decompress16(handle, jpegBuf, jpegSize,
                                      (unsigned short *)dstBuf, 0, pf));
-    }
+#endif
+	}
   }
 
   if (checkBuf(dstBuf, scaledWidth, scaledHeight, pf, subsamp, sf, bottomUp))
@@ -773,13 +777,15 @@ static void bufSizeTest(void)
           if (precision <= 8) {
             TRY_TJ(handle, tj3Compress8(handle, (unsigned char *)srcBuf, w, 0,
                                         h, TJPF_BGRX, &dstBuf, &dstSize));
-          } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+		  } else if (precision <= 12) {
             TRY_TJ(handle, tj3Compress12(handle, (short *)srcBuf, w, 0, h,
                                          TJPF_BGRX, &dstBuf, &dstSize));
           } else {
             TRY_TJ(handle, tj3Compress16(handle, (unsigned short *)srcBuf, w,
                                          0, h, TJPF_BGRX, &dstBuf, &dstSize));
-          }
+#endif
+		  }
         }
         free(srcBuf);  srcBuf = NULL;
         if (!alloc || doYUV) {
@@ -807,13 +813,15 @@ static void bufSizeTest(void)
           if (precision <= 8) {
             TRY_TJ(handle, tj3Compress8(handle, (unsigned char *)srcBuf, h, 0,
                                         w, TJPF_BGRX, &dstBuf, &dstSize));
-          } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+		  } else if (precision <= 12) {
             TRY_TJ(handle, tj3Compress12(handle, (short *)srcBuf, h, 0, w,
                                          TJPF_BGRX, &dstBuf, &dstSize));
           } else {
             TRY_TJ(handle, tj3Compress16(handle, (unsigned short *)srcBuf, h,
                                          0, w, TJPF_BGRX, &dstBuf, &dstSize));
-          }
+#endif
+		  }
         }
         free(srcBuf);  srcBuf = NULL;
         if (!alloc || doYUV) {
@@ -1000,12 +1008,14 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
   if (precision <= 8) {
     TRY_TJ(handle, tj3SaveImage8(handle, filename, (unsigned char *)buf, width,
                                  pitch, height, pf));
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     TRY_TJ(handle, tj3SaveImage12(handle, filename, (short *)buf, width, pitch,
                                   height, pf));
   } else {
     TRY_TJ(handle, tj3SaveImage16(handle, filename, (unsigned short *)buf,
                                   width, pitch, height, pf));
+#endif
   }
   md5sum = MD5File(filename, md5buf);
   if (!md5sum) {
@@ -1020,6 +1030,7 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
     if ((buf = tj3LoadImage8(handle, filename, &loadWidth, align, &loadHeight,
                              &pf)) == NULL)
       THROW_TJ(handle);
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if ((buf = tj3LoadImage12(handle, filename, &loadWidth, align, &loadHeight,
                               &pf)) == NULL)
@@ -1028,6 +1039,7 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
     if ((buf = tj3LoadImage16(handle, filename, &loadWidth, align, &loadHeight,
                               &pf)) == NULL)
       THROW_TJ(handle);
+#endif
   }
   if (width != loadWidth || height != loadHeight) {
     printf("\n   Image dimensions of %s are bogus\n", filename);
@@ -1044,7 +1056,8 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       if ((buf = tj3LoadImage8(handle, filename, &loadWidth, align,
                                &loadHeight, &pf)) == NULL)
         THROW_TJ(handle);
-    } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+	} else if (precision <= 12) {
       if ((buf = tj3LoadImage12(handle, filename, &loadWidth, align,
                                 &loadHeight, &pf)) == NULL)
         THROW_TJ(handle);
@@ -1052,7 +1065,8 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       if ((buf = tj3LoadImage16(handle, filename, &loadWidth, align,
                                 &loadHeight, &pf)) == NULL)
         THROW_TJ(handle);
-    }
+#endif
+	}
     pitch = PAD(width * tjPixelSize[pf], align);
     if (!cmpBitmap(buf, width, pitch, height, pf, bottomUp, 1)) {
       printf("\n   Converting %s to RGB failed\n", filename);
@@ -1065,7 +1079,8 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       if ((buf = tj3LoadImage8(handle, filename, &loadWidth, align,
                                &loadHeight, &pf)) == NULL)
         THROW_TJ(handle);
-    } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+	} else if (precision <= 12) {
       if ((buf = tj3LoadImage12(handle, filename, &loadWidth, align,
                                 &loadHeight, &pf)) == NULL)
         THROW_TJ(handle);
@@ -1073,7 +1088,8 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
       if ((buf = tj3LoadImage16(handle, filename, &loadWidth, align,
                                 &loadHeight, &pf)) == NULL)
         THROW_TJ(handle);
-    }
+#endif
+	}
     pitch = PAD(width * tjPixelSize[pf], align);
     if (!cmpBitmap(buf, width, pitch, height, pf, bottomUp, 1)) {
       printf("\n   Converting %s to CMYK failed\n", filename);
@@ -1089,6 +1105,7 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
     if ((buf = tj3LoadImage8(handle, filename, &loadWidth, align, &loadHeight,
                              &pixelFormat)) == NULL)
       THROW_TJ(handle);
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if ((buf = tj3LoadImage12(handle, filename, &loadWidth, align, &loadHeight,
                               &pixelFormat)) == NULL)
@@ -1097,6 +1114,7 @@ static int doBmpTest(const char *ext, int width, int align, int height, int pf,
     if ((buf = tj3LoadImage16(handle, filename, &loadWidth, align, &loadHeight,
                               &pixelFormat)) == NULL)
       THROW_TJ(handle);
+#endif
   }
   if ((pf == TJPF_GRAY && pixelFormat != TJPF_GRAY) ||
       (pf != TJPF_GRAY && !strcasecmp(ext, "bmp") &&

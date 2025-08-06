@@ -101,7 +101,7 @@ static int stopOnWarning = 0, precision = 8, sampleSize = 0, bottomUp = 0, noRea
   restartIntervalRows = 0;
 static int flags = TJFLAG_NOREALLOC, compOnly = 0, decompOnly = 0, doYUV = 0,
   quiet = 0, doTile = 0, pf = TJPF_BGR, yuvAlign = 1, doWrite = 1;
-static char *ext = "ppm";
+static const char *ext = "ppm";
 static const char *pixFormatStr[TJ_NUMPF] = {
   "RGB", "BGR", "RGBX", "BGRX", "XBGR", "XRGB", "GRAY", "", "", "", "", "CMYK"
 };
@@ -293,7 +293,8 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
             if (tj3Decompress8(handle, jpegBufs[tile], jpegSizes[tile],
                                dstPtr2, pitch, pf) == -1)
               THROW_TJ();
-          } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+		  } else if (precision <= 12) {
             if (tj3Decompress12(handle, jpegBufs[tile], jpegSizes[tile],
                                 (short *)dstPtr2, pitch, pf) == -1)
               THROW_TJ();
@@ -301,7 +302,8 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
             if (tj3Decompress16(handle, jpegBufs[tile], jpegSizes[tile],
                                 (unsigned short *)dstPtr2, pitch, pf) == -1)
               THROW_TJ();
-          }
+#endif
+		  }
         }
       }
     }
@@ -356,6 +358,7 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
     if (tj3SaveImage8(handle, tempStr, (unsigned char *)dstBuf, scaledw, 0,
                       scaledh, pf) == -1)
       THROW_TJ();
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
   } else if (precision <= 12) {
     if (tj3SaveImage12(handle, tempStr, (short *)dstBuf, scaledw, 0, scaledh,
                        pf) == -1)
@@ -364,6 +367,7 @@ static int decomp(unsigned char **jpegBufs, size_t *jpegSizes, void *dstBuf,
     if (tj3SaveImage16(handle, tempStr, (unsigned short *)dstBuf, scaledw, 0,
                       scaledh, pf) == -1)
       THROW_TJ();
+#endif
   }
 
 bailout:
@@ -518,7 +522,8 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
               if (tj3Compress8(handle, srcPtr2, width, pitch, height, pf,
                                &jpegBufs[tile], &jpegSizes[tile]) == -1)
                 THROW_TJ();
-            } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+			} else if (precision <= 12) {
               if (tj3Compress12(handle, (short *)srcPtr2, width, pitch, height,
                                 pf, &jpegBufs[tile], &jpegSizes[tile]) == -1)
                 THROW_TJ();
@@ -527,7 +532,8 @@ static int fullTest(tjhandle handle, void *srcBuf, int w, int h, int subsamp,
                                 pitch, height, pf, &jpegBufs[tile],
                                 &jpegSizes[tile]) == -1)
                 THROW_TJ();
-            }
+#endif
+			}
           }
           totalJpegSize += jpegSizes[tile];
         }
@@ -1381,13 +1387,15 @@ int main(int argc, const char** argv)
     if (precision <= 8) {
       if ((srcBuf = tj3LoadImage8(handle, argv[1], &w, 1, &h, &pf)) == NULL)
         THROW_TJ();
-    } else if (precision <= 12) {
+#if defined(HAVE_JPEGTURBO_DUAL_MODE_8_12)
+	} else if (precision <= 12) {
       if ((srcBuf = tj3LoadImage12(handle, argv[1], &w, 1, &h, &pf)) == NULL)
         THROW_TJ();
     } else {
       if ((srcBuf = tj3LoadImage16(handle, argv[1], &w, 1, &h, &pf)) == NULL)
         THROW_TJ();
-    }
+#endif
+	}
     temp = strrchr(argv[1], '.');
     if (temp != NULL) *temp = '\0';
   }
