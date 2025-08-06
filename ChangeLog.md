@@ -1,3 +1,17 @@
+3.1.2
+=====
+
+### Significant changes relative to 3.1.1:
+
+1. Fixed a regression introduced by 3.1 beta1[5] that caused a segfault in
+TJBench if `-copy` or `-c` was passed as the last command-line argument.
+
+2. The build system now uses wrappers rather than CMake object libraries to
+compile source files for multiple data precisions.  This improves code
+readability and facilitates adapting the libjpeg-turbo source code to non-CMake
+build systems.
+
+
 3.1.1
 =====
 
