@@ -23,6 +23,10 @@
 #ifndef _JPEGTURBO_MEMSYS_H_
 #define _JPEGTURBO_MEMSYS_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct jpeg_common_struct *j_common_ptr;
 
 /*
@@ -222,7 +226,10 @@ typedef int jpeg_sys_mem_register_t(j_common_ptr cinfo);
  * provided by this API will be invoked instead, serving as
  * 'default mem sys' provider.
  */
- EXTERN(void) jpeg_sys_mem_set_default_setup(jpeg_sys_mem_register_t *client_callback);
+EXTERN(void) jpeg_sys_mem_set_default_setup(jpeg_sys_mem_register_t *client_callback);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif
