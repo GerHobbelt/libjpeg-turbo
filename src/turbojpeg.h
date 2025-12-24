@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2009-2015, 2017, 2020-2024 D. R. Commander.
+ * Copyright (C)2009-2015, 2017, 2020-2025 D. R. Commander.
  *                                         All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -737,7 +737,8 @@ enum TJPARAM {
    * - DCT/IDCT algorithm selection
    * - Progressive JPEG
    * - Arithmetic entropy coding
-   * - Compression from/decompression to planar YUV images
+   * - Compression from/decompression to planar YUV images (this parameter is
+   * ignored by #tj3CompressFromYUV8() and #tj3CompressFromYUVPlanes8())
    * - Decompression scaling
    * - Lossless transformation
    *
@@ -1641,7 +1642,8 @@ DLLEXPORT int tj3Compress16(tjhandle handle, const unsigned short *srcBuf,
 
 /**
  * Compress a set of 8-bit-per-sample Y, U (Cb), and V (Cr) image planes into
- * an 8-bit-per-sample JPEG image.
+ * an 8-bit-per-sample lossy @ref TJCS_YCbCr "YCbCr" or
+ * @ref TJCS_GRAY "grayscale" JPEG image.
  *
  * @param handle handle to a TurboJPEG instance that has been initialized for
  * compression
@@ -1708,7 +1710,8 @@ DLLEXPORT int tj3CompressFromYUVPlanes8(tjhandle handle,
 
 /**
  * Compress an 8-bit-per-sample unified planar YUV image into an
- * 8-bit-per-sample JPEG image.
+ * 8-bit-per-sample lossy @ref TJCS_YCbCr "YCbCr" or @ref TJCS_GRAY "grayscale"
+ * JPEG image.
  *
  * @param handle handle to a TurboJPEG instance that has been initialized for
  * compression
@@ -1770,8 +1773,9 @@ DLLEXPORT int tj3CompressFromYUV8(tjhandle handle,
 /**
  * Encode an 8-bit-per-sample packed-pixel RGB or grayscale image into separate
  * 8-bit-per-sample Y, U (Cb), and V (Cr) image planes.  This function performs
- * color conversion (which is accelerated in the libjpeg-turbo implementation)
- * but does not execute any of the other steps in the JPEG compression process.
+ * color conversion and downsampling (which are accelerated in the
+ * libjpeg-turbo implementation) but does not execute any of the other steps in
+ * the JPEG compression process.
  *
  * @param handle handle to a TurboJPEG instance that has been initialized for
  * compression
@@ -1825,8 +1829,9 @@ DLLEXPORT int tj3EncodeYUVPlanes8(tjhandle handle, const unsigned char *srcBuf,
 /**
  * Encode an 8-bit-per-sample packed-pixel RGB or grayscale image into an
  * 8-bit-per-sample unified planar YUV image.  This function performs color
- * conversion (which is accelerated in the libjpeg-turbo implementation) but
- * does not execute any of the other steps in the JPEG compression process.
+ * conversion and downsampling (which are accelerated in the libjpeg-turbo
+ * implementation) but does not execute any of the other steps in the JPEG
+ * compression process.
  *
  * @param handle handle to a TurboJPEG instance that has been initialized for
  * compression
@@ -2065,11 +2070,12 @@ DLLEXPORT int tj3Decompress16(tjhandle handle, const unsigned char *jpegBuf,
 
 
 /**
- * Decompress an 8-bit-per-sample JPEG image into separate 8-bit-per-sample Y,
- * U (Cb), and V (Cr) image planes.  This function performs JPEG decompression
- * but leaves out the color conversion step, so a planar YUV image is generated
- * instead of a packed-pixel image.  The @ref TJPARAM "parameters" that
- * describe the JPEG image will be set when this function returns.
+ * Decompress an 8-bit-per-sample lossy JPEG image into separate
+ * 8-bit-per-sample Y, U (Cb), and V (Cr) image planes.  This function performs
+ * JPEG decompression but leaves out the color conversion step, so a planar YUV
+ * image is generated instead of a packed-pixel image.  The
+ * @ref TJPARAM "parameters" that describe the JPEG image will be set when this
+ * function returns.
  *
  * @param handle handle to a TurboJPEG instance that has been initialized for
  * decompression
@@ -2108,11 +2114,11 @@ DLLEXPORT int tj3DecompressToYUVPlanes8(tjhandle handle,
 
 
 /**
- * Decompress an 8-bit-per-sample JPEG image into an 8-bit-per-sample unified
- * planar YUV image.  This function performs JPEG decompression but leaves out
- * the color conversion step, so a planar YUV image is generated instead of a
- * packed-pixel image.  The @ref TJPARAM "parameters" that describe the JPEG
- * image will be set when this function returns.
+ * Decompress an 8-bit-per-sample lossy JPEG image into an 8-bit-per-sample
+ * unified planar YUV image.  This function performs JPEG decompression but
+ * leaves out the color conversion step, so a planar YUV image is generated
+ * instead of a packed-pixel image.  The @ref TJPARAM "parameters" that
+ * describe the JPEG image will be set when this function returns.
  *
  * @param handle handle to a TurboJPEG instance that has been initialized for
  * decompression

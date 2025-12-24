@@ -1,5 +1,5 @@
 /*
- * Copyright (C)2009-2014, 2017-2019, 2022-2024 D. R. Commander.
+ * Copyright (C)2009-2014, 2017-2019, 2022-2025 D. R. Commander.
  *                                              All Rights Reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -430,6 +430,10 @@ static void compTest(tjhandle handle, unsigned char **dstBuf, size_t *dstSize,
     memset(yuvBuf, 0, yuvSize);
 
     printf("%s %s -> YUV %s ... ", pfStr, buStrLong, subNameLong[subsamp]);
+    /* Verify that tj3EncodeYUV*8() ignores TJPARAM_LOSSLESS and
+       TJPARAM_COLORSPACE. */
+    TRY_TJ(handle2, tj3Set(handle2, TJPARAM_LOSSLESS, 1));
+    TRY_TJ(handle2, tj3Set(handle2, TJPARAM_COLORSPACE, TJCS_RGB));
     TRY_TJ(handle2, tj3EncodeYUV8(handle2, (unsigned char *)srcBuf, w, 0, h,
                                   pf, yuvBuf, yuvAlign));
     tj3Destroy(handle2);
@@ -438,6 +442,10 @@ static void compTest(tjhandle handle, unsigned char **dstBuf, size_t *dstSize,
 
     printf("YUV %s %s -> JPEG Q%d ... ", subNameLong[subsamp], buStrLong,
            jpegQual);
+    /* Verify that tj3CompressFromYUV*8() ignores TJPARAM_LOSSLESS and
+       TJPARAM_COLORSPACE. */
+    TRY_TJ(handle, tj3Set(handle, TJPARAM_LOSSLESS, 1));
+    TRY_TJ(handle, tj3Set(handle, TJPARAM_COLORSPACE, TJCS_RGB));
     TRY_TJ(handle, tj3CompressFromYUV8(handle, yuvBuf, w, yuvAlign, h, dstBuf,
                                        dstSize));
   } else {
@@ -771,9 +779,17 @@ static void bufSizeTest(void)
         }
 
         if (doYUV) {
+          /* Verify that tj3EncodeYUV*8() ignores TJPARAM_LOSSLESS and
+             TJPARAM_COLORSPACE. */
+          TRY_TJ(handle, tj3Set(handle, TJPARAM_LOSSLESS, 1));
+          TRY_TJ(handle, tj3Set(handle, TJPARAM_COLORSPACE, TJCS_RGB));
           TRY_TJ(handle, tj3EncodeYUV8(handle, (unsigned char *)srcBuf, w, 0,
                                        h, TJPF_BGRX, dstBuf, yuvAlign));
         } else {
+          /* Verify that the API is hardened against hypothetical applications
+             that may erroneously set the JPEG destination buffer size to 0
+             while reusing the destination buffer pointer. */
+          if (alloc && (w > 1 || h > 1)) dstSize = 0;
           if (precision <= 8) {
             TRY_TJ(handle, tj3Compress8(handle, (unsigned char *)srcBuf, w, 0,
                                         h, TJPF_BGRX, &dstBuf, &dstSize));
@@ -807,9 +823,14 @@ static void bufSizeTest(void)
         }
 
         if (doYUV) {
+          /* Verify that tj3EncodeYUV*8() ignores TJPARAM_LOSSLESS and
+             TJPARAM_COLORSPACE. */
+          TRY_TJ(handle, tj3Set(handle, TJPARAM_LOSSLESS, 1));
+          TRY_TJ(handle, tj3Set(handle, TJPARAM_COLORSPACE, TJCS_RGB));
           TRY_TJ(handle, tj3EncodeYUV8(handle, (unsigned char *)srcBuf, h, 0,
                                        w, TJPF_BGRX, dstBuf, yuvAlign));
         } else {
+          if (alloc && (w > 1 || h > 1)) dstSize = 0;
           if (precision <= 8) {
             TRY_TJ(handle, tj3Compress8(handle, (unsigned char *)srcBuf, h, 0,
                                         w, TJPF_BGRX, &dstBuf, &dstSize));

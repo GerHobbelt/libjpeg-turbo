@@ -1,6 +1,6 @@
 /*
  * Copyright 2009 Pierre Ossman <ossman@cendio.se> for Cendio AB
- * Copyright (C) 2009-2011, 2014, 2016, 2018, 2022-2024, D. R. Commander.
+ * Copyright (C) 2009-2011, 2014, 2016, 2018, 2022-2025, D. R. Commander.
  * Copyright (C) 2015-2016, 2018, 2022, Matthieu Darbois.
  *
  * Based on the x86 SIMD extension for IJG JPEG library,
@@ -1070,7 +1070,7 @@ jsimd_can_encode_mcu_AC_first_prepare(void)
     return 0;
   if (sizeof(JCOEF) != 2)
     return 0;
-  if (simd_support & JSIMD_SSE2)
+  if ((simd_support & JSIMD_SSE2) && simd_huffman)
     return 1;
 
   return 0;
@@ -1094,7 +1094,7 @@ jsimd_can_encode_mcu_AC_refine_prepare(void)
     return 0;
   if (sizeof(JCOEF) != 2)
     return 0;
-  if (simd_support & JSIMD_SSE2)
+  if ((simd_support & JSIMD_SSE2) && simd_huffman)
     return 1;
 
   return 0;
